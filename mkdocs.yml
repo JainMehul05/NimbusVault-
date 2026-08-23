@@ -1,0 +1,35 @@
+site_name: NimbusVault
+site_description: AI-Powered Cloud Storage & Document Intelligence Platform — Project Documentation
+repo_url: https://github.com/example/nimbusvault
+theme:
+  name: material
+  palette:
+    primary: indigo
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+markdown_extensions:
+  - tables
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.mermaid_code_format
+nav:
+  - Home: index.md
+  - Phase 0 — Planning & Architecture:
+      - SRS: phase-0/01-SRS.md
+      - Architecture: phase-0/02-Architecture.md
+      - Database Design: phase-0/03-Database.md
+      - API Contract: phase-0/04-API.md
+      - Technology Decisions: phase-0/05-Technology.md
+      - Security Design: phase-0/06-Security.md
+      - Scalability Design: phase-0/07-Scalability.md
+      - Workflow & Standards: phase-0/08-Workflow.md
+      - Testing Strategy: phase-0/09-Testing.md
+      - Team Ownership: phase-0/10-Team.md
+      - Roadmap: phase-0/11-Roadmap.md
+  - Phase 1 — Foundation Implementation:
+      - Implementation Plan: phase-1/01-phase1-implementation-plan.md

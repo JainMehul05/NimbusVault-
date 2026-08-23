@@ -80,6 +80,10 @@ model User {
   refreshTokens     RefreshToken[]
   sessions          UserSession[]
   activityLogs      ActivityLog[]
+  ownedFolders      Folder[]         @relation("FolderOwner")
+  ownedFiles        File[]           @relation("FileOwner")
+  createdShareLinks ShareLink[]      @relation("ShareLinkCreator")
+  permissions       Permission[]     @relation("PermissionGrantee")
 
   @@index([email])
   @@map("users")
@@ -125,7 +129,7 @@ model Folder {
   deletedAt         DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner             User     @relation("FolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   parent            Folder?  @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
   children          Folder[] @relation("FolderHierarchy")
   files             File[]
@@ -151,7 +155,7 @@ model File {
   aiStatus        AiStatus   @default(NA)
   uploadedAt      DateTime @default(now())
   deletedAt       DateTime?
-  owner           User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner           User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   shareLinks      ShareLink[]
   permissions     Permission[]
@@ -176,7 +180,7 @@ model ShareLink {
   revokedAt      DateTime?
   createdAt      DateTime       @default(now())
   file           File           @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  creator        User           @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  creator        User           @relation("ShareLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([fileId])
   @@index([token])
@@ -191,7 +195,7 @@ model Permission {
   level            PermissionLevel
   grantedBy        String
   createdAt        DateTime         @default(now())
-  user             User             @relation(fields: [granteeUserId], references: [id], onDelete: Cascade)
+  user             User             @relation("PermissionGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
 
   @@unique([resourceType, resourceId, granteeUserId])
   @@index([resourceType, resourceId])

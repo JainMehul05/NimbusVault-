@@ -133,7 +133,6 @@ model Folder {
   parent            Folder?  @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
   children          Folder[] @relation("FolderHierarchy")
   files             File[]
-  permissions       Permission[]
 
   @@unique([ownerId, parentFolderId, name])
   @@index([ownerId, parentFolderId])
@@ -158,8 +157,6 @@ model File {
   owner           User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   shareLinks      ShareLink[]
-  permissions     Permission[]
-  activityLogs    ActivityLog[]
 
   @@index([ownerId, deletedAt, uploadedAt])
   @@index([ownerId, folderId, deletedAt])

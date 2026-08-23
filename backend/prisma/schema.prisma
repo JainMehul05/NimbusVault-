@@ -133,7 +133,7 @@ model Folder {
   parent            Folder?  @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
   children          Folder[] @relation("FolderHierarchy")
   files             File[]
-  permissions       Permission[] @relation("FolderPermissions")
+  permissions       Permission[]
 
   @@unique([ownerId, parentFolderId, name])
   @@index([ownerId, parentFolderId])
@@ -158,7 +158,7 @@ model File {
   owner           User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   shareLinks      ShareLink[]
-  permissions     Permission[] @relation("FilePermissions")
+  permissions     Permission[]
   activityLogs    ActivityLog[]
 
   @@index([ownerId, deletedAt, uploadedAt])
@@ -196,8 +196,6 @@ model Permission {
   grantedBy        String
   createdAt        DateTime         @default(now())
   user             User             @relation("PermissionGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
-  folder           Folder?          @relation(fields: [resourceId], references: [id])
-  file             File?            @relation(fields: [resourceId], references: [id])
 
   @@unique([resourceType, resourceId, granteeUserId])
   @@index([resourceType, resourceId])
@@ -215,7 +213,6 @@ model ActivityLog {
   metadata      Json?
   createdAt     DateTime       @default(now())
   user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  file          File?          @relation(fields: [resourceId], references: [id])
 
   @@index([userId, createdAt])
   @@index([resourceType, resourceId, createdAt])

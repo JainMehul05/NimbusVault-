@@ -11,6 +11,8 @@ import { AppError } from '@common/errors';
 import { createRequestLogger } from '@common/logger';
 import authRoutes from '@modules/auth/auth.routes';
 import userRoutes from '@modules/users/user.routes';
+import fileRoutes from '@modules/files/files.routes';
+import folderRoutes from '@modules/folders/folders.routes';
 
 const app = express();
 
@@ -63,7 +65,7 @@ app.use(cookieParser());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: config.nodeEnv === 'test' ? 10000 : 100,
   message: errorResponse('Too many requests', 'RATE_LIMIT_EXCEEDED', undefined, 'unknown'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -109,6 +111,8 @@ app.get(`/api/${config.apiPrefix}/health/ready`, async (req, res) => {
 
 app.use(`/api/${config.apiPrefix}/auth`, authRoutes);
 app.use(`/api/${config.apiPrefix}/users`, userRoutes);
+app.use(`/api/${config.apiPrefix}/files`, fileRoutes);
+app.use(`/api/${config.apiPrefix}/folders`, folderRoutes);
 
 app.use((req, res) => {
   res.status(404).json(errorResponse('Route not found', 'NOT_FOUND', undefined, req.requestId));

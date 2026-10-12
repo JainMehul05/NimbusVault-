@@ -16,6 +16,25 @@ services:
       timeout: 5s
       retries: 5
 
+  localstack:
+    image: localstack/localstack:3.5
+    container_name: nimbusvault-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: 1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -32,6 +51,12 @@ services:
       JWT_REFRESH_EXPIRES_IN: 7d
       BCRYPT_ROUNDS: 12
       FRONTEND_URL: http://localhost:5173
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_S3_BUCKET: nimbusvault
+      S3_ENDPOINT: http://localstack:4566
+      S3_FORCE_PATH_STYLE: "true"
     ports:
       - "3002:3000"
     volumes:
@@ -40,6 +65,8 @@ services:
       - /app/dist
     depends_on:
       postgres:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     command: npm run start:dev
 
@@ -61,3 +88,4 @@ services:
 
 volumes:
   postgres_data:
+  localstack_data:

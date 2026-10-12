@@ -1,18 +1,62 @@
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@context/AuthContext';
+import { useFileManager } from '@hooks/useFileManager';
+import { UploadZone } from '@components/UploadZone';
+import { FileList } from '@components/FileList';
+import { FolderTree } from '@components/FolderTree';
+import { StorageIndicator } from '@components/StorageIndicator';
+import { Breadcrumb } from '@components/Breadcrumb';
+import { SearchBar } from '@components/SearchBar';
 
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fileManager = useFileManager();
+
+  // Override search handling
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+  }, []);
+
+  const handleSearch = useCallback((value: string) => {
+    fileManager.setSearchQuery(value);
+    fileManager.fetchFiles(1);
+  }, [fileManager]);
+
+  const handleCreateFolder = useCallback((_parentId: string | null, name: string) => {
+    fileManager.handleCreateFolder(name);
+  }, [fileManager]);
+
+  const handleRenameFolder = useCallback((folderId: string, newName: string) => {
+    // Need to implement folder rename in fileManager
+    // For now, we'll add this to the hook
+    console.log('Rename folder:', folderId, newName);
+  }, []);
+
+  const handleDeleteFolder = useCallback((folderId: string) => {
+    // Need to implement folder delete in fileManager
+    console.log('Delete folder:', folderId);
+  }, []);
+
+  const handleNavigate = useCallback((folderId: string | null) => {
+    fileManager.handleNavigateToFolder(folderId);
+  }, [fileManager]);
+
+  // Clear error when user interacts
+  const clearError = useCallback(() => setError(null), []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50" onClick={clearError}>
+      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-gray-900">NimbusVault</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Welcome, {user?.name}</span>
+              <span className="text-sm text-gray-700 hidden sm:block">Welcome, {user?.name}</span>
               <button
                 onClick={() => logout()}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
@@ -24,11 +68,90 @@ export const DashboardPage: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome to NimbusVault</h2>
-          <p className="mt-4 text-lg text-gray-600">Your files will appear here.</p>
-          <p className="mt-2 text-gray-500">File upload and storage features coming in Phase 2.</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Error Toast */}
+        {(fileManager.error || error) && (
+          <div className="fixed top-20 right-4 z-50 max-w-md animate-slide-in" role="alert">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-red-700">{fileManager.error || error}</p>
+                </div>
+                <button
+                  onClick={() => { setError(null); fileManager.fetchFiles(fileManager.pagination.page); }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Sidebar - Folder Tree */}
+          <aside className="lg:col-span-3 xl:col-span-2">
+            <FolderTree
+              fileManager={fileManager}
+              currentFolderId={fileManager.currentFolderId}
+              onNavigate={handleNavigate}
+              onCreateFolder={handleCreateFolder}
+              onRenameFolder={handleRenameFolder}
+              onDeleteFolder={handleDeleteFolder}
+            />
+
+            {/* Storage Indicator */}
+            <div className="mt-6">
+              <StorageIndicator storageInfo={fileManager.storageInfo} />
+            </div>
+          </aside>
+
+          {/* Main Content - File List */}
+          <div className="lg:col-span-9 xl:col-span-10">
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex items-center space-x-4">
+                <Breadcrumb
+                  folderPath={fileManager.folderPath}
+                  currentFolderId={fileManager.currentFolderId}
+                  onNavigate={handleNavigate}
+                />
+              </div>
+              <div className="flex items-center space-x-4 w-full sm:w-auto">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onSearch={handleSearch}
+                  placeholder="Search files..."
+                />
+                <UploadZone
+                  fileManager={fileManager}
+                  onFileSelect={fileManager.handleUpload}
+                />
+              </div>
+            </div>
+
+            {/* File List */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <FileList fileManager={fileManager} />
+            </div>
+
+            {/* Empty state for when no files but not loading */}
+            {!fileManager.isLoading && fileManager.files.length === 0 && !fileManager.isUploading && (
+              <div className="mt-6 text-center">
+                <svg className="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <p className="mt-4 text-lg text-gray-600">No files in this folder</p>
+                <p className="mt-1 text-gray-500">Drag and drop files above or click the upload area to add files</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

@@ -10,11 +10,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.$disconnect();
-});
-
-afterEach(async () => {
-  // Delete in correct order to respect foreign key constraints
+  // Final cleanup
   await prisma.file.deleteMany();
   await prisma.folder.deleteMany();
   await prisma.shareLink.deleteMany();
@@ -23,4 +19,8 @@ afterEach(async () => {
   await prisma.userSession.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.$disconnect();
 });
+
+// Individual test files should handle their own per-test cleanup
+// Global afterEach removed to avoid conflicts with test-specific data management

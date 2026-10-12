@@ -79,6 +79,10 @@ export class StorageService {
         secretAccessKey: this.config.secretAccessKey,
       },
       forcePathStyle: this.config.forcePathStyle,
+      // Disable checksums for LocalStack compatibility
+      // LocalStack doesn't support x-amz-checksum-* headers in presigned URLs
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
 
     this.initialized = true;

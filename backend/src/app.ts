@@ -13,6 +13,9 @@ import authRoutes from '@modules/auth/auth.routes';
 import userRoutes from '@modules/users/user.routes';
 import fileRoutes from '@modules/files/files.routes';
 import folderRoutes from '@modules/folders/folders.routes';
+import sharingRoutes from '@modules/sharing/sharing.routes';
+import shareLinkRoutes from '@modules/share-links/share-links.routes';
+import activityRoutes from '@modules/activity/activity.routes';
 
 const app = express();
 
@@ -113,6 +116,9 @@ app.use(`/api/${config.apiPrefix}/auth`, authRoutes);
 app.use(`/api/${config.apiPrefix}/users`, userRoutes);
 app.use(`/api/${config.apiPrefix}/files`, fileRoutes);
 app.use(`/api/${config.apiPrefix}/folders`, folderRoutes);
+app.use(`/api/${config.apiPrefix}/sharing`, sharingRoutes);
+app.use(`/api/${config.apiPrefix}/share-links`, shareLinkRoutes);
+app.use(`/api/${config.apiPrefix}/activity`, activityRoutes);
 
 app.use((req, res) => {
   res.status(404).json(errorResponse('Route not found', 'NOT_FOUND', undefined, req.requestId));

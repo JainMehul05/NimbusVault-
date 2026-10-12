@@ -6,6 +6,19 @@ import { config } from '@/config/index';
 import { storageService } from '@/common/storage';
 import fetch from 'node-fetch';
 
+// Global cleanup before all integration tests
+beforeAll(async () => {
+  const testEmails = ['test1@example.com', 'test2@example.com', 'test@example.com'];
+  await prisma.file.deleteMany({ where: { owner: { email: { in: testEmails } } } });
+  await prisma.folder.deleteMany({ where: { owner: { email: { in: testEmails } } } });
+  await prisma.shareLink.deleteMany({ where: { file: { owner: { email: { in: testEmails } } } } });
+  await prisma.permission.deleteMany({ where: { user: { email: { in: testEmails } } } });
+  await prisma.activityLog.deleteMany({ where: { user: { email: { in: testEmails } } } });
+  await prisma.userSession.deleteMany({ where: { user: { email: { in: testEmails } } } });
+  await prisma.refreshToken.deleteMany({ where: { user: { email: { in: testEmails } } } });
+  await prisma.user.deleteMany({ where: { email: { in: testEmails } } });
+});
+
 describe('File and Folder Integration Tests', () => {
   const testUser1 = {
     name: 'Test User 1',

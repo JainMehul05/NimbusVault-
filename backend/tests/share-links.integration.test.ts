@@ -24,22 +24,27 @@ describe('Share Links Integration Tests', () => {
   let fileId2: string;
 
   beforeAll(async () => {
-    // Clean up any existing test data
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
-    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    // Clean up any existing test data - in correct order for foreign keys
+    await prisma.activityLog.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: { in: [testUser.email, testUser2.email] } } } } });
+    await prisma.permission.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.file.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.folder.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
     await prisma.userSession.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
   });
 
   beforeEach(async () => {
-    // Clean up users first (they persist between tests in this describe block)
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
-    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    // Clean up in correct order for foreign keys
+    await prisma.activityLog.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: { in: [testUser.email, testUser2.email] } } } } });
+    await prisma.permission.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.file.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.folder.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
     await prisma.userSession.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
-
-    // Clean up share links and files for each test
-    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
-    await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
-    await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
+    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
 
     // Create test user
     const passwordHash = await bcrypt.hash(testUser.password, config.bcrypt.rounds);
@@ -82,12 +87,10 @@ describe('Share Links Integration Tests', () => {
       .set('Authorization', `Bearer ${userAccessToken}`)
       .attach('file', Buffer.from('Second file'), 'share-test2.txt');
     fileId2 = uploadResponse2.body.data.id;
-  });
+  }, 30000);
 
   afterAll(async () => {
-    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
-    await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
+    // No cleanup needed - beforeEach handles it for each test
     await prisma.$disconnect();
   });
 
@@ -649,33 +652,27 @@ describe('Share Links - Permission Inheritance and EDITOR Sharing', () => {
   let folderId: string;
 
   beforeAll(async () => {
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
-    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    // Clean up in correct order for foreign keys
+    await prisma.activityLog.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: { in: [testUser.email, testUser2.email] } } } } });
+    await prisma.permission.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.file.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.folder.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
     await prisma.userSession.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
   });
 
   beforeEach(async () => {
-    // Clean up users first (they persist between tests in this describe block)
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
-    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    // Clean up in correct order for foreign keys
+    await prisma.activityLog.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: { in: [testUser.email, testUser2.email] } } } } });
+    await prisma.permission.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.file.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.folder.deleteMany({ where: { owner: { email: { in: [testUser.email, testUser2.email] } } } });
     await prisma.userSession.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
-
-    // Clean up permissions first (need file/folder IDs)
-    const userFiles = await prisma.file.findMany({ where: { owner: { email: testUser.email } }, select: { id: true } });
-    const userFileIds = userFiles.map(f => f.id);
-    if (userFileIds.length > 0) {
-      await prisma.permission.deleteMany({ where: { resourceType: 'FILE', resourceId: { in: userFileIds } } });
-    }
-
-    const userFolders = await prisma.folder.findMany({ where: { owner: { email: testUser.email } }, select: { id: true } });
-    const userFolderIds = userFolders.map(f => f.id);
-    if (userFolderIds.length > 0) {
-      await prisma.permission.deleteMany({ where: { resourceType: 'FOLDER', resourceId: { in: userFolderIds } } });
-    }
-
-    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
-    await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
-    await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
+    await prisma.refreshToken.deleteMany({ where: { user: { email: { in: [testUser.email, testUser2.email] } } } });
+    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
 
     const passwordHash = await bcrypt.hash(testUser.password, config.bcrypt.rounds);
     const user = await prisma.user.create({
@@ -713,14 +710,10 @@ describe('Share Links - Permission Inheritance and EDITOR Sharing', () => {
       .attach('file', Buffer.from('Permission test'), 'perm-test.txt')
       .field('folderId', folderId);
     fileId = fileResponse.body.data.id;
-  });
+  }, 30000);
 
   afterAll(async () => {
-    await prisma.permission.deleteMany({ where: { granteeUserId: { in: [userId, user2Id] } } });
-    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
-    await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
-    await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
-    await prisma.user.deleteMany({ where: { email: { in: [testUser.email, testUser2.email] } } });
+    // No cleanup needed - beforeEach handles it for each test
     await prisma.$disconnect();
   });
 

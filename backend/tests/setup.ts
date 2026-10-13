@@ -15,12 +15,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Final cleanup
-  await prisma.file.deleteMany();
-  await prisma.folder.deleteMany();
+  // Final cleanup - delete in correct order to respect foreign key constraints
+  await prisma.activityLog.deleteMany();
   await prisma.shareLink.deleteMany();
   await prisma.permission.deleteMany();
-  await prisma.activityLog.deleteMany();
+  await prisma.file.deleteMany();
+  await prisma.folder.deleteMany();
   await prisma.userSession.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();

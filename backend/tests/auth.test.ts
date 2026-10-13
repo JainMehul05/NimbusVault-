@@ -21,11 +21,16 @@ describe('Authentication', () => {
     password: 'password123',
   };
 
-  // Clean up after each test to avoid conflicts
+  // Clean up after each test to avoid conflicts - in correct order for foreign keys
   afterEach(async () => {
-    await prisma.user.deleteMany({ where: { email: testUser.email } });
-    await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+    await prisma.activityLog.deleteMany({ where: { user: { email: testUser.email } } });
+    await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
+    await prisma.permission.deleteMany({ where: { user: { email: testUser.email } } });
+    await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
+    await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
     await prisma.userSession.deleteMany({ where: { user: { email: testUser.email } } });
+    await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+    await prisma.user.deleteMany({ where: { email: testUser.email } });
   });
 
   describe('POST /api/v1/auth/register', () => {
@@ -81,10 +86,15 @@ describe('Authentication', () => {
 
   describe('POST /api/v1/auth/login', () => {
     beforeEach(async () => {
-      // Clean up any existing user with this email first
-      await prisma.user.deleteMany({ where: { email: testUser.email } });
-      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      // Clean up any existing user with this email first - in correct order for foreign keys
+      await prisma.activityLog.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
+      await prisma.permission.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
+      await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
       await prisma.userSession.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.user.deleteMany({ where: { email: testUser.email } });
 
       const passwordHash = await bcrypt.hash(testUser.password, config.bcrypt.rounds);
       await prisma.user.create({
@@ -94,7 +104,7 @@ describe('Authentication', () => {
           passwordHash,
         },
       });
-    });
+    }, 30000);
 
     it('should login successfully with correct credentials', async () => {
       const response = await request(app)
@@ -193,10 +203,15 @@ describe('Authentication', () => {
     let tokenFamily: string;
 
     beforeEach(async () => {
-      // Clean up any existing user with this email first
-      await prisma.user.deleteMany({ where: { email: testUser.email } });
-      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      // Clean up any existing user with this email first - in correct order for foreign keys
+      await prisma.activityLog.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
+      await prisma.permission.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
+      await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
       await prisma.userSession.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.user.deleteMany({ where: { email: testUser.email } });
 
       const passwordHash = await bcrypt.hash(testUser.password, config.bcrypt.rounds);
       await prisma.user.create({
@@ -213,7 +228,7 @@ describe('Authentication', () => {
 
       refreshToken = loginResponse.body.data.tokens.refreshToken;
       tokenFamily = loginResponse.body.data.tokens.refreshTokenFamily;
-    });
+    }, 30000);
 
     it('should rotate refresh token successfully', async () => {
       const response = await request(app)
@@ -248,10 +263,15 @@ describe('Authentication', () => {
     let tokenFamily: string;
 
     beforeEach(async () => {
-      // Clean up any existing user with this email first
-      await prisma.user.deleteMany({ where: { email: testUser.email } });
-      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      // Clean up any existing user with this email first - in correct order for foreign keys
+      await prisma.activityLog.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.shareLink.deleteMany({ where: { file: { owner: { email: testUser.email } } } });
+      await prisma.permission.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.file.deleteMany({ where: { owner: { email: testUser.email } } });
+      await prisma.folder.deleteMany({ where: { owner: { email: testUser.email } } });
       await prisma.userSession.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.refreshToken.deleteMany({ where: { user: { email: testUser.email } } });
+      await prisma.user.deleteMany({ where: { email: testUser.email } });
 
       const passwordHash = await bcrypt.hash(testUser.password, config.bcrypt.rounds);
       await prisma.user.create({
@@ -267,7 +287,7 @@ describe('Authentication', () => {
         .send({ email: testUser.email, password: testUser.password });
 
       tokenFamily = loginResponse.body.data.tokens.refreshTokenFamily;
-    });
+    }, 30000);
 
     it('should logout successfully', async () => {
       const response = await request(app)

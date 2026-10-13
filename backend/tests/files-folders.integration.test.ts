@@ -88,13 +88,10 @@ describe('File and Folder Integration Tests', () => {
     user2AccessToken = login2.body.data.tokens.accessToken;
     user2RefreshToken = login2.body.data.tokens.refreshToken;
     user2TokenFamily = login2.body.data.tokens.refreshTokenFamily;
-  });
+  }, 30000);
 
   afterAll(async () => {
-    // Final cleanup
-    await prisma.file.deleteMany({ where: { owner: { email: { in: [testUser1.email, testUser2.email] } } } });
-    await prisma.folder.deleteMany({ where: { owner: { email: { in: [testUser1.email, testUser2.email] } } } });
-    await prisma.user.deleteMany({ where: { email: { in: [testUser1.email, testUser2.email] } } });
+    // No cleanup needed - beforeEach handles it for each test
     await prisma.$disconnect();
   });
 

@@ -3,6 +3,7 @@ import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
 import { createRequestLogger } from '@common/logger';
+import { authorizationService, hasPermission } from '@common/authorization';
 
 export interface CreateShareInput {
   resourceType: ResourceType;
@@ -36,32 +37,20 @@ export class SharingService {
     });
   }
 
-  private async validateResourceOwnership(
+  private async validateResourceSharePermission(
     resourceType: ResourceType,
     resourceId: string,
     userId: string
   ): Promise<void> {
     if (resourceType === 'FILE') {
-      const file = await this.prismaClient.file.findUnique({
-        where: { id: resourceId },
-        select: { ownerId: true, deletedAt: true },
-      });
-      if (!file || file.deletedAt) {
-        throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
-      }
-      if (file.ownerId !== userId) {
-        throw AppError.forbidden('Only the owner can manage sharing', ErrorCodes.FORBIDDEN);
+      const access = await authorizationService.getFileAccess(userId, resourceId);
+      if (!hasPermission(access.effectiveLevel, 'share')) {
+        throw AppError.forbidden('Insufficient permissions to manage sharing', ErrorCodes.FORBIDDEN);
       }
     } else {
-      const folder = await this.prismaClient.folder.findUnique({
-        where: { id: resourceId },
-        select: { ownerId: true, deletedAt: true },
-      });
-      if (!folder || folder.deletedAt) {
-        throw AppError.notFound('Folder not found', ErrorCodes.FOLDER_NOT_FOUND);
-      }
-      if (folder.ownerId !== userId) {
-        throw AppError.forbidden('Only the owner can manage sharing', ErrorCodes.FORBIDDEN);
+      const access = await authorizationService.getFolderAccess(userId, resourceId);
+      if (!hasPermission(access.effectiveLevel, 'share')) {
+        throw AppError.forbidden('Insufficient permissions to manage sharing', ErrorCodes.FORBIDDEN);
       }
     }
   }
@@ -81,7 +70,7 @@ export class SharingService {
     }
 
     // Validate resource ownership
-    await this.validateResourceOwnership(input.resourceType, input.resourceId, input.grantedBy);
+    await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy);
 
     // Check if share already exists
     const existingPermission = await this.prismaClient.permission.findUnique({
@@ -143,9 +132,9 @@ export class SharingService {
     return { permission, grantee };
   }
 
-  async listShares(resourceType: ResourceType, resourceId: string, ownerId: string): Promise<Array<Permission & { grantee: { id: string; name: string; email: string } }>> {
-    // Validate ownership
-    await this.validateResourceOwnership(resourceType, resourceId, ownerId);
+  async listShares(resourceType: ResourceType, resourceId: string, userId: string): Promise<Array<Permission & { grantee: { id: string; name: string; email: string } }>> {
+    // Validate share permission
+    await this.validateResourceSharePermission(resourceType, resourceId, userId);
 
     const permissions = await this.prismaClient.permission.findMany({
       where: { resourceType, resourceId },
@@ -174,13 +163,13 @@ export class SharingService {
     resourceId: string,
     granteeId: string,
     level: PermissionLevel,
-    ownerId: string,
+    userId: string,
     requestId?: string
   ): Promise<Permission> {
     const log = requestId ? createRequestLogger(requestId) : undefined;
 
-    // Validate ownership
-    await this.validateResourceOwnership(resourceType, resourceId, ownerId);
+    // Validate share permission
+    await this.validateResourceSharePermission(resourceType, resourceId, userId);
 
     // Check if permission exists
     const existing = await this.prismaClient.permission.findUnique({
@@ -216,7 +205,7 @@ export class SharingService {
     // Log activity
     await this.prismaClient.activityLog.create({
       data: {
-        userId: ownerId,
+        userId,
         action: 'share_revoke', // Using existing action type
         resourceType,
         resourceId,
@@ -231,13 +220,13 @@ export class SharingService {
     resourceType: ResourceType,
     resourceId: string,
     granteeId: string,
-    ownerId: string,
+    userId: string,
     requestId?: string
   ): Promise<void> {
     const log = requestId ? createRequestLogger(requestId) : undefined;
 
-    // Validate ownership
-    await this.validateResourceOwnership(resourceType, resourceId, ownerId);
+    // Validate share permission
+    await this.validateResourceSharePermission(resourceType, resourceId, userId);
 
     const existing = await this.prismaClient.permission.findUnique({
       where: {
@@ -268,7 +257,7 @@ export class SharingService {
     // Log activity
     await this.prismaClient.activityLog.create({
       data: {
-        userId: ownerId,
+        userId,
         action: 'share_revoke',
         resourceType,
         resourceId,
@@ -328,6 +317,14 @@ export class SharingService {
       .map(p => p.resourceId)
       .filter(id => folderMap.has(id));
 
+    // Create a map of folderId -> permission level for inherited access
+    const folderPermissionMap = new Map<string, PermissionLevel>();
+    folderPermissions
+      .filter(p => folderMap.has(p.resourceId))
+      .forEach(p => {
+        folderPermissionMap.set(p.resourceId, p.level);
+      });
+
     let inheritedFiles: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; ownerId: string }> = [];
     if (sharedFolderIds.length > 0) {
       inheritedFiles = await this.prismaClient.file.findMany({
@@ -368,7 +365,8 @@ export class SharingService {
       mimeType: f.mimeType,
       category: f.category,
       folderId: f.folderId,
-      permission: 'VIEWER' as PermissionLevel, // Inherited access is typically VIEWER
+      // Inherit the permission level from the parent folder
+      permission: f.folderId ? (folderPermissionMap.get(f.folderId) ?? ('VIEWER' as PermissionLevel)) : ('VIEWER' as PermissionLevel),
       owner: fileOwnerMap.get(f.ownerId)!,
     }));
 

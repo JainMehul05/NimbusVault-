@@ -2,6 +2,7 @@ import type { PrismaClient, File, Folder, Permission, ShareLink } from '@prisma/
 import { AppError } from './errors';
 import { ErrorCodes } from './errors';
 import prisma from '@database/prisma';
+import bcrypt from 'bcrypt';
 
 export type ResourceType = 'FILE' | 'FOLDER';
 export type Action =
@@ -56,6 +57,7 @@ export const PermissionMatrix: Record<PermissionLevel, Action[]> = {
     'rename',
     'move',
     'share', // Editors can share with others (configurable)
+    'create_share_link', // Editors can create public share links
   ],
   VIEWER: [
     'read',
@@ -119,14 +121,14 @@ export class AuthorizationService {
     // Check inherited permission from parent folder
     if (file.folderId) {
       const folderAccess = await this.getFolderAccess(userId, file.folderId);
-      if (folderAccess.effectiveLevel !== 'VIEWER' || folderAccess.permission) {
-        return {
-          file,
-          effectiveLevel: folderAccess.effectiveLevel,
-          isOwner: false,
-          isPublicAccess: false,
-        };
-      }
+      // Grant inherited access if user has any access to the folder (direct or inherited)
+      // The getFolderAccess method throws if no access, so if it returns, user has access
+      return {
+        file,
+        effectiveLevel: folderAccess.effectiveLevel,
+        isOwner: false,
+        isPublicAccess: false,
+      };
     }
 
     throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
@@ -180,7 +182,9 @@ export class AuthorizationService {
     // Check inherited permission from parent folder
     if (folder.parentFolderId) {
       const parentAccess = await this.getFolderAccess(userId, folder.parentFolderId);
-      if (parentAccess.effectiveLevel !== 'VIEWER' || parentAccess.permission) {
+      // Only grant inherited access if user has explicit permission on parent folder
+      // or if parent access level is EDITOR or OWNER
+      if (parentAccess.permission || parentAccess.effectiveLevel === 'EDITOR' || parentAccess.effectiveLevel === 'OWNER') {
         return {
           folder,
           effectiveLevel: parentAccess.effectiveLevel,
@@ -356,10 +360,22 @@ export class AuthorizationService {
     token: string,
     action: 'read' | 'download' = 'read'
   ): Promise<{ shareLink: ShareLink; file: File }> {
-    const shareLink = await this.prismaClient.shareLink.findUnique({
-      where: { token },
+    // Find share link by token hash - check all links (including expired/revoked)
+    // Expired/revoked links are checked after token verification to return proper error
+    const shareLinks = await this.prismaClient.shareLink.findMany({
       include: { file: true },
     });
+
+    let shareLink: ShareLink & { file: File } | null = null;
+
+    for (const link of shareLinks) {
+      // Verify token using bcrypt (tokens are stored as bcrypt hashes)
+      const isValid = await bcrypt.compare(token, link.token);
+      if (isValid) {
+        shareLink = link;
+        break;
+      }
+    }
 
     if (!shareLink) {
       throw AppError.notFound('Invalid share link', ErrorCodes.SHARE_NOT_FOUND);

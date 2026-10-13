@@ -55,8 +55,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ fileManager, onFileSelec
       onClick={handleClick}
       className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
         isDragActive 
-          ? 'border-blue-500 bg-blue-50' 
-          : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+          ? 'border-primary bg-primary/10' 
+          : 'border-border hover:border-primary hover:bg-muted/50'
       } ${isUploading || hasProgress ? 'opacity-75 pointer-events-none' : ''}`}
       role="button"
       tabIndex={0}
@@ -79,7 +79,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ fileManager, onFileSelec
       
       <div className="relative z-10">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-muted-foreground"
           stroke="currentColor"
           fill="none"
           viewBox="0 0 48 48"
@@ -93,11 +93,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ fileManager, onFileSelec
           />
         </svg>
         
-        <p className="mt-2 text-lg font-medium text-gray-900">
+        <p className="mt-2 text-lg font-medium text-foreground">
           {isUploading || hasProgress ? 'Uploading...' : 'Drag and drop files here, or click to select'}
         </p>
         
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Supports: PDF, Images, Videos, Documents (max 100MB each)
         </p>
         
@@ -107,11 +107,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ fileManager, onFileSelec
               <div key={filename} className="text-left">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="truncate pr-2">{filename}</span>
-                  <span className="text-gray-500">{progress}%</span>
+                  <span className="text-muted-foreground">{progress}%</span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-600 transition-all duration-300"
+                    className="h-full bg-primary transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>

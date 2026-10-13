@@ -4,6 +4,7 @@ import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
 import { storageService } from '@common/storage';
 import { logger, createRequestLogger } from '@common/logger';
+import { authorizationService } from '@common/authorization';
 
 export interface CreateFileInput {
   filename: string;
@@ -192,22 +193,25 @@ export class FileService {
   }
 
   async findById(fileId: string, userId: string): Promise<File | null> {
-    return this.prismaClient.file.findFirst({
-      where: {
-        id: fileId,
-        ownerId: userId,
-        deletedAt: null,
-      },
-    });
+    try {
+      const access = await authorizationService.authorizeFileAccess(
+        { userId, isAuthenticated: true },
+        fileId,
+        'read'
+      );
+      return access.file ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async findByIdAnyStatus(fileId: string, userId: string): Promise<File | null> {
-    return this.prismaClient.file.findFirst({
-      where: {
-        id: fileId,
-        ownerId: userId,
-      },
-    });
+    try {
+      const access = await authorizationService.getFileAccess(userId, fileId);
+      return access.file ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async listFiles(
@@ -280,15 +284,17 @@ export class FileService {
   }
 
   async rename(fileId: string, userId: string, newFilename: string): Promise<File> {
-    // Check for duplicate name in same folder
-    const file = await this.findById(fileId, userId);
-    if (!file) {
-      throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
-    }
+    // Check for duplicate name in same folder - use proper authorization for rename action
+    const access = await authorizationService.authorizeFileAccess(
+      { userId, isAuthenticated: true },
+      fileId,
+      'rename'
+    );
+    const file = access.file!;
 
     const existingFile = await this.prismaClient.file.findFirst({
       where: {
-        ownerId: userId,
+        ownerId: file.ownerId,
         folderId: file.folderId,
         filename: newFilename,
         deletedAt: null,

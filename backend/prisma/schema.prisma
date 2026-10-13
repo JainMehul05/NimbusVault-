@@ -68,7 +68,7 @@ enum ActivityAction {
 model User {
   id                String           @id @default(uuid())
   name              String
-  email             String           @unique @db.Citext
+  email             String           @unique
   passwordHash      String
   role              String           @default("user")
   status            String           @default("active")

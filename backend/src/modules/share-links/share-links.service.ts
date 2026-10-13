@@ -1,10 +1,12 @@
 import type { PrismaClient, ShareLink, SharePermission, File } from '@prisma/client';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 import prisma from '@database/prisma';
 import { authorizationService } from '@common/authorization';
 import { createRequestLogger } from '@common/logger';
+import { config } from '@config/index';
 
 export interface CreateShareLinkInput {
   fileId: string;
@@ -34,41 +36,36 @@ export class ShareLinkService {
     return randomBytes(32).toString('base64url');
   }
 
-  private hashToken(token: string): string {
-    // For security, we could hash the token, but for now we'll store it directly
-    // In production, consider using a proper hash like bcrypt or argon2
-    return token;
+  private async hashToken(token: string): Promise<string> {
+    return bcrypt.hash(token, config.bcrypt.rounds);
   }
 
-  private hashPassword(password: string): string {
-    // In production, use bcrypt with proper salt rounds
-    // For now, we'll use a simple hash
-    return createHash('sha256').update(password).digest('hex');
+  private async verifyToken(token: string, tokenHash: string): Promise<boolean> {
+    return bcrypt.compare(token, tokenHash);
   }
 
-  private verifyPassword(password: string, passwordHash: string): boolean {
-    const hash = this.hashPassword(password);
-    return hash === passwordHash;
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, config.bcrypt.rounds);
+  }
+
+  private async verifyPassword(password: string, passwordHash: string): Promise<boolean> {
+    return bcrypt.compare(password, passwordHash);
   }
 
   async createShareLink(input: CreateShareLinkInput): Promise<ShareLinkResult> {
     const log = input.requestId ? createRequestLogger(input.requestId) : undefined;
 
-    // Validate file ownership
-    const access = await authorizationService.authorizeFileAccess(
+    // Validate file access and permission to create share link
+    await authorizationService.authorizeFileAccess(
       { userId: input.createdBy, isAuthenticated: true },
       input.fileId,
       'create_share_link'
     );
 
-    if (!access.isOwner) {
-      throw AppError.forbidden('Only the owner can create share links', ErrorCodes.FORBIDDEN);
-    }
-
     const token = this.generateToken();
-    const tokenHash = this.hashToken(token);
+    const tokenHash = await this.hashToken(token);
 
-    const passwordHash = input.password ? this.hashPassword(input.password) : null;
+    const passwordHash = input.password ? await this.hashPassword(input.password) : null;
 
     const shareLink = await this.prismaClient.shareLink.create({
       data: {
@@ -126,10 +123,10 @@ export class ShareLinkService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Don't expose tokens in list view
+    // Don't expose tokens in list view (tokens are now hashed)
     return shareLinks.map(link => ({
       ...link,
-      token: '', // Will be filtered out in controller
+      token: '',
     }));
   }
 
@@ -178,12 +175,25 @@ export class ShareLinkService {
     action: 'read' | 'download' = 'read',
     password?: string
   ): Promise<{ shareLink: ShareLink; file: File }> {
-    const tokenHash = this.hashToken(token);
-
-    const shareLink = await this.prismaClient.shareLink.findUnique({
-      where: { token: tokenHash },
+    // Find share link by token hash - we need to check all links (including expired/revoked)
+    // Expired/revoked links are checked after token verification to return proper error
+    const shareLinks = await this.prismaClient.shareLink.findMany({
       include: { file: true },
     });
+
+    let shareLink: ShareLink & { file: File } | null = null;
+
+    for (const link of shareLinks) {
+      // Verify token using bcrypt (all tokens are now stored as bcrypt hashes)
+      // High-entropy tokens (32 bytes = 256 bits) are not susceptible to brute-force,
+      // so bcrypt's computational cost is acceptable and provides defense-in-depth.
+      const isValid = await this.verifyToken(token, link.token);
+      
+      if (isValid) {
+        shareLink = link;
+        break;
+      }
+    }
 
     if (!shareLink) {
       throw AppError.notFound('Invalid share link', ErrorCodes.SHARE_NOT_FOUND);
@@ -205,12 +215,15 @@ export class ShareLinkService {
       throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
     }
 
-    // Check password if required
+    // Check password if required - passwords are stored as bcrypt hashes
     if (shareLink.passwordHash) {
       if (!password) {
         throw AppError.forbidden('Password required', ErrorCodes.PASSWORD_REQUIRED);
       }
-      if (!this.verifyPassword(password, shareLink.passwordHash)) {
+      
+      const passwordValid = await this.verifyPassword(password, shareLink.passwordHash);
+      
+      if (!passwordValid) {
         throw AppError.forbidden('Invalid password', ErrorCodes.INVALID_PASSWORD);
       }
     }

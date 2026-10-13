@@ -60,7 +60,7 @@ export const FileItem: React.FC<FileItemProps> = ({
   const progress = uploadProgress[file.filename];
 
   return (
-    <tr className={`hover:bg-gray-50 ${progress !== undefined ? 'opacity-75' : ''}`}>
+    <tr className={`hover:bg-muted/50 ${progress !== undefined ? 'opacity-75' : ''}`}>
       <td className="px-4 py-3 flex items-center space-x-3">
         <span className="text-2xl">{getFileIcon(file.mimeType, file.category)}</span>
         {isRenaming ? (
@@ -70,25 +70,25 @@ export const FileItem: React.FC<FileItemProps> = ({
               type="text"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              className="flex-1 px-2 py-1 border border-blue-500 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 px-2 py-1 border border-primary rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-card"
               autoComplete="off"
             />
-            <button type="submit" className="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700">Save</button>
-            <button type="button" onClick={() => setIsRenaming(false)} className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900">Cancel</button>
+            <button type="submit" className="px-2 py-1 text-xs text-primary-foreground bg-primary rounded hover:bg-primary/90 transition-colors">Save</button>
+            <button type="button" onClick={() => setIsRenaming(false)} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
           </form>
         ) : (
-          <span className="font-medium text-gray-900 truncate max-w-xs">{file.filename}</span>
+          <span className="font-medium text-foreground truncate max-w-xs">{file.filename}</span>
         )}
         {progress !== undefined && (
-          <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 transition-all" style={{ width: `${progress}%` }}></div>
+          <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }}></div>
           </div>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
+      <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
         {formatFileSize(file.sizeBytes)}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500 hidden lg:table-cell">
+      <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
         {new Date(file.uploadedAt).toLocaleDateString()}
       </td>
       <td className="px-4 py-3">
@@ -97,7 +97,7 @@ export const FileItem: React.FC<FileItemProps> = ({
             <>
               <button
                 onClick={() => onDownload(file)}
-                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
                 title="Download"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +106,7 @@ export const FileItem: React.FC<FileItemProps> = ({
               </button>
               <button
                 onClick={() => setIsRenaming(true)}
-                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
                 title="Rename"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@ export const FileItem: React.FC<FileItemProps> = ({
               </button>
               <button
                 onClick={() => setIsMoving(true)}
-                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
                 title="Move"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@ export const FileItem: React.FC<FileItemProps> = ({
               </button>
               <button
                 onClick={() => onDelete(file)}
-                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                 title="Delete"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,18 +135,18 @@ export const FileItem: React.FC<FileItemProps> = ({
           )}
           {isMoving && (
             <form onSubmit={handleMoveSubmit} className="flex items-center space-x-2">
-              <select name="folderId" className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
+              <select name="folderId" className="text-sm border border-border rounded px-2 py-1 bg-card focus:outline-none focus:ring-1 focus:ring-primary">
                 <option value="">Root</option>
                 {folders.map((folder) => (
                   <option key={folder.id} value={folder.id}>{'  '.repeat(folder.depth)}📁 {folder.name}</option>
                 ))}
               </select>
-              <button type="submit" className="p-1.5 text-white bg-blue-600 rounded hover:bg-blue-700" title="Confirm">
+              <button type="submit" className="p-1.5 text-primary-foreground bg-primary rounded hover:bg-primary/90 transition-colors" title="Confirm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </button>
-              <button type="button" onClick={() => setIsMoving(false)} className="p-1.5 text-gray-500 hover:text-gray-900" title="Cancel">
+              <button type="button" onClick={() => setIsMoving(false)} className="p-1.5 text-muted-foreground hover:text-foreground" title="Cancel">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

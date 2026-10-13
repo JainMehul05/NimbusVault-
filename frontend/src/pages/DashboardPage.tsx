@@ -48,18 +48,18 @@ export const DashboardPage: React.FC = () => {
   const clearError = useCallback(() => setError(null), []);
 
   return (
-    <div className="min-h-screen bg-gray-50" onClick={clearError}>
-      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background" onClick={clearError}>
+      <nav className="bg-card border-b border-border sticky top-0 z-10">
+        <div className="container-custom">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">NimbusVault</h1>
+              <h1 className="text-xl font-bold text-foreground">NimbusVault</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700 hidden sm:block">Welcome, {user?.name}</span>
+              <span className="text-sm text-muted-foreground hidden sm:block">Welcome, {user?.name}</span>
               <button
                 onClick={() => logout()}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
               >
                 Logout
               </button>
@@ -68,21 +68,21 @@ export const DashboardPage: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="container-custom py-6">
         {/* Error Toast */}
         {(fileManager.error || error) && (
           <div className="fixed top-20 right-4 z-50 max-w-md animate-slide-in" role="alert">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
-                  <p className="text-sm text-red-700">{fileManager.error || error}</p>
+                  <p className="text-sm text-destructive">{fileManager.error || error}</p>
                 </div>
                 <button
                   onClick={() => { setError(null); fileManager.fetchFiles(fileManager.pagination.page); }}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -137,18 +137,18 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* File List */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-card rounded-lg border border-border overflow-hidden">
               <FileList fileManager={fileManager} />
             </div>
 
             {/* Empty state for when no files but not loading */}
             {!fileManager.isLoading && fileManager.files.length === 0 && !fileManager.isUploading && (
               <div className="mt-6 text-center">
-                <svg className="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mx-auto h-16 w-16 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                <p className="mt-4 text-lg text-gray-600">No files in this folder</p>
-                <p className="mt-1 text-gray-500">Drag and drop files above or click the upload area to add files</p>
+                <p className="mt-4 text-lg text-muted-foreground">No files in this folder</p>
+                <p className="mt-1 text-sm text-muted-foreground">Drag and drop files above or click the upload area to add files</p>
               </div>
             )}
           </div>

@@ -171,6 +171,11 @@ export const shareLinkController = {
     log.info({ shareLinkId: result.shareLink.id }, 'Share link download initiated');
 
     // Generate presigned download URL
+    // NOTE: Presigned URLs cannot be revoked once generated. They remain valid for their
+    // full duration (1 hour) even if the share link is revoked, expired, or download limit
+    // is reached. This is a fundamental limitation of S3 presigned URLs. The share-link
+    // validation above ensures the link is valid at the time of URL generation, but the
+    // generated URL itself cannot be invalidated server-side.
     const { storageService } = await import('@common/storage');
     const { url, expiresIn } = await storageService.generatePresignedDownloadUrl(
       result.file.s3Key,

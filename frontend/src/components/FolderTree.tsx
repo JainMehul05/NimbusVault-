@@ -59,19 +59,20 @@ const FolderNode: React.FC<{
   };
 
   const hasChildren = (folder.children?.length ?? 0) > 0;
+  const isActive = currentFolderId === folder.id;
 
   return (
     <div className="select-none">
       <div
-        className={`flex items-center space-x-1 py-1 px-2 rounded hover:bg-gray-100 transition-colors ${
-          currentFolderId === folder.id ? 'bg-blue-50 text-blue-700 font-medium' : ''
+        className={`flex items-center space-x-1 py-1 px-2 rounded transition-colors ${
+          isActive ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/50'
         }`}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
       >
         {hasChildren && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 text-gray-400 hover:text-gray-600"
+            className="p-1 text-muted-foreground hover:text-foreground"
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
             {isExpanded ? (
@@ -97,11 +98,11 @@ const FolderNode: React.FC<{
                 type="text"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
-                className="flex-1 px-1 py-0.5 border border-blue-500 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 px-1 py-0.5 border border-primary rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-card"
                 autoFocus
               />
-              <button type="submit" className="px-1.5 py-0.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700">✓</button>
-              <button type="button" onClick={() => setIsRenaming(false)} className="px-1.5 py-0.5 text-xs text-gray-500 hover:text-gray-700">✕</button>
+              <button type="submit" className="px-1.5 py-0.5 text-xs text-primary-foreground bg-primary rounded hover:bg-primary/90">✓</button>
+              <button type="button" onClick={() => setIsRenaming(false)} className="px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">✕</button>
             </form>
           ) : (
             <span className="truncate font-medium text-sm">{folder.name}</span>
@@ -113,7 +114,7 @@ const FolderNode: React.FC<{
             <>
               <button
                 onClick={() => setShowCreateFolder(!showCreateFolder)}
-                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
                 title="Create subfolder"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,7 +123,7 @@ const FolderNode: React.FC<{
               </button>
               <button
                 onClick={() => setIsRenaming(true)}
-                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
                 title="Rename"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +132,7 @@ const FolderNode: React.FC<{
               </button>
               <button
                 onClick={handleDelete}
-                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
                 title="Delete"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,11 +151,11 @@ const FolderNode: React.FC<{
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             placeholder="New folder name"
-            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 px-2 py-1 border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-card"
             autoFocus
           />
-          <button type="submit" className="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700">Create</button>
-          <button type="button" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }} className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+          <button type="submit" className="px-2 py-1 text-xs text-primary-foreground bg-primary rounded hover:bg-primary/90">Create</button>
+          <button type="button" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
         </form>
       )}
 
@@ -185,17 +186,18 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onDeleteFolder,
 }) => {
   const rootFolders = fileManager.folderTree;
+  const isRootActive = currentFolderId === null;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 h-full overflow-y-auto">
+    <div className="bg-card rounded-lg border border-border p-4 h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Folders</h3>
+        <h3 className="text-lg font-semibold text-foreground">Folders</h3>
         <button
           onClick={() => {
             const name = prompt('Folder name:');
             if (name?.trim()) onCreateFolder(null, name.trim());
           }}
-          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
           title="Create root folder"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,16 +209,16 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       <button
         onClick={() => onNavigate(null)}
         className={`w-full flex items-center space-x-2 py-2 px-3 rounded transition-colors ${
-          currentFolderId === null
-            ? 'bg-blue-50 text-blue-700 font-medium'
-            : 'text-gray-700 hover:bg-gray-100'
+          isRootActive
+            ? 'bg-primary/10 text-primary font-medium'
+            : 'text-foreground hover:bg-muted/50'
         }`}
       >
         <span className="text-lg">🏠</span>
         <span className="font-medium text-sm">Root</span>
       </button>
 
-      <div className="mt-2 border-t border-gray-100 pt-2">
+      <div className="mt-2 border-t border-border pt-2">
         {rootFolders.map((folder) => (
           <FolderNode
             key={folder.id}
@@ -233,7 +235,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       </div>
 
       {rootFolders.length === 0 && (
-        <div className="mt-4 text-center text-gray-500 text-sm">
+        <div className="mt-4 text-center text-muted-foreground text-sm">
           <p>No folders yet</p>
           <p className="text-xs">Click + to create your first folder</p>
         </div>

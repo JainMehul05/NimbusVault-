@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { AuthProvider } from '@context/AuthContext';
-import { LoginPage } from '@pages/LoginPage';
+import LoginPage from '@pages/LoginPage';
 import { api } from '@services/api';
 
 vi.mock('@services/api');
@@ -25,8 +25,8 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/••••••••••••/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enter workspace/i })).toBeInTheDocument();
   });
 
   it('shows error on failed login', async () => {
@@ -37,8 +37,8 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpassword' } });
-    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    fireEvent.change(screen.getByPlaceholderText(/••••••••••••/i), { target: { value: 'wrongpassword' } });
+    fireEvent.click(screen.getByRole('button', { name: /enter workspace/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
@@ -54,8 +54,8 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    fireEvent.change(screen.getByPlaceholderText(/••••••••••••/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /enter workspace/i }));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('/auth/login', {

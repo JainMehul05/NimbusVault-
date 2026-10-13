@@ -14,22 +14,22 @@ export const StorageIndicator: React.FC<StorageIndicatorProps> = ({ storageInfo 
   const usagePercent = quota > 0 ? (used / quota) * 100 : 0;
 
   const getProgressColor = (percent: number) => {
-    if (percent >= 90) return 'bg-red-500';
+    if (percent >= 90) return 'bg-destructive';
     if (percent >= 70) return 'bg-yellow-500';
-    return 'bg-blue-500';
+    return 'bg-primary';
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Storage Usage</h3>
+    <div className="bg-card rounded-lg border border-border p-4">
+      <h3 className="text-lg font-semibold text-foreground mb-4">Storage Usage</h3>
       
       <div className="space-y-3">
         <div>
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600">Used</span>
-            <span className="font-medium text-gray-900">{formatFileSize(used)}</span>
+            <span className="text-muted-foreground">Used</span>
+            <span className="font-medium text-foreground">{formatFileSize(used)}</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${getProgressColor(usagePercent)}`}
               style={{ width: `${Math.min(usagePercent, 100)}%` }}
@@ -43,21 +43,21 @@ export const StorageIndicator: React.FC<StorageIndicatorProps> = ({ storageInfo 
         </div>
 
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">{formatFileSize(quota)}</p>
-            <p className="text-xs text-gray-500">Total</p>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold text-foreground">{formatFileSize(quota)}</p>
+            <p className="text-xs text-muted-foreground">Total</p>
           </div>
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">{formatFileSize(used)}</p>
-            <p className="text-xs text-gray-500">Used</p>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold text-foreground">{formatFileSize(used)}</p>
+            <p className="text-xs text-muted-foreground">Used</p>
           </div>
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">{formatFileSize(remaining)}</p>
-            <p className="text-xs text-gray-500">Free</p>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold text-foreground">{formatFileSize(remaining)}</p>
+            <p className="text-xs text-muted-foreground">Free</p>
           </div>
         </div>
 
-        <p className="text-sm text-gray-500 text-center">
+        <p className="text-sm text-muted-foreground text-center">
           {Math.round(usagePercent)}% used
         </p>
       </div>

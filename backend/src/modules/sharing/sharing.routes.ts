@@ -23,6 +23,20 @@ router.post(
   sharingController.createShare
 );
 
+// Get resources shared with me (must come before generic routes)
+router.get(
+  '/me/shared-with-me',
+  validate(sharedWithMeSchema),
+  sharingController.getSharedWithMe
+);
+
+// Get resources shared by me (must come before generic routes)
+router.get(
+  '/me/shared-by-me',
+  validate(sharedByMeSchema),
+  sharingController.getSharedByMe
+);
+
 // List shares for a resource (owner only)
 router.get(
   '/:resourceType/:resourceId',
@@ -42,20 +56,6 @@ router.delete(
   '/:resourceType/:resourceId/:granteeId',
   validate(revokeShareSchema),
   sharingController.revokeShare
-);
-
-// Get resources shared with me
-router.get(
-  '/me/shared-with-me',
-  validate(sharedWithMeSchema),
-  sharingController.getSharedWithMe
-);
-
-// Get resources shared by me
-router.get(
-  '/me/shared-by-me',
-  validate(sharedByMeSchema),
-  sharingController.getSharedByMe
 );
 
 export default router;

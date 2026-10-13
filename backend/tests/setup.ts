@@ -5,6 +5,11 @@ dotenv.config({ path: '.env.test' });
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '@/database/prisma';
 
+// BigInt serialization for Jest
+(BigInt.prototype as any).toJSON = function() {
+  return this.toString();
+};
+
 beforeAll(async () => {
   await prisma.$connect();
 });

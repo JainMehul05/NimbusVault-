@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authenticate } from '@modules/auth/auth.routes';
 import { validate } from '@common/validation';
 import { shareLinkController } from './share-links.controller';
@@ -8,6 +9,7 @@ import {
   revokeShareLinkSchema,
   accessShareLinkSchema,
 } from './share-links.validation';
+import { errorResponse } from '@common/response';
 
 const router = Router();
 
@@ -36,9 +38,20 @@ router.delete(
 );
 
 // Public routes - no authentication required
+// Rate limiter for public share-link access (prevent brute-force)
+const shareLinkRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per window per IP
+  message: errorResponse('Too many requests to share link', 'RATE_LIMIT_EXCEEDED'),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `share-link:${req.params.token}:${req.ip}`,
+});
+
 // Access a shared resource via token
 router.get(
   '/public/:token',
+  shareLinkRateLimiter,
   validate(accessShareLinkSchema),
   shareLinkController.accessShareLink
 );
@@ -46,6 +59,7 @@ router.get(
 // Download via share link
 router.get(
   '/public/:token/download',
+  shareLinkRateLimiter,
   validate(accessShareLinkSchema),
   shareLinkController.downloadShareLink
 );

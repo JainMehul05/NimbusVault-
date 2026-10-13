@@ -18,7 +18,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ folderPath, currentFolde
       {pathItems.map((item, index) => (
         <React.Fragment key={item.id || 'root'}>
           {index > 0 && (
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           )}
@@ -26,8 +26,8 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ folderPath, currentFolde
             onClick={() => onNavigate(item.id)}
             className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
               item.id === currentFolderId
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
             }`}
             aria-current={item.id === currentFolderId ? 'page' : undefined}
           >

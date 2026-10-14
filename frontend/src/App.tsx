@@ -5,6 +5,8 @@ import LandingPage from '@pages/LandingPage';
 import RegisterPage from '@pages/RegisterPage';
 import LoginPage from '@pages/LoginPage';
 import { DashboardPage } from '@pages/DashboardPage';
+import { SharedWithMePage } from '@pages/SharedWithMePage';
+import { ActivityPage } from '@pages/ActivityPage';
 
 const App: React.FC = () => {
   return (
@@ -19,6 +21,22 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shared-with-me"
+            element={
+              <ProtectedRoute>
+                <SharedWithMePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity"
+            element={
+              <ProtectedRoute>
+                <ActivityPage />
               </ProtectedRoute>
             }
           />

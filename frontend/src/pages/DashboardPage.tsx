@@ -1,19 +1,39 @@
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { Users, Clock, LogOut } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import { useFileManager } from '@hooks/useFileManager';
+import { useSharing } from '@hooks/useSharing';
 import { UploadZone } from '@components/UploadZone';
 import { FileList } from '@components/FileList';
 import { FolderTree } from '@components/FolderTree';
 import { StorageIndicator } from '@components/StorageIndicator';
 import { Breadcrumb } from '@components/Breadcrumb';
 import { SearchBar } from '@components/SearchBar';
+import { ShareDialog } from '@components/ShareDialog';
+import { ShareLinkDialog } from '@components/ShareLinkDialog';
 
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Dialog states
+  const [shareDialog, setShareDialog] = useState<{
+    isOpen: boolean;
+    resourceType: 'FILE' | 'FOLDER';
+    resourceId: string;
+    resourceName: string;
+  } | null>(null);
+
+  const [shareLinkDialog, setShareLinkDialog] = useState<{
+    isOpen: boolean;
+    fileId: string;
+    fileName: string;
+  } | null>(null);
+
   const fileManager = useFileManager();
+  const sharing = useSharing();
 
   // Override search handling
   const handleSearchChange = useCallback((value: string) => {
@@ -30,19 +50,34 @@ export const DashboardPage: React.FC = () => {
   }, [fileManager]);
 
   const handleRenameFolder = useCallback((folderId: string, newName: string) => {
-    // Need to implement folder rename in fileManager
-    // For now, we'll add this to the hook
     console.log('Rename folder:', folderId, newName);
   }, []);
 
   const handleDeleteFolder = useCallback((folderId: string) => {
-    // Need to implement folder delete in fileManager
     console.log('Delete folder:', folderId);
   }, []);
 
   const handleNavigate = useCallback((folderId: string | null) => {
     fileManager.handleNavigateToFolder(folderId);
   }, [fileManager]);
+
+  // Share handlers
+  const handleShare = useCallback((file: any) => {
+    setShareDialog({
+      isOpen: true,
+      resourceType: 'FILE',
+      resourceId: file.id,
+      resourceName: file.filename,
+    });
+  }, []);
+
+  const handleCreateShareLink = useCallback((file: any) => {
+    setShareLinkDialog({
+      isOpen: true,
+      fileId: file.id,
+      fileName: file.filename,
+    });
+  }, []);
 
   // Clear error when user interacts
   const clearError = useCallback(() => setError(null), []);
@@ -52,15 +87,38 @@ export const DashboardPage: React.FC = () => {
       <nav className="bg-card border-b border-border sticky top-0 z-10">
         <div className="container-custom">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-6">
               <h1 className="text-xl font-bold text-foreground">NimbusVault</h1>
+              <nav className="hidden md:flex items-center space-x-4">
+                <Link
+                  to="/dashboard"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Files
+                </Link>
+                <Link
+                  to="/shared-with-me"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <Users className="w-4 h-4" />
+                  Shared with me
+                </Link>
+                <Link
+                  to="/activity"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <Clock className="w-4 h-4" />
+                  Activity
+                </Link>
+              </nav>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground hidden sm:block">Welcome, {user?.name}</span>
               <button
                 onClick={() => logout()}
-                className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors flex items-center gap-2"
               >
+                <LogOut className="w-4 h-4" />
                 Logout
               </button>
             </div>
@@ -138,14 +196,18 @@ export const DashboardPage: React.FC = () => {
 
             {/* File List */}
             <div className="bg-card rounded-lg border border-border overflow-hidden">
-              <FileList fileManager={fileManager} />
+              <FileList
+                fileManager={fileManager}
+                onShare={handleShare}
+                onCreateShareLink={handleCreateShareLink}
+              />
             </div>
 
             {/* Empty state for when no files but not loading */}
             {!fileManager.isLoading && fileManager.files.length === 0 && !fileManager.isUploading && (
               <div className="mt-6 text-center">
                 <svg className="mx-auto h-16 w-16 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 002-2h-6l-2-2H5a2 2 0 002-2z" />
                 </svg>
                 <p className="mt-4 text-lg text-muted-foreground">No files in this folder</p>
                 <p className="mt-1 text-sm text-muted-foreground">Drag and drop files above or click the upload area to add files</p>
@@ -154,6 +216,38 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Share Dialog */}
+      {shareDialog && (
+        <ShareDialog
+          isOpen={shareDialog.isOpen}
+          onClose={() => setShareDialog(null)}
+          resourceType={shareDialog.resourceType}
+          resourceId={shareDialog.resourceId}
+          resourceName={shareDialog.resourceName}
+          onShare={async (granteeEmail, level) => {
+            await sharing.createShare({
+              resourceType: shareDialog.resourceType,
+              resourceId: shareDialog.resourceId,
+              granteeEmail,
+              level,
+            });
+            // Refresh shares list
+            sharing.listShares(shareDialog.resourceType, shareDialog.resourceId);
+          }}
+          existingShares={sharing.shares}
+        />
+      )}
+
+      {/* Share Link Dialog */}
+      {shareLinkDialog && (
+        <ShareLinkDialog
+          isOpen={shareLinkDialog.isOpen}
+          onClose={() => setShareLinkDialog(null)}
+          fileId={shareLinkDialog.fileId}
+          fileName={shareLinkDialog.fileName}
+        />
+      )}
     </div>
   );
 };

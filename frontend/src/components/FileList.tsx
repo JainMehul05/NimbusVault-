@@ -4,9 +4,11 @@ import type { FileManagerReturn } from '@hooks/useFileManager';
 
 interface FileListProps {
   fileManager: FileManagerReturn;
+  onShare?: (file: any) => void;
+  onCreateShareLink?: (file: any) => void;
 }
 
-export const FileList: React.FC<FileListProps> = ({ fileManager }) => {
+export const FileList: React.FC<FileListProps> = ({ fileManager, onShare, onCreateShareLink }) => {
   const {
     files,
     folders,
@@ -20,6 +22,9 @@ export const FileList: React.FC<FileListProps> = ({ fileManager }) => {
     handleDelete,
     fetchFiles,
   } = fileManager;
+
+  const handleShare = onShare ?? ((_file: any) => {});
+  const handleCreateShareLink = onCreateShareLink ?? ((_file: any) => {});
 
   if (isLoading) {
     return (
@@ -61,6 +66,8 @@ export const FileList: React.FC<FileListProps> = ({ fileManager }) => {
               onRename={handleRename}
               onMove={handleMove}
               onDelete={handleDelete}
+              onShare={handleShare}
+              onCreateShareLink={handleCreateShareLink}
               folders={folders}
               uploadProgress={uploadProgress}
             />

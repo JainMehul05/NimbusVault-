@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Share2, Link2 } from 'lucide-react';
 import { formatFileSize, getFileIcon } from '@hooks/useFileManager';
 
 interface FileItemProps {
@@ -16,6 +17,8 @@ interface FileItemProps {
   onRename: (file: any, newName: string) => void;
   onMove: (file: any, newFolderId: string | null) => void;
   onDelete: (file: any) => void;
+  onShare: (file: any) => void;
+  onCreateShareLink: (file: any) => void;
   folders: any[];
   uploadProgress?: Record<string, number>;
 }
@@ -26,6 +29,8 @@ export const FileItem: React.FC<FileItemProps> = ({
   onRename,
   onMove,
   onDelete,
+  onShare,
+  onCreateShareLink,
   folders,
   uploadProgress = {},
 }) => {
@@ -121,6 +126,20 @@ export const FileItem: React.FC<FileItemProps> = ({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
+              </button>
+              <button
+                onClick={() => onShare(file)}
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                title="Share with user"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => onCreateShareLink(file)}
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                title="Create share link"
+              >
+                <Link2 className="w-5 h-5" />
               </button>
               <button
                 onClick={() => onDelete(file)}

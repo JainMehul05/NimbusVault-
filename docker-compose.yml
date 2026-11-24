@@ -1,107 +1,141 @@
+# Full local stack: docker compose up --build
+# App http://localhost:5173 · API http://localhost:3002/api/v1 · S3 http://localhost:4566
+# Development values only. Production runs on AWS (see docs/phase-5/aws-deployment.md).
+
+x-backend-env: &backend-env
+  NODE_ENV: development
+  API_PREFIX: v1
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nimbusvault?schema=public
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-in-production-min-32-chars}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production-min-32-chars}
+  FRONTEND_URL: http://localhost:5173
+  TRUST_PROXY: "1"
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_S3_BUCKET: nimbusvault
+  S3_ENDPOINT: http://localstack:4566
+  # Presigned URLs are opened by the browser, which cannot resolve "localstack".
+  S3_PUBLIC_ENDPOINT: http://localhost:4566
+  S3_FORCE_PATH_STYLE: "true"
+  # Embeddings: none | local (MiniLM on CPU, no data leaves the machine) | openai
+  AI_EMBEDDING_PROVIDER: ${AI_EMBEDDING_PROVIDER:-local}
+  AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-}
+  # Summaries and answers: none | openai | anthropic (needs a key; sends passages to that provider)
+  AI_GENERATION_PROVIDER: ${AI_GENERATION_PROVIDER:-none}
+  AI_GENERATION_MODEL: ${AI_GENERATION_MODEL:-}
+  AI_GENERATION_API_KEY: ${AI_GENERATION_API_KEY:-}
+  AI_OCR_ENABLED: ${AI_OCR_ENABLED:-false}
+
 services:
   postgres:
-    # PostgreSQL 16 with the pgvector extension (required by the AI migration).
-    # Same major version as the previous postgres:16-alpine image, so existing volumes keep working.
+    # PostgreSQL 16 with pgvector (required by the AI migration). Existing volumes keep working.
     image: pgvector/pgvector:pg16
-    container_name: nimbusvault-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: nimbusvault
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nimbusvault"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
+    restart: unless-stopped
 
   localstack:
     image: localstack/localstack:3.5
-    container_name: nimbusvault-localstack
     environment:
       SERVICES: s3
-      DEBUG: 1
       AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
+      # Object persistence across restarts needs LocalStack Pro; with the community image the
+      # bucket is recreated empty. The setting is harmless without a licence.
+      PERSISTENCE: "1"
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - localstack_data:/var/lib/localstack
-      # Creates the S3 bucket when LocalStack is ready.
       - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      # Healthy only once the bucket exists.
+      test: ["CMD-SHELL", "awslocal s3api head-bucket --bucket nimbusvault"]
+      interval: 5s
+      timeout: 10s
+      retries: 24
+    restart: unless-stopped
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: nimbusvault-backend
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      API_PREFIX: v1
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nimbusvault?schema=public
-      JWT_ACCESS_SECRET: dev-access-secret-change-in-production-min-32-chars
-      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production-min-32-chars
-      JWT_ACCESS_EXPIRES_IN: 15m
-      JWT_REFRESH_EXPIRES_IN: 7d
-      BCRYPT_ROUNDS: 12
-      FRONTEND_URL: http://localhost:5173
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_S3_BUCKET: nimbusvault
-      S3_ENDPOINT: http://localstack:4566
-      S3_FORCE_PATH_STYLE: "true"
-      # --- Phase 4 AI (optional; core storage works with these unset) ---
-      # Embeddings: none | local (all-MiniLM-L6-v2 on CPU, no data leaves the server) | openai
-      AI_EMBEDDING_PROVIDER: ${AI_EMBEDDING_PROVIDER:-local}
-      AI_LOCAL_MODEL_CACHE_DIR: /models
-      # Generation (summaries + Q&A): none | openai | anthropic — needs an API key
-      AI_GENERATION_PROVIDER: ${AI_GENERATION_PROVIDER:-none}
-      AI_GENERATION_MODEL: ${AI_GENERATION_MODEL:-}
-      AI_GENERATION_API_KEY: ${AI_GENERATION_API_KEY:-}
-      AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-}
-    ports:
-      - "3002:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - /app/dist
-      - model_cache:/models
+  migrate:
+    build: &backend-build
+      context: .
+      dockerfile: backend/Dockerfile
+    image: nimbusvault-backend:local
+    environment: *backend-env
+    command: ["node", "scripts/migrate.cjs"]
     depends_on:
       postgres:
         condition: service_healthy
+    restart: "no"
+
+  backend:
+    build: *backend-build
+    image: nimbusvault-backend:local
+    environment:
+      <<: *backend-env
+      PORT: 3000
+      AI_WORKER_ENABLED: "false"
+      MAINTENANCE_ENABLED: "false"
+    ports:
+      - "127.0.0.1:3002:3000"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
       localstack:
         condition: service_healthy
-    # Apply reviewed migrations, then start the API (which also runs the AI worker).
-    command: sh -c "npx prisma migrate deploy && npm run start:dev"
+    restart: unless-stopped
+
+  worker:
+    build: *backend-build
+    image: nimbusvault-backend:local
+    environment:
+      <<: *backend-env
+      AI_WORKER_HEARTBEAT_FILE: /tmp/worker-heartbeat
+    command: ["node", "dist/worker.js"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "node", "scripts/healthcheck.cjs", "worker"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: nimbusvault-frontend
-    environment:
-      VITE_API_URL: http://localhost:3002/api/v1
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: nimbusvault-frontend:local
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "127.0.0.1:5173:8080"
     depends_on:
-      - backend
-    command: npm run dev
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   localstack_data:
-  model_cache:

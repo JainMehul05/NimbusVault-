@@ -1,0 +1,74 @@
+name: Deploy
+
+# Needs the GitHub environment "staging" or "production" with the variables AWS_DEPLOY_ROLE_ARN
+# and AWS_REGION. Until those exist the workflow stops at the gate without touching anything.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        default: staging
+      image_tag:
+        description: Redeploy an existing image (rollback). Empty builds this commit.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        run: |
+          if [ -n "${{ vars.AWS_DEPLOY_ROLE_ARN }}" ] && [ -n "${{ vars.AWS_REGION }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::AWS is not configured for this environment; nothing will be deployed."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify:
+    needs: gate
+    if: needs.gate.outputs.ready == 'true' && inputs.image_tag == ''
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: [gate, verify]
+    if: always() && needs.gate.outputs.ready == 'true' && (needs.verify.result == 'success' || inputs.image_tag != '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.environment }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+      CDK_CONTEXT: ${{ vars.CDK_CONTEXT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+        env: { ONNXRUNTIME_NODE_INSTALL_CUDA: skip, ONNXRUNTIME_NODE_INSTALL: skip }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Build and push image
+        if: inputs.image_tag == ''
+        run: bash infra/scripts/push-image.sh
+      - name: Deploy
+        run: bash infra/scripts/deploy.sh
+      - name: Health check
+        run: bash infra/scripts/verify.sh

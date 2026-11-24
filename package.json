@@ -6,7 +6,8 @@
   "workspaces": [
     "backend",
     "frontend",
-    "e2e"
+    "e2e",
+    "infra"
   ],
   "scripts": {
     "dev": "docker compose up",

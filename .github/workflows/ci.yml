@@ -1,143 +1,232 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'phase-5-**']
   pull_request:
     branches: [main, develop]
+  # The deploy workflow runs exactly these checks before touching AWS.
+  workflow_call:
 
-# The repository is an npm workspace: there is one lockfile at the root.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: '22'
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+# One npm workspace, one lockfile at the root.
 jobs:
   backend:
-    name: Backend (lint, typecheck, tests, build)
+    name: Backend (lint, types, migrations, tests, build)
     runs-on: ubuntu-latest
-
+    timeout-minutes: 25
     services:
       postgres:
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nimbusvault
-        ports:
-          - 5433:5432
+          POSTGRES_DB: nimbusvault_test
+        ports: ['5433:5432']
         options: >-
           --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-interval 5s --health-timeout 5s --health-retries 12
       localstack:
         image: localstack/localstack:3.5
         env:
           SERVICES: s3
           AWS_DEFAULT_REGION: us-east-1
-        ports:
-          - 4566:4566
-
+        ports: ['4566:4566']
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/nimbusvault?schema=public
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_S3_BUCKET: nimbusvault
-      S3_ENDPOINT: http://localhost:4566
-      S3_FORCE_PATH_STYLE: 'true'
-      # AI tests use deterministic test doubles — no paid provider or key is required.
-      AI_EMBEDDING_PROVIDER: none
-      AI_GENERATION_PROVIDER: none
-
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/nimbusvault_test?schema=public
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+        working-directory: .
+      - run: npx prisma generate
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        working-directory: ./backend
-
-      - name: Apply database migrations
-        run: npx prisma migrate deploy
-        working-directory: ./backend
-
-      - name: Verify schema matches migrations
-        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
-        working-directory: ./backend
-
-      - name: Create S3 bucket
+      - name: Upgrade path — apply the previous release's migrations, add data, then upgrade
         run: |
-          for i in $(seq 1 30); do curl -sf http://localhost:4566/_localstack/health && break; sleep 2; done
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          export PGPASSWORD=postgres
+          psql -q -h localhost -p 5433 -U postgres -c 'CREATE DATABASE nimbusvault_test_upgrade'
+          node scripts/test-upgrade.cjs postgresql://postgres:postgres@localhost:5433/nimbusvault_test_upgrade?schema=public
+
+      - name: Fresh install
+        run: npx prisma migrate deploy
+      - name: Schema matches migrations
+        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+
+      - name: Create bucket
+        run: |
+          for i in $(seq 1 60); do curl -sf http://localhost:4566/_localstack/health && break; sleep 2; done
           curl -sf -X PUT http://localhost:4566/nimbusvault
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
 
-      - name: Lint
-        run: npm run lint
-        working-directory: ./backend
-
-      - name: Typecheck
-        run: npm run typecheck
-        working-directory: ./backend
-
-      - name: Tests
-        run: npm test -- --runInBand
-        working-directory: ./backend
-
-      - name: Build and smoke-start compiled server
-        working-directory: ./backend
+      - name: Build and smoke-start the compiled API and worker in production mode
         env:
           NODE_ENV: production
           PORT: 3100
-          JWT_ACCESS_SECRET: ci-access-secret-0123456789-abcdefghijkl
-          JWT_REFRESH_SECRET: ci-refresh-secret-0123456789-abcdefghijk
+          JWT_ACCESS_SECRET: Zk3vQ9xT1mB7wYc5hN2rJ8dL4sG6fAeU
+          JWT_REFRESH_SECRET: Hp4nWv8Ry2Kb6Tq9Zm1Cx7Jd3Lf5Gs0E
+          FRONTEND_URL: https://vault.example.com
+          TRUST_PROXY: '2'
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_S3_BUCKET: nimbusvault
+          S3_ENDPOINT: http://localhost:4566
+          S3_FORCE_PATH_STYLE: 'true'
+          AI_WORKER_HEARTBEAT_FILE: /tmp/hb
         run: |
           npm run build
-          node dist/main.js &
-          for i in $(seq 1 30); do curl -sf http://localhost:3100/api/v1/health/ready && exit 0; sleep 1; done
-          exit 1
+          node dist/main.js & API=$!
+          node dist/worker.js & WORKER=$!
+          for i in $(seq 1 40); do curl -sf http://localhost:3100/api/v1/health/ready && break; sleep 1; done
+          curl -sf http://localhost:3100/api/v1/health/ready
+          sleep 3 && AI_WORKER_HEARTBEAT_FILE=/tmp/hb node scripts/healthcheck.cjs worker
+          node scripts/healthcheck.cjs http
+          kill -TERM $API $WORKER && wait $API && wait $WORKER
+      - name: Insecure production configuration is refused
+        env: { NODE_ENV: production, JWT_ACCESS_SECRET: short, JWT_REFRESH_SECRET: short }
+        run: if node dist/main.js; then echo "started with insecure settings" && exit 1; fi
 
   frontend:
-    name: Frontend (lint, typecheck, tests, build)
+    name: Frontend (lint, types, tests, build)
     runs-on: ubuntu-latest
-
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npm run lint --workspace=frontend
+      - run: npm run test:run --workspace=frontend
+      - run: npm run build --workspace=frontend
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-        working-directory: ./frontend
-
-      - name: Tests
-        run: npm run test:run
-        working-directory: ./frontend
-
-      - name: Build (includes typecheck)
-        run: npm run build
-        working-directory: ./frontend
-        env:
-          VITE_API_URL: http://localhost:3000/api/v1
-
-  docker:
-    name: Docker Build
+  e2e:
+    name: End-to-end (Chromium, real PostgreSQL, LocalStack, MiniLM)
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
-
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: nimbusvault_e2e }
+        ports: ['5433:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 12
+      localstack:
+        image: localstack/localstack:3.5
+        env: { SERVICES: s3, AWS_DEFAULT_REGION: us-east-1 }
+        ports: ['4566:4566']
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+        working-directory: backend
+      - run: npm run build
+      - uses: actions/cache@v4
+        with:
+          path: ~/models
+          key: minilm-l6-v2-fp32
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Create bucket
+        run: |
+          for i in $(seq 1 60); do curl -sf http://localhost:4566/_localstack/health && break; sleep 2; done
+          curl -sf -X PUT http://localhost:4566/nimbusvault
+      - run: AI_LOCAL_MODEL_CACHE_DIR=$HOME/models npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
 
-      - name: Build backend Docker image
-        run: docker build -t nimbusvault-backend ./backend
+  infra:
+    name: Infrastructure (types, tests, synth, security rules, cfn-lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npm run typecheck --workspace=infra
+      - run: npm test --workspace=infra
+      - name: Synthesize every variant (fails on unacknowledged security findings)
+        working-directory: infra
+        run: |
+          npx cdk synth --quiet -c env=staging -c githubRepo=${{ github.repository }}
+          npx cdk synth --quiet -c env=production -c githubRepo=${{ github.repository }} -c alarmEmail=ops@example.com -c aiGenerationProvider=anthropic
+          npx cdk synth --quiet -o cdk.out.full -c env=production -c githubRepo=${{ github.repository }} -c enableWaf=true -c dbMultiAz=true -c domainName=vault.example.com -c certificateArn=arn:aws:acm:us-east-1:123456789012:certificate/example
+      - run: pipx run cfn-lint==1.61.0 -r us-east-1 -i W3005 -t 'infra/cdk.out/*.template.json' 'infra/cdk.out.full/*.template.json'
 
-      - name: Build frontend Docker image
-        run: docker build -t nimbusvault-frontend ./frontend
+  containers:
+    name: Containers (build, compose stack, smoke test, scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the whole stack
+        run: docker compose up --build --detach --wait --wait-timeout 300
+      - name: Smoke test through the front door
+        run: bash scripts/smoke-test.sh http://localhost:5173
+      - name: Survives restart and recreation with data intact
+        run: |
+          docker compose up --detach --force-recreate --wait backend worker postgres
+          docker compose exec -T postgres psql -U postgres -d nimbusvault -tAc 'SELECT COUNT(*) FROM users' | grep -qv '^0$'
+      - name: Images run as an unprivileged user
+        run: |
+          test "$(docker run --rm --entrypoint id nimbusvault-backend:local -u)" != 0
+          test "$(docker run --rm --entrypoint id nimbusvault-frontend:local -u)" != 0
+      - name: Model is baked in and loads with no network
+        run: >
+          docker run --rm --network none --read-only --tmpfs /tmp --entrypoint node nimbusvault-backend:local -e
+          "const t=require('@huggingface/transformers');t.env.cacheDir='/app/models';t.env.localModelPath='/app/models';t.env.allowRemoteModels=false;
+          t.pipeline('feature-extraction','Xenova/all-MiniLM-L6-v2',{dtype:'fp32'}).then(e=>e(['x'],{pooling:'mean'})).then(o=>{if(o.dims.at(-1)!==384)process.exit(1)})"
+      - name: Scan image for fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: nimbusvault-backend:local
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          scanners: vuln
+      - if: failure()
+        run: docker compose ps -a && docker compose logs --tail 200
+
+  security:
+    name: Dependency and secret checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: No high or critical advisories in shipped dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: No committed credentials
+        run: |
+          ! git grep -nIE '(AKIA|ASIA)[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH|PRIVATE)|sk-ant-[A-Za-z0-9]{10,}|sk-[A-Za-z0-9]{32,}|ghp_[A-Za-z0-9]{30,}' -- . ':!.github/workflows/ci.yml'
+          ! git ls-files | grep -E '(^|/)\.env($|\.(local|production|test)$)'

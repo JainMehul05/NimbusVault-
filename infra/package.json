@@ -1,0 +1,23 @@
+{
+  "name": "nimbusvault-infra",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "synth": "cdk synth --quiet",
+    "diff": "cdk diff",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "aws-cdk": "^2.1149.0",
+    "aws-cdk-lib": "^2.278.0",
+    "cdk-nag": "^3.1.0",
+    "constructs": "^10.8.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.1"
+  }
+}

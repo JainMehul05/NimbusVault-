@@ -1,0 +1,23 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'mkdocs.yml', '.github/workflows/mkdocs.yml']
+  pull_request:
+    paths: ['docs/**', 'mkdocs.yml', '.github/workflows/mkdocs.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Documentation builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install 'mkdocs-material>=9.5,<10'
+      - run: mkdocs build --site-dir /tmp/site

@@ -37,7 +37,13 @@ router.delete(
   shareLinkController.revokeShareLink
 );
 
-// Public routes - no authentication required
+// Public routes - no authentication required. Responses depend on live link state: never cache.
+router.use('/public', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
+
 // Rate limiter for public share-link access (prevent brute-force)
 const shareLinkRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

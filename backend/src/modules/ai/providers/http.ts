@@ -7,12 +7,11 @@ export function isLocalUrl(url: string): boolean {
     return (
       host === 'localhost' ||
       host === '127.0.0.1' ||
-      host === '::1' ||
+      host === '[::1]' ||
       host.endsWith('.local') ||
       host === 'host.docker.internal' ||
-      /^10\./.test(host) ||
-      /^192\.168\./.test(host) ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+      // Whole IPv4 literals only: "10.evil.com" is a public hostname.
+      /^(10\.\d+|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+$/.test(host)
     );
   } catch {
     return false;
@@ -29,30 +28,36 @@ export async function postJson<T>(
   headers: Record<string, string>,
   timeoutMs: number
 ): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // The timeout covers the whole exchange, including a body that trickles in forever.
+  const signal = AbortSignal.timeout(timeoutMs);
+  const transportError = (err: unknown) =>
+    new AiProviderError(
+      signal.aborted || (err as Error)?.name === 'TimeoutError' ? `AI provider timed out after ${timeoutMs} ms` : 'AI provider unreachable',
+      true
+    );
+
   let response: Response;
   try {
     response = await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify(body),
-      signal: controller.signal,
+      // Never follow a redirect with document text and credentials attached.
+      redirect: 'error',
+      signal,
     });
   } catch (err) {
-    const aborted = (err as Error).name === 'AbortError';
-    throw new AiProviderError(aborted ? `AI provider timed out after ${timeoutMs} ms` : 'AI provider unreachable', true);
-  } finally {
-    clearTimeout(timer);
+    throw transportError(err);
   }
 
   if (!response.ok) {
-    // 429 and 5xx are transient; other 4xx (bad key, bad model, bad request) are not.
-    const retryable = response.status === 429 || response.status >= 500;
+    // 408, 429 and 5xx are transient; other 4xx (bad key, bad model, bad request) are not.
+    const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
     let detail = '';
     try {
-      const data = (await response.json()) as { error?: { message?: string; type?: string } };
-      detail = data?.error?.type || '';
+      const data = (await response.json()) as { error?: { type?: unknown } };
+      // Only a short machine code is kept; free-form messages could echo document text.
+      if (typeof data?.error?.type === 'string' && /^[\w.-]{1,64}$/.test(data.error.type)) detail = data.error.type;
     } catch {
       /* ignore */
     }
@@ -61,7 +66,8 @@ export async function postJson<T>(
 
   try {
     return (await response.json()) as T;
-  } catch {
+  } catch (err) {
+    if (signal.aborted) throw transportError(err);
     throw new AiProviderError('AI provider returned an invalid response', true);
   }
 }

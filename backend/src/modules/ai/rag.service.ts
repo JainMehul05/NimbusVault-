@@ -178,6 +178,14 @@ export class RagService {
       throw AppError.serviceUnavailable(`The AI assistant is temporarily unavailable: ${msg}`, 'AI_PROVIDER_ERROR');
     }
 
+    // Generation takes seconds. If access to any source was lost meanwhile (revoked share,
+    // deleted file), the answer may contain its content and must not be returned.
+    for (const fileId of new Set(selected.map((h) => h.fileId))) {
+      if (!(await authorizationService.getEffectivePermissionLevel(userId, 'FILE', fileId))) {
+        throw AppError.conflict('Access to a source document changed while answering. Please ask again.', 'SOURCES_CHANGED');
+      }
+    }
+
     const validRefs = new Set(sources.map((s) => s.ref));
     if (!text || text.toUpperCase().startsWith(INSUFFICIENT)) {
       const explanation = text.slice(INSUFFICIENT.length).trim();

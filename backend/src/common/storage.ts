@@ -5,25 +5,18 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   CopyObjectCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import { Transform } from 'stream';
 import type { Readable } from 'stream';
-import { createHash } from 'crypto';
+import { pipeline } from 'stream/promises';
+import { createHash, randomBytes } from 'crypto';
 import { config } from '@config/index';
 import { createChildLogger } from '@common/logger';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
-
-export interface StorageConfig {
-  endpoint: string;
-  region: string;
-  bucket: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  forcePathStyle: boolean;
-}
 
 export interface UploadResult {
   key: string;
@@ -35,7 +28,7 @@ export interface FileMetadata {
   size: number;
   contentType: string;
   lastModified: Date;
-  checksumSha256?: string;
+  etag?: string;
 }
 
 export interface PresignedUrlResult {
@@ -43,91 +36,74 @@ export interface PresignedUrlResult {
   expiresIn: number;
 }
 
+/** Objects under this prefix are unfinished presigned uploads; a lifecycle rule expires them. */
+export const STAGING_PREFIX = 'staging/';
+
+const isNotFound = (error: unknown): boolean => {
+  const e = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return e?.name === 'NotFound' || e?.name === 'NoSuchKey' || e?.$metadata?.httpStatusCode === 404;
+};
+
+/** The parts of an SDK error that are safe and useful to log. */
+const describe = (error: unknown) => {
+  const e = error as { name?: string; message?: string; $metadata?: { httpStatusCode?: number } };
+  return { name: e?.name, message: e?.message, status: e?.$metadata?.httpStatusCode };
+};
+
 export class StorageService {
   private client: S3Client | null = null;
-  private config: StorageConfig | null = null;
-  private initialized = false;
+  private presignClient: S3Client | null = null;
+  private bucket: string | null = null;
   private readonly log = createChildLogger({ module: 'storage' });
 
   initialize(): void {
-    if (this.initialized) return;
+    if (this.client) return;
 
-    const { region, accessKeyId, secretAccessKey, s3Bucket } = config.aws;
-
-    if (!region || !accessKeyId || !secretAccessKey || !s3Bucket) {
+    const { region, accessKeyId, secretAccessKey, s3Bucket, s3Endpoint, s3PublicEndpoint, s3ForcePathStyle } = config.aws;
+    if (!s3Bucket) {
       this.log.warn('S3 configuration incomplete; storage operations will fail until configured');
       return;
     }
 
-    const endpoint = process.env.S3_ENDPOINT || `https://s3.${region}.amazonaws.com`;
-    const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
+    const build = (endpoint: string) =>
+      new S3Client({
+        region,
+        ...(endpoint ? { endpoint } : {}),
+        // Without static keys the SDK uses its default chain (ECS task role on AWS).
+        ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
+        forcePathStyle: s3ForcePathStyle,
+        // Keep presigned URLs usable by plain HTTP clients and by LocalStack.
+        requestChecksumCalculation: 'WHEN_REQUIRED',
+        responseChecksumValidation: 'WHEN_REQUIRED',
+      });
 
-    this.config = {
-      endpoint,
-      region,
-      bucket: s3Bucket,
-      accessKeyId,
-      secretAccessKey,
-      forcePathStyle,
-    };
-
-    this.client = new S3Client({
-      region: this.config.region,
-      endpoint: this.config.endpoint,
-      credentials: {
-        accessKeyId: this.config.accessKeyId,
-        secretAccessKey: this.config.secretAccessKey,
-      },
-      forcePathStyle: this.config.forcePathStyle,
-      // Disable checksums for LocalStack compatibility
-      // LocalStack doesn't support x-amz-checksum-* headers in presigned URLs
-      requestChecksumCalculation: 'WHEN_REQUIRED',
-      responseChecksumValidation: 'WHEN_REQUIRED',
-    });
-
-    this.initialized = true;
-    this.log.info({ endpoint: this.config.endpoint, bucket: this.config.bucket }, 'Storage service initialized');
+    this.client = build(s3Endpoint);
+    this.presignClient = s3PublicEndpoint === s3Endpoint ? this.client : build(s3PublicEndpoint);
+    this.bucket = s3Bucket;
+    this.log.info({ endpoint: s3Endpoint || 'aws', bucket: s3Bucket }, 'Storage service initialized');
   }
 
-  private ensureClient(): S3Client {
-    if (!this.client || !this.config) {
-      this.log.error('Storage service not initialized - missing S3 configuration');
+  private ctx(): { client: S3Client; presign: S3Client; Bucket: string } {
+    if (!this.client || !this.presignClient || !this.bucket) {
       throw AppError.serviceUnavailable('Object storage not configured', ErrorCodes.SERVICE_UNAVAILABLE);
     }
-    return this.client;
+    return { client: this.client, presign: this.presignClient, Bucket: this.bucket };
   }
 
-  private getBucket(): string {
-    if (!this.config) {
-      throw AppError.serviceUnavailable('Object storage not configured', ErrorCodes.SERVICE_UNAVAILABLE);
-    }
-    return this.config.bucket;
-  }
-
+  /** Unguessable key. The user's filename contributes only a short alphanumeric extension. */
   generateObjectKey(userId: string, originalFilename: string): string {
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 10);
-    const extension = originalFilename.includes('.')
-      ? originalFilename.substring(originalFilename.lastIndexOf('.'))
-      : '';
-    return `${userId}/${timestamp}-${randomSuffix}${extension}`;
+    const ext = /\.([A-Za-z0-9]{1,10})$/.exec(originalFilename)?.[1]?.toLowerCase();
+    return `${userId}/${Date.now()}-${randomBytes(16).toString('hex')}${ext ? `.${ext}` : ''}`;
   }
 
-  async upload(
-    userId: string,
-    originalFilename: string,
-    stream: Readable,
-    contentType: string
-  ): Promise<UploadResult> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
+  async upload(userId: string, originalFilename: string, stream: Readable, contentType: string): Promise<UploadResult> {
+    const { client, Bucket } = this.ctx();
     const key = this.generateObjectKey(userId, originalFilename);
 
     const hash = createHash('sha256');
     let size = 0;
-
     const hashStream = new Transform({
-      transform(chunk, encoding, callback) {
+      transform(chunk, _encoding, callback) {
         hash.update(chunk);
         size += chunk.length;
         callback(null, chunk);
@@ -136,193 +112,179 @@ export class StorageService {
 
     const upload = new Upload({
       client,
-      params: {
-        Bucket: bucket,
-        Key: key,
-        Body: stream.pipe(hashStream),
-        ContentType: contentType,
-      },
+      params: { Bucket, Key: key, Body: hashStream, ContentType: contentType },
+      leavePartsOnError: false,
     });
 
     try {
-      await upload.done();
-      const checksumSha256 = hash.digest('hex');
+      // pipeline() propagates source errors, so a failing disk read cannot hang the upload.
+      await Promise.all([
+        pipeline(stream, hashStream).catch(async (err) => {
+          await upload.abort().catch(() => {});
+          throw err;
+        }),
+        upload.done(),
+      ]);
       this.log.info({ key, size, userId }, 'File uploaded successfully');
-      return { key, size, checksumSha256 };
+      return { key, size, checksumSha256: hash.digest('hex') };
     } catch (error) {
-      this.log.error({ err: error, key, userId }, 'File upload failed');
-      // Attempt to clean up partial upload
-      try {
-        await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-      } catch (cleanupError) {
-        this.log.error({ err: cleanupError, key }, 'Failed to clean up partial upload');
-      }
+      stream.destroy();
+      this.log.error({ err: describe(error), key, userId }, 'File upload failed');
+      await client.send(new DeleteObjectCommand({ Bucket, Key: key })).catch((cleanupError) => {
+        this.log.error({ err: describe(cleanupError), key }, 'Failed to clean up partial upload');
+      });
       throw AppError.internal('File upload failed', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
   async download(key: string): Promise<{ stream: Readable; metadata: FileMetadata }> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
-
+    const { client, Bucket } = this.ctx();
     try {
-      const headCommand = new HeadObjectCommand({ Bucket: bucket, Key: key });
-      const headResponse = await client.send(headCommand);
-
-      const getCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
-      const getResponse = await client.send(getCommand);
-
-      if (!getResponse.Body) {
+      const res = await client.send(new GetObjectCommand({ Bucket, Key: key }));
+      if (!res.Body) {
         throw AppError.notFound('File content not found', ErrorCodes.S3_OBJECT_MISSING);
       }
-
-      const stream = getResponse.Body as Readable;
-      const metadata: FileMetadata = {
-        size: Number(headResponse.ContentLength || 0),
-        contentType: headResponse.ContentType || 'application/octet-stream',
-        lastModified: headResponse.LastModified || new Date(),
-        checksumSha256: headResponse.Metadata?.['checksum-sha256'],
+      return {
+        stream: res.Body as Readable,
+        metadata: {
+          size: Number(res.ContentLength || 0),
+          contentType: res.ContentType || 'application/octet-stream',
+          lastModified: res.LastModified || new Date(),
+          etag: res.ETag,
+        },
       };
-
-      return { stream, metadata };
     } catch (error) {
       if (error instanceof AppError) throw error;
-      this.log.error({ err: error, key }, 'File download failed');
-      if ((error as any).name === 'NotFound' || (error as any).$metadata?.httpStatusCode === 404) {
-        throw AppError.notFound('File not found in storage', ErrorCodes.S3_OBJECT_MISSING);
-      }
+      if (isNotFound(error)) throw AppError.notFound('File not found in storage', ErrorCodes.S3_OBJECT_MISSING);
+      this.log.error({ err: describe(error), key }, 'File download failed');
       throw AppError.internal('File download failed', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
-  async delete(key: string): Promise<void> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
+  /** Streams an object once, returning its SHA-256 and first bytes. */
+  async inspect(key: string, headBytes = 4096): Promise<{ checksumSha256: string; head: Buffer; size: number }> {
+    const { stream } = await this.download(key);
+    const hash = createHash('sha256');
+    const head: Buffer[] = [];
+    let headSize = 0;
+    let size = 0;
+    for await (const chunk of stream) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+      hash.update(buf);
+      size += buf.length;
+      if (headSize < headBytes) {
+        const part = buf.subarray(0, headBytes - headSize);
+        head.push(part);
+        headSize += part.length;
+      }
+    }
+    return { checksumSha256: hash.digest('hex'), head: Buffer.concat(head), size };
+  }
 
+  async delete(key: string): Promise<void> {
+    const { client, Bucket } = this.ctx();
     try {
-      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      await client.send(new DeleteObjectCommand({ Bucket, Key: key }));
       this.log.info({ key }, 'File deleted successfully');
     } catch (error) {
-      this.log.error({ err: error, key }, 'File deletion failed');
-      if ((error as any).name === 'NotFound' || (error as any).$metadata?.httpStatusCode === 404) {
-        throw AppError.notFound('File not found in storage', ErrorCodes.S3_OBJECT_MISSING);
-      }
+      if (isNotFound(error)) return; // already gone
+      this.log.error({ err: describe(error), key }, 'File deletion failed');
       throw AppError.internal('File deletion failed', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
   async getMetadata(key: string): Promise<FileMetadata> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
-
+    const { client, Bucket } = this.ctx();
     try {
-      const command = new HeadObjectCommand({ Bucket: bucket, Key: key });
-      const response = await client.send(command);
-
+      const res = await client.send(new HeadObjectCommand({ Bucket, Key: key }));
       return {
-        size: Number(response.ContentLength || 0),
-        contentType: response.ContentType || 'application/octet-stream',
-        lastModified: response.LastModified || new Date(),
-        checksumSha256: response.Metadata?.['checksum-sha256'],
+        size: Number(res.ContentLength || 0),
+        contentType: res.ContentType || 'application/octet-stream',
+        lastModified: res.LastModified || new Date(),
+        etag: res.ETag,
       };
     } catch (error) {
-      this.log.error({ err: error, key }, 'Failed to get file metadata');
-      if ((error as any).name === 'NotFound' || (error as any).$metadata?.httpStatusCode === 404) {
-        throw AppError.notFound('File not found in storage', ErrorCodes.S3_OBJECT_MISSING);
-      }
+      if (isNotFound(error)) throw AppError.notFound('File not found in storage', ErrorCodes.S3_OBJECT_MISSING);
+      this.log.error({ err: describe(error), key }, 'Failed to get file metadata');
       throw AppError.internal('Failed to get file metadata', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
-  async copy(sourceKey: string, destinationKey: string): Promise<void> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
-
+  /** Copies an object. With `ifMatch`, fails if the source changed since it was inspected. */
+  async copy(sourceKey: string, destinationKey: string, options: { ifMatch?: string; contentType?: string } = {}): Promise<void> {
+    const { client, Bucket } = this.ctx();
     try {
       await client.send(
         new CopyObjectCommand({
-          Bucket: bucket,
-          CopySource: `${bucket}/${sourceKey}`,
+          Bucket,
+          CopySource: `${Bucket}/${sourceKey.split('/').map(encodeURIComponent).join('/')}`,
           Key: destinationKey,
+          ...(options.ifMatch ? { CopySourceIfMatch: options.ifMatch } : {}),
+          ...(options.contentType ? { MetadataDirective: 'REPLACE' as const, ContentType: options.contentType } : {}),
         })
       );
-      this.log.info({ sourceKey, destinationKey }, 'File copied successfully');
     } catch (error) {
-      this.log.error({ err: error, sourceKey, destinationKey }, 'File copy failed');
-      if ((error as any).name === 'NotFound' || (error as any).$metadata?.httpStatusCode === 404) {
-        throw AppError.notFound('Source file not found in storage', ErrorCodes.S3_OBJECT_MISSING);
+      if (isNotFound(error)) throw AppError.notFound('Source file not found in storage', ErrorCodes.S3_OBJECT_MISSING);
+      if ((error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 412) {
+        throw AppError.conflict('The uploaded object changed while it was being verified', 'UPLOAD_CHANGED');
       }
+      this.log.error({ err: describe(error), sourceKey, destinationKey }, 'File copy failed');
       throw AppError.internal('File copy failed', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
-  async generatePresignedDownloadUrl(key: string, expiresInSeconds = 3600): Promise<PresignedUrlResult> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
-
+  async generatePresignedDownloadUrl(
+    key: string,
+    expiresInSeconds = config.storage.downloadUrlTtlSeconds,
+    response: { disposition?: string; contentType?: string } = {}
+  ): Promise<PresignedUrlResult> {
+    const { presign, Bucket } = this.ctx();
     try {
-      const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-      const url = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
-      return { url, expiresIn: expiresInSeconds };
+      const command = new GetObjectCommand({
+        Bucket,
+        Key: key,
+        ...(response.disposition ? { ResponseContentDisposition: response.disposition } : {}),
+        ...(response.contentType ? { ResponseContentType: response.contentType } : {}),
+      });
+      return { url: await getSignedUrl(presign, command, { expiresIn: expiresInSeconds }), expiresIn: expiresInSeconds };
     } catch (error) {
-      this.log.error({ err: error, key }, 'Failed to generate presigned URL');
+      this.log.error({ err: describe(error), key }, 'Failed to generate presigned URL');
       throw AppError.internal('Failed to generate download URL', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
+  /** PUT URL for one exact object. Type and length are signed, so S3 rejects anything else. */
   async generatePresignedUploadUrl(
-    userId: string,
-    originalFilename: string,
+    key: string,
     contentType: string,
-    expiresInSeconds = 3600
-  ): Promise<{ key: string; url: string; expiresIn: number }> {
-    const client = this.ensureClient();
-    const bucket = this.getBucket();
-    const key = this.generateObjectKey(userId, originalFilename);
-
+    contentLength: number,
+    expiresInSeconds = config.storage.uploadUrlTtlSeconds
+  ): Promise<PresignedUrlResult> {
+    const { presign, Bucket } = this.ctx();
     try {
-      const command = new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        ContentType: contentType,
+      const command = new PutObjectCommand({ Bucket, Key: key, ContentType: contentType, ContentLength: contentLength });
+      const url = await getSignedUrl(presign, command, {
+        expiresIn: expiresInSeconds,
+        signableHeaders: new Set(['host', 'content-type', 'content-length']),
       });
-      const url = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
-      return { key, url, expiresIn: expiresInSeconds };
+      return { url, expiresIn: expiresInSeconds };
     } catch (error) {
-      this.log.error({ err: error, key }, 'Failed to generate presigned upload URL');
+      this.log.error({ err: describe(error), key }, 'Failed to generate presigned upload URL');
       throw AppError.internal('Failed to generate upload URL', ErrorCodes.INTERNAL_ERROR);
     }
   }
 
   async healthCheck(): Promise<boolean> {
-    if (!this.client || !this.config) {
-      return false;
-    }
-
+    if (!this.client || !this.bucket) return false;
     try {
-      // Use ListObjectsV2 with max-keys=1 for a lightweight connectivity check
-      // This is more reliable than HEAD bucket and works across S3 implementations
-      const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
-      const command = new ListObjectsV2Command({
-        Bucket: this.config.bucket,
-        MaxKeys: 1,
-      });
-
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Health check timeout')), 5000);
-      });
-
-      await Promise.race([this.client.send(command), timeoutPromise]);
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }), { abortSignal: AbortSignal.timeout(5000) });
       return true;
     } catch (error) {
-      this.log.warn({ err: error }, 'Storage health check failed');
+      this.log.warn({ err: describe(error) }, 'Storage health check failed');
       return false;
     }
   }
 }
-
-// Transform stream for hashing while piping
 
 export const storageService = new StorageService();
 

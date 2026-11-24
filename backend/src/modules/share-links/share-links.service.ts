@@ -4,7 +4,7 @@ import { ErrorCodes } from '@common/errors';
 import { createHash, randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import prisma from '@database/prisma';
-import { authorizationService } from '@common/authorization';
+import { authorizationService, hasPermission } from '@common/authorization';
 import { createRequestLogger } from '@common/logger';
 import { config } from '@config/index';
 import { activityLogService } from '@modules/activity/activity.service';
@@ -222,6 +222,15 @@ export class ShareLinkService {
       throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
     }
 
+    // A link is only as good as its creator's current access: revoking an editor (or
+    // downgrading them) immediately disables every link they made.
+    if (shareLink.createdBy !== shareLink.file.ownerId) {
+      const level = await authorizationService.getEffectivePermissionLevel(shareLink.createdBy, 'FILE', shareLink.fileId);
+      if (!level || !hasPermission(level, 'create_share_link')) {
+        throw AppError.forbidden('Share link has been revoked', ErrorCodes.SHARE_REVOKED);
+      }
+    }
+
     if (shareLink.passwordHash) {
       if (!password) {
         throw AppError.forbidden('Password required', ErrorCodes.PASSWORD_REQUIRED);
@@ -246,6 +255,7 @@ export class ShareLinkService {
     const updated = await this.prismaClient.$executeRaw`
       UPDATE "share_links" SET "downloadCount" = "downloadCount" + 1
       WHERE "id" = ${shareLinkId} AND "revokedAt" IS NULL
+        AND ("expiresAt" IS NULL OR "expiresAt" > (NOW() AT TIME ZONE 'UTC'))
         AND ("maxDownloads" IS NULL OR "downloadCount" < "maxDownloads")`;
     if (updated === 0) {
       throw AppError.forbidden('Share link download limit exceeded', ErrorCodes.SHARE_EXHAUSTED);

@@ -25,21 +25,10 @@ export const foldersController = {
 
     const { name, parentFolderId } = req.body as FolderCreateInput;
 
-    // Validate parent folder if provided
-    let depth = 0;
-    if (parentFolderId) {
-      const parentFolder = await folderService.validateFolderOwnership(parentFolderId, userId);
-      depth = parentFolder.depth + 1;
-    }
-
-    // Check for duplicate name
-    await folderService.checkDuplicateName(userId, parentFolderId || null, name);
-
     const folder = await folderService.create({
       name,
       ownerId: userId,
       parentFolderId: parentFolderId || null,
-      depth,
     });
 
     await activityLogService.logActivity(userId, 'folder_create', {
@@ -223,10 +212,7 @@ export const foldersController = {
   delete: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const userId = req.user!.userId;
     const { folderId } = req.params;
-    const deleteDescendantsRaw = req.query.deleteDescendants;
-    const deleteDescendants = Array.isArray(deleteDescendantsRaw)
-      ? deleteDescendantsRaw[0] === 'true'
-      : deleteDescendantsRaw === 'true';
+    const { deleteDescendants } = req.query as unknown as { deleteDescendants: boolean };
 
     const { folder, deletedFileIds } = await folderService.softDelete(folderId, userId, { deleteDescendants });
 

@@ -22,17 +22,6 @@ export const sharingController = {
 
     const { resourceType, resourceId, granteeEmail, level } = req.body;
 
-    // Check if share already exists to determine message
-    const grantee = await sharingService.getPrismaClient().user.findUnique({ where: { email: granteeEmail } });
-    const existingPermission = grantee ? await sharingService.getPrismaClient().permission.findUnique({
-      where: {
-        resourceType_resourceId_granteeUserId: {
-          resourceType,
-          resourceId,
-          granteeUserId: grantee.id,
-        },
-      },
-    }) : null;
 
     const result = await sharingService.createOrUpdateShare({
       resourceType,
@@ -60,7 +49,7 @@ export const sharingController = {
           },
           grantee: result.grantee,
         },
-        existingPermission ? 'Share permission updated' : 'Share permission created',
+        result.created ? 'Share permission created' : 'Share permission updated',
         requestId
       )
     );
@@ -158,10 +147,8 @@ export const sharingController = {
     const log = createRequestLogger(requestId, userId);
     req.logger = log;
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-
-    const result = await sharingService.listResourcesSharedWithUser(userId);
+    const { page, limit } = req.query as unknown as { page: number; limit: number };
+    const result = await sharingService.listResourcesSharedWithUser(userId, { page, limit });
 
     log.info({ userId, fileCount: result.files.length, folderCount: result.folders.length }, 'Shared with me retrieved');
 
@@ -174,8 +161,8 @@ export const sharingController = {
           pagination: {
             page,
             limit,
-            total: result.files.length + result.folders.length,
-            totalPages: Math.ceil((result.files.length + result.folders.length) / limit),
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit),
           },
         },
         'Shared resources retrieved successfully',

@@ -5,50 +5,25 @@ import { config } from '@config/index';
 export interface AccessTokenPayload {
   userId: string;
   email: string;
+  /** Session id (also the refresh-token family). */
+  sid: string;
   type: 'access';
 }
 
-export interface RefreshTokenPayload {
-  userId: string;
-  tokenFamily: string;
-  type: 'refresh';
-}
-
-const accessSignOptions: SignOptions = { expiresIn: config.jwt.accessExpiresIn as SignOptions['expiresIn'] };
-const refreshSignOptions: SignOptions = { expiresIn: config.jwt.refreshExpiresIn as SignOptions['expiresIn'] };
+const signOptions: SignOptions = {
+  algorithm: 'HS256',
+  expiresIn: config.jwt.accessExpiresIn as SignOptions['expiresIn'],
+};
 
 export function generateAccessToken(payload: Omit<AccessTokenPayload, 'type'>): string {
-  return jwt.sign(
-    { ...payload, type: 'access' },
-    config.jwt.accessSecret,
-    accessSignOptions
-  );
+  return jwt.sign({ ...payload, type: 'access' }, config.jwt.accessSecret, signOptions);
 }
 
-export function generateRefreshToken(payload: Omit<RefreshTokenPayload, 'type'>): string {
-  return jwt.sign(
-    { ...payload, type: 'refresh' },
-    config.jwt.refreshSecret,
-    refreshSignOptions
-  );
-}
-
+/** Verifies signature, algorithm, expiry and shape. Refresh tokens are opaque, so none are JWTs. */
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  const payload = jwt.verify(token, config.jwt.accessSecret, { algorithms: ['HS256'] }) as AccessTokenPayload;
-  if (payload.type !== 'access' || typeof payload.userId !== 'string') {
+  const payload = jwt.verify(token, config.jwt.accessSecret, { algorithms: ['HS256'] }) as Partial<AccessTokenPayload>;
+  if (payload.type !== 'access' || typeof payload.userId !== 'string' || typeof payload.sid !== 'string') {
     throw new Error('Not an access token');
   }
-  return payload;
-}
-
-export function verifyRefreshToken(token: string): RefreshTokenPayload {
-  return jwt.verify(token, config.jwt.refreshSecret) as RefreshTokenPayload;
-}
-
-export function decodeToken(token: string): jwt.JwtPayload | null {
-  try {
-    return jwt.decode(token) as jwt.JwtPayload;
-  } catch {
-    return null;
-  }
+  return payload as AccessTokenPayload;
 }

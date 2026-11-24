@@ -8,6 +8,8 @@ import {
   folderRenameSchema,
   folderMoveSchema,
   folderListQuerySchema,
+  folderTreeSchema,
+  folderDeleteSchema,
 } from './folders.validation';
 
 const router = Router();
@@ -32,6 +34,7 @@ router.get(
 // Get folder tree
 router.get(
   '/tree/:folderId?',
+  validate(folderTreeSchema),
   foldersController.getTree
 );
 
@@ -56,10 +59,10 @@ router.patch(
   foldersController.move
 );
 
-// Delete folder (soft delete)
+// Delete folder (moves to trash)
 router.delete(
   '/:folderId',
-  validate(folderIdParamSchema),
+  validate(folderDeleteSchema),
   foldersController.delete
 );
 

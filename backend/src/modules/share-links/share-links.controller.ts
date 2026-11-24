@@ -4,13 +4,25 @@ import { successResponse } from '@common/response';
 import { shareLinkService } from './share-links.service';
 import { createRequestLogger } from '@common/logger';
 import { activityLogService } from '@modules/activity/activity.service';
+import { presignFileDownload } from '@modules/files/files.controller';
 
-/** Password from the X-Share-Password header (preferred: not logged in URLs) or legacy ?password=. */
+/**
+ * Password from the X-Share-Password header (percent-encoded UTF-8, since headers are ASCII).
+ * `?password=` is still read for links shared with older clients.
+ */
 const sharePassword = (req: Request): string | undefined => {
   const header = req.get('x-share-password');
-  if (header) return header;
+  if (header) {
+    if (header.length > 1024) return undefined;
+    if (req.get('x-share-password-encoding') !== 'percent') return header;
+    try {
+      return decodeURIComponent(header);
+    } catch {
+      return undefined;
+    }
+  }
   const q = req.query.password;
-  return typeof q === 'string' && q ? q : undefined;
+  return typeof q === 'string' && q && q.length <= 1024 ? q : undefined;
 };
 
 interface AuthenticatedRequest extends Request {
@@ -161,21 +173,12 @@ export const shareLinkController = {
 
     const result = await shareLinkService.validateShareLinkAccess(token, 'download', sharePassword(req));
 
-    // Generate the URL first so a storage failure does not consume a download.
-
     log.info({ shareLinkId: result.shareLink.id }, 'Share link download initiated');
 
-    // Generate presigned download URL
-    // NOTE: Presigned URLs cannot be revoked once generated. They remain valid for their
-    // full duration (1 hour) even if the share link is revoked, expired, or download limit
-    // is reached. This is a fundamental limitation of S3 presigned URLs. The share-link
-    // validation above ensures the link is valid at the time of URL generation, but the
-    // generated URL itself cannot be invalidated server-side.
-    const { storageService } = await import('@common/storage');
-    const { url, expiresIn } = await storageService.generatePresignedDownloadUrl(
-      result.file.s3Key,
-      3600
-    );
+    // Presigned URLs cannot be revoked once issued, so they are short-lived
+    // (DOWNLOAD_URL_TTL_SECONDS). The URL is created first so that a storage failure does not
+    // consume a download, and released only after the atomic limit check succeeds.
+    const { url, expiresIn } = await presignFileDownload(result.file);
 
     await shareLinkService.consumeDownload(result.shareLink.id);
 

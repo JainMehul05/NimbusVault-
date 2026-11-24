@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { FileCategory } from '@prisma/client';
+import { config } from '@config/index';
+import { nameSchema } from '@common/names';
+import { queryBoolean } from '@common/validation';
+
+const fileIdParams = z.object({ fileId: z.string().uuid('Invalid file ID') });
 
 export const fileUploadSchema = z.object({
   body: z.object({
@@ -7,25 +12,15 @@ export const fileUploadSchema = z.object({
   }),
 });
 
-export const fileIdParamSchema = z.object({
-  params: z.object({
-    fileId: z.string().min(1, 'File ID is required'),
-  }),
-});
+export const fileIdParamSchema = z.object({ params: fileIdParams });
 
 export const fileRenameSchema = z.object({
-  params: z.object({
-    fileId: z.string().uuid('Invalid file ID'),
-  }),
-  body: z.object({
-    filename: z.string().min(1, 'Filename is required').max(255, 'Filename too long'),
-  }),
+  params: fileIdParams,
+  body: z.object({ filename: nameSchema('Filename') }),
 });
 
 export const fileMoveSchema = z.object({
-  params: z.object({
-    fileId: z.string().uuid('Invalid file ID'),
-  }),
+  params: fileIdParams,
   body: z.object({
     folderId: z.string().uuid('Invalid folder ID').nullable(),
   }),
@@ -36,9 +31,9 @@ export const fileListQuerySchema = z.object({
     // 'root' lists only files that are not inside any folder; omitting folderId lists all files.
     folderId: z.union([z.literal('root'), z.string().uuid('Invalid folder ID')]).optional(),
     category: z.nativeEnum(FileCategory).optional(),
-    status: z.enum(['UPLOADING', 'READY', 'FAILED']).optional(),
+    status: z.enum(['UPLOADING', 'READY', 'FAILED']).default('READY'),
     search: z.string().max(100, 'Search query too long').optional(),
-    page: z.coerce.number().int().positive().default(1),
+    page: z.coerce.number().int().positive().max(100000).default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
     sortBy: z.enum(['filename', 'sizeBytes', 'uploadedAt', 'category']).default('uploadedAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -46,25 +41,29 @@ export const fileListQuerySchema = z.object({
 });
 
 export const fileDownloadSchema = z.object({
-  params: z.object({
-    fileId: z.string().uuid('Invalid file ID'),
-  }),
-  query: z.object({
-    inline: z.coerce.boolean().default(false),
-  }),
+  params: fileIdParams,
+  query: z.object({ inline: queryBoolean }),
 });
 
 export const filePresignedUploadSchema = z.object({
   body: z.object({
-    filename: z.string().min(1, 'Filename is required').max(255, 'Filename too long'),
-    contentType: z.string().min(1, 'Content type is required'),
+    filename: nameSchema('Filename'),
+    contentType: z.string().min(1, 'Content type is required').max(255),
+    // Required: quota is reserved for exactly this many bytes before a URL is issued.
+    sizeBytes: z
+      .number()
+      .int()
+      .positive('Empty file not allowed')
+      .max(config.storage.maxFileBytes, 'File is too large'),
+    folderId: z.string().uuid('Invalid folder ID').nullable().optional(),
+    checksumSha256: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/i, 'checksumSha256 must be 64 hexadecimal characters')
+      .optional(),
   }),
 });
 
 export type FileUploadInput = z.infer<typeof fileUploadSchema>['body'];
-export type FileIdParam = z.infer<typeof fileIdParamSchema>['params'];
-export type FileRenameInput = z.infer<typeof fileRenameSchema>['body'];
-export type FileMoveInput = z.infer<typeof fileMoveSchema>['body'];
 export type FileListQuery = z.infer<typeof fileListQuerySchema>['query'];
 export type FileDownloadQuery = z.infer<typeof fileDownloadSchema>['query'];
 export type FilePresignedUploadInput = z.infer<typeof filePresignedUploadSchema>['body'];

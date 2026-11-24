@@ -3,8 +3,9 @@ import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
 import { createRequestLogger } from '@common/logger';
-import { authorizationService, hasPermission, type Action } from '@common/authorization';
+import { authorizationService, hasPermission, strongerLevel, type Action } from '@common/authorization';
 import { activityLogService } from '@modules/activity/activity.service';
+import { userService } from '@modules/users/user.service';
 
 export interface CreateShareInput {
   resourceType: ResourceType;
@@ -21,6 +22,8 @@ export interface UpdateShareInput {
 
 export interface ShareResult {
   permission: Permission;
+  /** False when the person already had access and the grant was updated (or left unchanged). */
+  created: boolean;
   grantee: { id: string; name: string; email: string };
 }
 
@@ -32,10 +35,8 @@ export class SharingService {
   }
 
   private async findUserByEmail(email: string) {
-    return this.prismaClient.user.findUnique({
-      where: { email },
-      select: { id: true, name: true, email: true },
-    });
+    const user = await userService.findByEmail(email);
+    return user && user.status === 'active' ? { id: user.id, name: user.name, email: user.email } : null;
   }
 
   /**
@@ -69,7 +70,9 @@ export class SharingService {
   async createOrUpdateShare(input: CreateShareInput): Promise<ShareResult> {
     const log = input.requestId ? createRequestLogger(input.requestId) : undefined;
 
-    // Validate grantee exists
+    // Authorize first, so only people who can share this item learn whether an account exists.
+    const resource = await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy);
+
     const grantee = await this.findUserByEmail(input.granteeEmail);
     if (!grantee) {
       throw AppError.notFound('User not found', ErrorCodes.NOT_OWNER);
@@ -79,8 +82,6 @@ export class SharingService {
     if (grantee.id === input.grantedBy) {
       throw AppError.badRequest('Cannot share with yourself', ErrorCodes.VALIDATION_ERROR);
     }
-
-    const resource = await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy);
 
     if (grantee.id === resource.ownerId) {
       throw AppError.badRequest('This person already owns the item', ErrorCodes.VALIDATION_ERROR);
@@ -153,7 +154,7 @@ export class SharingService {
       });
     }
 
-    return { permission, grantee };
+    return { permission, grantee, created: !existingPermission };
   }
 
   async listShares(resourceType: ResourceType, resourceId: string, userId: string): Promise<Array<Permission & { grantee: { id: string; name: string; email: string } }>> {
@@ -284,9 +285,13 @@ export class SharingService {
     });
   }
 
-  async listResourcesSharedWithUser(userId: string): Promise<{
+  async listResourcesSharedWithUser(
+    userId: string,
+    options: { page: number; limit: number } = { page: 1, limit: Number.MAX_SAFE_INTEGER }
+  ): Promise<{
     files: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; aiStatus: string; permission: PermissionLevel; owner: { id: string; name: string; email: string } }>;
     folders: Array<{ id: string; name: string; permission: PermissionLevel; owner: { id: string; name: string; email: string } }>;
+    total: number;
   }> {
     // Get direct file permissions
     const filePermissions = await this.prismaClient.permission.findMany({
@@ -301,7 +306,7 @@ export class SharingService {
     // Get file details for file permissions
     const fileIds = filePermissions.map(p => p.resourceId);
     const files = await this.prismaClient.file.findMany({
-      where: { id: { in: fileIds }, deletedAt: null },
+      where: { id: { in: fileIds }, deletedAt: null, status: 'READY' },
       select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true, aiStatus: true },
     });
     const fileMap = new Map(files.map(f => [f.id, f]));
@@ -346,7 +351,7 @@ export class SharingService {
     let inheritedFiles: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; ownerId: string; aiStatus: string }> = [];
     if (sharedFolderIds.length > 0) {
       inheritedFiles = await this.prismaClient.file.findMany({
-        where: { folderId: { in: sharedFolderIds }, deletedAt: null },
+        where: { folderId: { in: sharedFolderIds }, deletedAt: null, status: 'READY' },
         select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true, aiStatus: true },
       });
 
@@ -371,13 +376,14 @@ export class SharingService {
           category: file.category,
           folderId: file.folderId,
           aiStatus: file.aiStatus,
-          permission: p.level,
+          // A file can be shared directly and through its folder: the stronger grant applies.
+          permission: strongerLevel(p.level, file.folderId ? folderPermissionMap.get(file.folderId) ?? null : null) as PermissionLevel,
           owner: fileOwnerMap.get(file.ownerId)!,
         };
       })
       .filter((f): f is NonNullable<typeof f> => f !== null);
 
-    const inheritedFileResults = inheritedFiles.map(f => ({
+    const inheritedFileResults = inheritedFiles.filter(f => !fileMap.has(f.id)).map(f => ({
       id: f.id,
       filename: f.filename,
       sizeBytes: f.sizeBytes,
@@ -403,24 +409,35 @@ export class SharingService {
       })
       .filter((f): f is NonNullable<typeof f> => f !== null);
 
-    return { files: [...fileResults, ...inheritedFileResults], folders: folderResults };
+    // One ordered list (folders first) so that pages are stable and cover both kinds.
+    const byName = (a: string, b: string) => a.localeCompare(b);
+    const folderList = folderResults.sort((a, b) => byName(a.name, b.name));
+    const fileList = [...fileResults, ...inheritedFileResults].sort((a, b) => byName(a.filename, b.filename));
+    const start = (options.page - 1) * options.limit;
+    const end = start + options.limit;
+    return {
+      folders: folderList.slice(start, end),
+      files: fileList.slice(Math.max(0, start - folderList.length), Math.max(0, end - folderList.length)),
+      total: folderList.length + fileList.length,
+    };
   }
 
   async listResourcesSharedByUser(userId: string): Promise<{
     files: Array<{ id: string; filename: string; shares: Array<{ grantee: { id: string; name: string; email: string }; level: PermissionLevel }> }>;
     folders: Array<{ id: string; name: string; shares: Array<{ grantee: { id: string; name: string; email: string }; level: PermissionLevel }> }>;
   }> {
-    // Get files owned by user
-    const files = await this.prismaClient.file.findMany({
-      where: { ownerId: userId, deletedAt: null },
-      select: { id: true, filename: true },
-    });
+    // Only owned items that have at least one grant (avoids loading the whole library).
+    const files = await this.prismaClient.$queryRaw<Array<{ id: string; filename: string }>>`
+      SELECT f."id", f."filename" FROM "files" f
+      WHERE f."ownerId" = ${userId} AND f."deletedAt" IS NULL AND EXISTS (
+        SELECT 1 FROM "permissions" p WHERE p."resourceType" = 'FILE'::"ResourceType" AND p."resourceId" = f."id")
+      ORDER BY f."filename"`;
 
-    // Get folders owned by user
-    const folders = await this.prismaClient.folder.findMany({
-      where: { ownerId: userId, deletedAt: null },
-      select: { id: true, name: true },
-    });
+    const folders = await this.prismaClient.$queryRaw<Array<{ id: string; name: string }>>`
+      SELECT d."id", d."name" FROM "folders" d
+      WHERE d."ownerId" = ${userId} AND d."deletedAt" IS NULL AND EXISTS (
+        SELECT 1 FROM "permissions" p WHERE p."resourceType" = 'FOLDER'::"ResourceType" AND p."resourceId" = d."id")
+      ORDER BY d."name"`;
 
     // Get file permissions for these files
     const fileIds = files.map(f => f.id);

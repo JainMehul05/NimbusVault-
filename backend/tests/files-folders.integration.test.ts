@@ -229,7 +229,7 @@ describe('File and Folder Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.downloadUrl).toBeDefined();
       expect(response.body.data.downloadUrl).toContain('localhost:4566');
-      expect(response.body.data.expiresIn).toBe(3600);
+      expect(response.body.data.expiresIn).toBe(config.storage.downloadUrlTtlSeconds);
       expect(response.body.data.filename).toBe('download.txt');
 
       // Verify the URL works by fetching the file
@@ -269,16 +269,16 @@ describe('File and Folder Integration Tests', () => {
       const response = await request(app)
         .post('/api/v1/files/presigned-upload')
         .set('Authorization', `Bearer ${user1AccessToken}`)
-        .send({ filename, contentType })
+        .send({ filename, contentType, sizeBytes: fileContent.length })
         .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.key).toBeDefined();
       expect(response.body.data.url).toBeDefined();
       expect(response.body.data.url).toContain('localhost:4566');
-      expect(response.body.data.expiresIn).toBe(3600);
+      expect(response.body.data.expiresIn).toBe(config.storage.uploadUrlTtlSeconds);
 
-      const { key, url } = response.body.data;
+      const { key, url, fileId } = response.body.data;
 
       // Upload directly to S3 using presigned URL
       const uploadResponse = await fetch(url, {
@@ -293,23 +293,18 @@ describe('File and Folder Integration Tests', () => {
       expect(metadata.size).toBe(fileContent.length);
       expect(metadata.contentType).toBe(contentType);
 
-      // Verify file record can be created with the uploaded key
-      const fileRecord = await prisma.file.create({
-        data: {
-          filename,
-          sizeBytes: BigInt(fileContent.length),
-          mimeType: contentType,
-          category: 'document',
-          ownerId: user1Id,
-          folderId: null,
-          s3Key: key,
-          checksumSha256: require('crypto').createHash('sha256').update(fileContent).digest('hex'),
-          status: 'READY',
-        },
-      });
+      // The server verifies the object and creates the finished record itself
+      const completed = await request(app)
+        .post(`/api/v1/files/${fileId}/complete`)
+        .set('Authorization', `Bearer ${user1AccessToken}`)
+        .expect(200);
+      expect(completed.body.data.status).toBe('READY');
+      expect(completed.body.data.checksumSha256).toBe(require('crypto').createHash('sha256').update(fileContent).digest('hex'));
 
-      expect(fileRecord.id).toBeDefined();
-      expect(fileRecord.s3Key).toBe(key);
+      const fileRecord = await prisma.file.findUniqueOrThrow({ where: { id: fileId } });
+      expect(fileRecord.ownerId).toBe(user1Id);
+      expect(fileRecord.s3Key).not.toBe(key);
+      await expect(storageService.getMetadata(key)).rejects.toMatchObject({ code: 'S3_OBJECT_MISSING' });
 
       // Verify download works
       const downloadResponse = await request(app)
@@ -322,7 +317,7 @@ describe('File and Folder Integration Tests', () => {
       expect(await download.text()).toBe('presigned upload test content');
 
       // Cleanup
-      await storageService.delete(key);
+      await storageService.delete(fileRecord.s3Key);
       await prisma.file.delete({ where: { id: fileRecord.id } });
     });
 
@@ -330,7 +325,7 @@ describe('File and Folder Integration Tests', () => {
       const response = await request(app)
         .post('/api/v1/files/presigned-upload')
         .set('Authorization', `Bearer ${user1AccessToken}`)
-        .send({ filename: 'test.exe', contentType: 'application/x-msdownload' })
+        .send({ filename: 'test.exe', contentType: 'application/x-msdownload', sizeBytes: 10 })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -341,7 +336,7 @@ describe('File and Folder Integration Tests', () => {
       const response = await request(app)
         .post('/api/v1/files/presigned-upload')
         .set('Authorization', `Bearer ${user2AccessToken}`)
-        .send({ filename: 'test.txt', contentType: 'text/plain' })
+        .send({ filename: 'test.txt', contentType: 'text/plain', sizeBytes: 10 })
         .expect(201);
 
       // User2 can generate URL but it will have their userId in the key

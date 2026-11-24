@@ -6,9 +6,19 @@ export const createShareLinkSchema = z.object({
   body: z.object({
     fileId: z.string().uuid(),
     permission: sharePermissionSchema.default('VIEW'),
-    password: z.string().min(4).max(100).optional(),
-    expiresAt: z.string().datetime().optional(),
-    maxDownloads: z.coerce.number().int().positive().optional(),
+    // bcrypt reads at most 72 bytes.
+    password: z
+      .string()
+      .min(4, 'Password must be at least 4 characters')
+      .max(72, 'Password too long')
+      .refine((v) => Buffer.byteLength(v, 'utf8') <= 72, 'Password too long')
+      .optional(),
+    expiresAt: z
+      .string()
+      .datetime()
+      .refine((v) => new Date(v).getTime() > Date.now(), 'Expiry must be in the future')
+      .optional(),
+    maxDownloads: z.coerce.number().int().positive().max(1_000_000).optional(),
   }),
 });
 
@@ -26,9 +36,6 @@ export const revokeShareLinkSchema = z.object({
 
 export const accessShareLinkSchema = z.object({
   params: z.object({
-    token: z.string().min(1),
-  }),
-  query: z.object({
-    password: z.string().optional(),
+    token: z.string().min(1).max(100),
   }),
 });

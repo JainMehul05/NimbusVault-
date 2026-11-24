@@ -18,7 +18,7 @@ export const activityLogQuerySchema = z.object({
       endDate: z.string().datetime().optional(),
       ...pagination,
     })
-    .refine((q) => !q.startDate || !q.endDate || q.startDate <= q.endDate, {
+    .refine((q) => !q.startDate || !q.endDate || new Date(q.startDate) <= new Date(q.endDate), {
       message: 'startDate must be before endDate',
       path: ['startDate'],
     }),

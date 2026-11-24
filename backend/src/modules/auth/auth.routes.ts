@@ -1,56 +1,46 @@
 import { Router } from 'express';
-import type { Request, Response, NextFunction } from 'express';
 import { validate } from '@common/validation';
-import { asyncHandler } from '@common/async-handler';
 import { authController } from './auth.controller';
-import { registerSchema, loginSchema, refreshSchema, logoutSchema } from './auth.validation';
-import { verifyAccessToken } from './jwt.utils';
-import { AppError } from '@common/errors';
-import rateLimit from 'express-rate-limit';
-import { config } from '@config/index';
-import { errorResponse } from '@common/response';
+import { cookieCsrfGuard } from './auth.cookies';
+import { authenticate } from './auth.middleware';
+import { accountFailureLimiter, accountIpFailureLimiter, credentialLimiter, refreshLimiter } from './auth.limits';
+import {
+  changePasswordSchema,
+  loginSchema,
+  logoutSchema,
+  refreshSchema,
+  registerSchema,
+  sessionIdSchema,
+} from './auth.validation';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    type: string;
-  };
-}
+// Re-exported for the feature routers that import it from here.
+export { authenticate } from './auth.middleware';
 
 const router = Router();
 
-export const authenticate = asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw AppError.unauthorized('Access token required', 'TOKEN_REQUIRED');
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const payload = verifyAccessToken(token);
-    req.user = payload;
-    next();
-  } catch {
-    throw AppError.unauthorized('Invalid or expired token', 'INVALID_TOKEN');
-  }
-});
-
-// Brute-force protection for credential endpoints (per IP), stricter than the global limit.
-const credentialLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: config.rateLimit.authMax,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: errorResponse('Too many attempts. Please wait and try again.', 'RATE_LIMIT_EXCEEDED'),
+// Auth responses carry credentials and must never be cached by browsers or intermediaries.
+router.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
 });
 
 router.post('/register', credentialLimiter, validate(registerSchema), authController.register);
-router.post('/login', credentialLimiter, validate(loginSchema), authController.login);
-router.post('/refresh', credentialLimiter, validate(refreshSchema), authController.refresh);
-router.post('/logout', validate(logoutSchema), authController.logout);
+router.post(
+  '/login',
+  credentialLimiter,
+  validate(loginSchema),
+  accountIpFailureLimiter,
+  accountFailureLimiter,
+  authController.login
+);
+router.post('/refresh', refreshLimiter, validate(refreshSchema), cookieCsrfGuard, authController.refresh);
+router.post('/logout', refreshLimiter, validate(logoutSchema), cookieCsrfGuard, authController.logout);
 router.get('/me', authenticate, authController.me);
+
+// Session management
+router.get('/sessions', authenticate, authController.listSessions);
+router.delete('/sessions', authenticate, authController.revokeOtherSessions);
+router.delete('/sessions/:sessionId', authenticate, validate(sessionIdSchema), authController.revokeSession);
+router.post('/change-password', credentialLimiter, authenticate, validate(changePasswordSchema), authController.changePassword);
 
 export default router;

@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { nameSchema } from '@common/names';
+import { queryBoolean } from '@common/validation';
 
 export const folderCreateSchema = z.object({
   body: z.object({
-    name: z.string().min(1, 'Folder name is required').max(255, 'Folder name too long'),
+    name: nameSchema('Folder name'),
     parentFolderId: z.string().uuid('Invalid parent folder ID').nullable().optional(),
   }),
 });
@@ -15,15 +17,22 @@ export const folderIdParamSchema = z.object({
   }),
 });
 
+export const folderTreeSchema = z.object({
+  params: z.object({
+    folderId: z.union([z.literal('root'), z.string().uuid('Invalid folder ID')]).optional(),
+  }),
+});
 
+export const folderDeleteSchema = z.object({
+  params: z.object({ folderId: z.string().uuid('Invalid folder ID') }),
+  query: z.object({ deleteDescendants: queryBoolean }),
+});
 
 export const folderRenameSchema = z.object({
   params: z.object({
     folderId: z.string().uuid('Invalid folder ID'),
   }),
-  body: z.object({
-    name: z.string().min(1, 'Folder name is required').max(255, 'Folder name too long'),
-  }),
+  body: z.object({ name: nameSchema('Folder name') }),
 });
 
 export const folderMoveSchema = z.object({
@@ -38,7 +47,7 @@ export const folderMoveSchema = z.object({
 export const folderListQuerySchema = z.object({
   query: z.object({
     parentFolderId: z.string().uuid('Invalid parent folder ID').nullable().optional(),
-    page: z.coerce.number().int().positive().default(1),
+    page: z.coerce.number().int().positive().max(100000).default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
     sortBy: z.enum(['name', 'createdAt', 'depth']).default('name'),
     sortOrder: z.enum(['asc', 'desc']).default('asc'),

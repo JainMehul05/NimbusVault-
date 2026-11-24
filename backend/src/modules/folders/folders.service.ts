@@ -2,16 +2,23 @@ import type { PrismaClient, Folder, Prisma } from '@prisma/client';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
-import { logger } from '@common/logger';
-import { authorizationService, type PermissionLevel } from '@common/authorization';
+import { authorizationService, MAX_FOLDER_DEPTH, type PermissionLevel } from '@common/authorization';
+import { folderTreeLock, lockInTransaction } from '@common/locks';
+import { releaseQuota } from '@modules/files/quota.service';
 
 type TransactionClient = Prisma.TransactionClient;
+
+/** Deeper than this and permission inheritance could no longer be resolved. */
+const assertDepth = (depth: number) => {
+  if (depth >= MAX_FOLDER_DEPTH) {
+    throw AppError.badRequest(`Folders can be nested at most ${MAX_FOLDER_DEPTH} levels deep`, 'FOLDER_TOO_DEEP');
+  }
+};
 
 export interface CreateFolderInput {
   name: string;
   ownerId: string;
   parentFolderId: string | null;
-  depth: number;
 }
 
 export interface FolderListResult {
@@ -35,52 +42,25 @@ export interface FolderListResult {
   totalPages: number;
 }
 
-export interface SafeFolder {
+export interface FolderTreeNode {
   id: string;
   name: string;
   parentFolderId: string | null;
   depth: number;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
-  childrenCount: number;
-  filesCount: number;
+  children: FolderTreeNode[];
 }
 
 export class FolderService {
   constructor(private readonly prismaClient: PrismaClient = prisma) {}
 
-  private toSafeFolder(folder: Folder & { _count?: { children: number; files: number } }): SafeFolder {
-    return {
-      id: folder.id,
-      name: folder.name,
-      parentFolderId: folder.parentFolderId,
-      depth: folder.depth,
-      createdAt: folder.createdAt,
-      updatedAt: folder.updatedAt,
-      deletedAt: folder.deletedAt,
-      childrenCount: folder._count?.children || 0,
-      filesCount: folder._count?.files || 0,
-    };
-  }
-
-  async calculateDepth(parentFolderId: string | null): Promise<number> {
-    if (!parentFolderId) return 0;
-
-    const parent = await this.prismaClient.folder.findUnique({
-      where: { id: parentFolderId },
-      select: { depth: true },
-    });
-
-    if (!parent) {
-      throw AppError.notFound('Parent folder not found', ErrorCodes.FOLDER_NOT_FOUND);
-    }
-
-    return parent.depth + 1;
-  }
-
-  async validateFolderOwnership(folderId: string, userId: string): Promise<Folder> {
-    const folder = await this.prismaClient.folder.findFirst({
+  async validateFolderOwnership(
+    folderId: string,
+    userId: string,
+    db: PrismaClient | TransactionClient = this.prismaClient
+  ): Promise<Folder> {
+    const folder = await db.folder.findFirst({
       where: {
         id: folderId,
         ownerId: userId,
@@ -95,7 +75,7 @@ export class FolderService {
     return folder;
   }
 
-  async checkCircularReference(folderId: string, newParentId: string | null): Promise<void> {
+  private async checkCircularReference(tx: TransactionClient, folderId: string, newParentId: string | null): Promise<void> {
     if (!newParentId) return;
     if (folderId === newParentId) {
       throw AppError.badRequest('Cannot move folder into itself', ErrorCodes.FOLDER_CYCLE);
@@ -107,7 +87,7 @@ export class FolderService {
       if (currentId === folderId) {
         throw AppError.badRequest('Cannot move folder into its own descendant', ErrorCodes.FOLDER_CYCLE);
       }
-      const parentFolder: { parentFolderId: string | null } | null = await this.prismaClient.folder.findUnique({
+      const parentFolder: { parentFolderId: string | null } | null = await tx.folder.findUnique({
         where: { id: currentId },
         select: { parentFolderId: true },
       });
@@ -115,19 +95,17 @@ export class FolderService {
     }
   }
 
-  async checkDuplicateName(ownerId: string, parentFolderId: string | null, name: string, excludeId?: string): Promise<void> {
-    const where: any = {
-      ownerId,
-      parentFolderId,
-      name,
-      deletedAt: null,
-    };
-
-    if (excludeId) {
-      where.NOT = { id: excludeId };
-    }
-
-    const existing = await this.prismaClient.folder.findFirst({ where });
+  private async checkDuplicateName(
+    tx: TransactionClient,
+    ownerId: string,
+    parentFolderId: string | null,
+    name: string,
+    excludeId?: string
+  ): Promise<void> {
+    const existing = await tx.folder.findFirst({
+      where: { ownerId, parentFolderId, name, deletedAt: null, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+      select: { id: true },
+    });
 
     if (existing) {
       throw AppError.conflict('A folder with this name already exists in this location', ErrorCodes.NAME_CONFLICT);
@@ -135,32 +113,14 @@ export class FolderService {
   }
 
   async create(input: CreateFolderInput): Promise<Folder> {
-    return this.prismaClient.folder.create({
-      data: {
-        name: input.name,
-        ownerId: input.ownerId,
-        parentFolderId: input.parentFolderId,
-        depth: input.depth,
-      },
-    });
-  }
-
-  async findById(folderId: string, userId: string): Promise<Folder | null> {
-    return this.prismaClient.folder.findFirst({
-      where: {
-        id: folderId,
-        ownerId: userId,
-        deletedAt: null,
-      },
-    });
-  }
-
-  async findByIdAnyStatus(folderId: string, userId: string): Promise<Folder | null> {
-    return this.prismaClient.folder.findFirst({
-      where: {
-        id: folderId,
-        ownerId: userId,
-      },
+    return this.prismaClient.$transaction(async (tx) => {
+      await lockInTransaction(tx, folderTreeLock(input.ownerId));
+      const depth = input.parentFolderId
+        ? (await this.validateFolderOwnership(input.parentFolderId, input.ownerId, tx)).depth + 1
+        : 0;
+      assertDepth(depth);
+      await this.checkDuplicateName(tx, input.ownerId, input.parentFolderId, input.name);
+      return tx.folder.create({ data: { ...input, depth } });
     });
   }
 
@@ -176,14 +136,11 @@ export class FolderService {
   ): Promise<FolderListResult> {
     const { parentFolderId, page, limit, sortBy, sortOrder } = options;
 
-    const where: any = {
+    const where: Prisma.FolderWhereInput = {
       ownerId: userId,
       deletedAt: null,
+      ...(parentFolderId !== undefined ? { parentFolderId } : {}),
     };
-
-    if (parentFolderId !== undefined) {
-      where.parentFolderId = parentFolderId;
-    }
 
     const validSortFields = ['name', 'createdAt', 'depth'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
@@ -191,14 +148,14 @@ export class FolderService {
     const [folders, total] = await Promise.all([
       this.prismaClient.folder.findMany({
         where,
-        orderBy: { [sortField]: sortOrder },
+        orderBy: [{ [sortField]: sortOrder }, { id: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
         include: {
           _count: {
             select: {
-              children: true,
-              files: true,
+              children: { where: { deletedAt: null } },
+              files: { where: { deletedAt: null, status: 'READY' } },
             },
           },
         },
@@ -215,7 +172,7 @@ export class FolderService {
     };
   }
 
-  async getFolderTree(userId: string, rootFolderId: string | null = null): Promise<any> {
+  async getFolderTree(userId: string, rootFolderId: string | null = null): Promise<FolderTreeNode[]> {
     // Fetch all folders for this user in a single query
     const allFolders = await this.prismaClient.folder.findMany({
       where: {
@@ -244,7 +201,7 @@ export class FolderService {
     }
 
     // Recursive function to build tree
-    const buildTree = (parentId: string | null): any[] => {
+    const buildTree = (parentId: string | null): FolderTreeNode[] => {
       const children = childrenMap.get(parentId) || [];
       return children.map((folder) => ({
         id: folder.id,
@@ -262,72 +219,51 @@ export class FolderService {
   }
 
   async rename(folderId: string, userId: string, newName: string): Promise<{ folder: Folder; oldName: string }> {
-    const folder = await this.validateFolderOwnership(folderId, userId);
-
-    await this.checkDuplicateName(userId, folder.parentFolderId, newName, folderId);
-
-    const updated = await this.prismaClient.folder.update({
-      where: { id: folderId },
-      data: { name: newName },
+    return this.prismaClient.$transaction(async (tx) => {
+      await lockInTransaction(tx, folderTreeLock(userId));
+      const folder = await this.validateFolderOwnership(folderId, userId, tx);
+      await this.checkDuplicateName(tx, userId, folder.parentFolderId, newName, folderId);
+      const updated = await tx.folder.update({ where: { id: folderId }, data: { name: newName } });
+      return { folder: updated, oldName: folder.name };
     });
-    return { folder: updated, oldName: folder.name };
   }
 
   async move(folderId: string, userId: string, newParentFolderId: string | null): Promise<{ folder: Folder; previousParentId: string | null }> {
-    const folder = await this.validateFolderOwnership(folderId, userId);
+    return this.prismaClient.$transaction(async (tx) => {
+      // All tree checks happen under one per-owner lock: two concurrent moves could otherwise
+      // each pass the cycle check and together create a cycle.
+      await lockInTransaction(tx, folderTreeLock(userId));
+      const folder = await this.validateFolderOwnership(folderId, userId, tx);
+      await this.checkCircularReference(tx, folderId, newParentFolderId);
 
-    await this.checkCircularReference(folderId, newParentFolderId);
+      const newDepth = newParentFolderId
+        ? (await this.validateFolderOwnership(newParentFolderId, userId, tx)).depth + 1
+        : 0;
+      const depthDiff = newDepth - folder.depth;
 
-    let newDepth = 0;
-    if (newParentFolderId) {
-      const newParent = await this.validateFolderOwnership(newParentFolderId, userId);
-      newDepth = newParent.depth + 1;
-    }
-
-    await this.checkDuplicateName(userId, newParentFolderId, folder.name, folderId);
-
-    // Calculate depth difference for descendants
-    const depthDiff = newDepth - folder.depth;
-
-    // Update folder and all descendants in a transaction
-    const moved = await this.prismaClient.$transaction(async (tx) => {
-      // Update the folder itself
-      const updatedFolder = await tx.folder.update({
-        where: { id: folderId },
-        data: {
-          parentFolderId: newParentFolderId,
-          depth: newDepth,
-        },
-      });
-
-      // Update all descendants' depth
-      if (depthDiff !== 0) {
-        await this.updateDescendantsDepth(tx, folderId, depthDiff);
+      const descendants = await this.getDescendantIds(tx, folderId);
+      if (descendants.length) {
+        const deepest = await tx.folder.aggregate({ where: { id: { in: descendants } }, _max: { depth: true } });
+        assertDepth((deepest._max.depth ?? 0) + depthDiff);
       }
+      assertDepth(newDepth);
+      await this.checkDuplicateName(tx, userId, newParentFolderId, folder.name, folderId);
 
-      return updatedFolder;
-    });
-    return { folder: moved, previousParentId: folder.parentFolderId };
-  }
-
-  private async updateDescendantsDepth(tx: TransactionClient, folderId: string, depthDiff: number): Promise<void> {
-    const children = await tx.folder.findMany({
-      where: { parentFolderId: folderId },
-      select: { id: true },
-    });
-
-    for (const child of children) {
-      await tx.folder.update({
-        where: { id: child.id },
-        data: { depth: { increment: depthDiff } },
+      const moved = await tx.folder.update({
+        where: { id: folderId },
+        data: { parentFolderId: newParentFolderId, depth: newDepth },
       });
-      await this.updateDescendantsDepth(tx, child.id, depthDiff);
-    }
+      if (depthDiff !== 0 && descendants.length) {
+        await tx.folder.updateMany({ where: { id: { in: descendants } }, data: { depth: { increment: depthDiff } } });
+      }
+      return { folder: moved, previousParentId: folder.parentFolderId };
+    });
   }
 
   /**
-   * Soft-deletes a folder (owner only). With `deleteDescendants`, every subfolder and file is
-   * deleted in the same transaction and their storage is returned to the owner's quota.
+   * Moves a folder to the trash (owner only). With `deleteDescendants`, every subfolder and file
+   * is deleted in the same transaction, with the same timestamp (so they can be restored
+   * together), and their storage is returned to the owner's quota.
    * Returns the deleted folder plus the ids of files that were deleted.
    */
   async softDelete(
@@ -335,105 +271,54 @@ export class FolderService {
     userId: string,
     options?: { deleteDescendants?: boolean }
   ): Promise<{ folder: Folder; deletedFileIds: string[] }> {
-    await this.validateFolderOwnership(folderId, userId);
     const { deleteDescendants = false } = options || {};
     const now = new Date();
 
-    if (deleteDescendants) {
-      return this.prismaClient.$transaction(async (tx) => {
-        const descendantFolderIds = await this.getAllDescendantIds(tx, folderId);
-        const allFolderIds = [folderId, ...descendantFolderIds];
+    return this.prismaClient.$transaction(async (tx) => {
+      await lockInTransaction(tx, folderTreeLock(userId));
+      await this.validateFolderOwnership(folderId, userId, tx);
 
-        const files = await tx.file.findMany({
-          where: { folderId: { in: allFolderIds }, deletedAt: null },
-          select: { id: true, sizeBytes: true },
-        });
-        const freed = files.reduce((sum, f) => sum + f.sizeBytes, 0n);
+      const descendantFolderIds = await this.getDescendantIds(tx, folderId);
+      const allFolderIds = [folderId, ...descendantFolderIds];
 
-        if (files.length) {
-          await tx.file.updateMany({
-            where: { id: { in: files.map((f) => f.id) }, deletedAt: null },
-            data: { deletedAt: now },
-          });
-          await tx.user.update({ where: { id: userId }, data: { storageUsedBytes: { decrement: freed } } });
+      if (!deleteDescendants) {
+        const filesCount = await tx.file.count({ where: { folderId, deletedAt: null } });
+        const childrenCount = await tx.folder.count({ where: { parentFolderId: folderId, deletedAt: null } });
+        if (childrenCount > 0 || filesCount > 0) {
+          throw AppError.conflict(
+            'Folder is not empty. Use deleteDescendants option to delete with all contents.',
+            ErrorCodes.NAME_CONFLICT,
+            { childrenCount, filesCount }
+          );
         }
-
-        if (descendantFolderIds.length) {
-          await tx.folder.updateMany({ where: { id: { in: descendantFolderIds }, deletedAt: null }, data: { deletedAt: now } });
-        }
-
-        const folder = await tx.folder.update({ where: { id: folderId }, data: { deletedAt: now } });
-        return { folder, deletedFileIds: files.map((f) => f.id) };
-      });
-    }
-
-    const childrenCount = await this.prismaClient.folder.count({
-      where: { parentFolderId: folderId, deletedAt: null },
-    });
-
-    const filesCount = await this.prismaClient.file.count({
-      where: { folderId, deletedAt: null },
-    });
-
-    if (childrenCount > 0 || filesCount > 0) {
-      throw AppError.conflict(
-        'Folder is not empty. Use deleteDescendants option to delete with all contents.',
-        ErrorCodes.NAME_CONFLICT,
-        { childrenCount, filesCount }
-      );
-    }
-
-    const folder = await this.prismaClient.folder.update({
-      where: { id: folderId },
-      data: { deletedAt: now },
-    });
-    return { folder, deletedFileIds: [] };
-  }
-
-  private async getAllDescendantIds(tx: TransactionClient, folderId: string): Promise<string[]> {
-    const children = await tx.folder.findMany({
-      where: { parentFolderId: folderId, deletedAt: null },
-      select: { id: true },
-    });
-
-    let allIds: string[] = [];
-    for (const child of children) {
-      allIds.push(child.id);
-      const descendantIds = await this.getAllDescendantIds(tx, child.id);
-      allIds = [...allIds, ...descendantIds];
-    }
-
-    return allIds;
-  }
-
-  async permanentDelete(folderId: string, userId: string): Promise<void> {
-    const folder = await this.findByIdAnyStatus(folderId, userId);
-    if (!folder) {
-      throw AppError.notFound('Folder not found', ErrorCodes.FOLDER_NOT_FOUND);
-    }
-
-    // Delete all files in this folder and descendants from storage and DB
-    const descendantFolderIds = await this.getAllDescendantIds(this.prismaClient, folderId);
-    const allFolderIds = [folderId, ...descendantFolderIds];
-
-    const files = await this.prismaClient.file.findMany({
-      where: { folderId: { in: allFolderIds } },
-      select: { s3Key: true, id: true },
-    });
-
-    // Delete from storage
-    for (const file of files) {
-      try {
-        await import('@common/storage').then(({ storageService }) => storageService.delete(file.s3Key));
-      } catch (error) {
-        logger.error({ err: error, s3Key: file.s3Key }, 'Failed to delete file from storage during folder deletion');
       }
-    }
 
-    // Delete from database (cascade will handle files and descendant folders)
-    await this.prismaClient.folder.delete({
-      where: { id: folderId },
+      // Folders first: uploads re-check their folder before recording a file, so none can land
+      // in this subtree after this point. In-progress presigned uploads are left for the sweeper.
+      await tx.folder.updateMany({ where: { id: { in: allFolderIds }, deletedAt: null }, data: { deletedAt: now } });
+
+      const deletedFiles = await tx.$queryRaw<Array<{ id: string; sizeBytes: bigint }>>`
+        UPDATE "files" SET "deletedAt" = ${now.toISOString()}::timestamp
+        WHERE "folderId" = ANY(${allFolderIds}) AND "deletedAt" IS NULL AND "status" <> 'UPLOADING'::"FileStatus"
+        RETURNING "id", "sizeBytes"`;
+      const freed = deletedFiles.reduce((sum, f) => sum + BigInt(f.sizeBytes), 0n);
+      if (freed > 0n) await releaseQuota(tx, userId, freed);
+
+      const folder = await tx.folder.findUniqueOrThrow({ where: { id: folderId } });
+      return { folder, deletedFileIds: deletedFiles.map((f) => f.id) };
     });
+  }
+
+  /** Live descendants of a folder (excluding itself), at any depth, in one query. */
+  private async getDescendantIds(tx: TransactionClient, folderId: string): Promise<string[]> {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      WITH RECURSIVE sub(id) AS (
+        SELECT "id" FROM "folders" WHERE "parentFolderId" = ${folderId} AND "deletedAt" IS NULL
+        UNION
+        SELECT f."id" FROM "folders" f JOIN sub ON f."parentFolderId" = sub.id WHERE f."deletedAt" IS NULL
+      )
+      SELECT id FROM sub`;
+    return rows.map((r) => r.id);
   }
 
   /**
@@ -490,9 +375,10 @@ export class FolderService {
       }),
       this.prismaClient.file.findMany({
         where: folder
-          ? { folderId: folder.id, deletedAt: null }
-          : { ownerId: userId, folderId: null, deletedAt: null },
+          ? { folderId: folder.id, deletedAt: null, status: 'READY' }
+          : { ownerId: userId, folderId: null, deletedAt: null, status: 'READY' },
         orderBy: { uploadedAt: 'desc' },
+        take: 1000,
         select: fileSelect,
       }),
     ]);

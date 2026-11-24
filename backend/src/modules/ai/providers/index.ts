@@ -9,7 +9,7 @@ function buildEmbeddingProvider(): EmbeddingProvider | null {
   const c = config.ai.embedding;
   switch (c.provider) {
     case 'local':
-      return new LocalEmbeddingProvider(c.model, c.dimensions, c.localCacheDir);
+      return new LocalEmbeddingProvider(c.model, c.dimensions, c.localCacheDir, c.allowRemoteModels);
     case 'openai':
       // An API key is required for the public OpenAI endpoint; local gateways may not need one.
       if (!c.apiKey && c.baseUrl.includes('api.openai.com')) return null;

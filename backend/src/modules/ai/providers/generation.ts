@@ -45,6 +45,12 @@ export class OpenAICompatibleGenerationProvider implements GenerationProvider {
   }
 }
 
+/**
+ * Room for adaptive thinking, which current Claude models run by default and count towards
+ * max_tokens. Without it a short answer budget could be used up before any text is written.
+ */
+const ANTHROPIC_THINKING_HEADROOM = 4096;
+
 /** Anthropic Messages API (Claude), the documented fallback provider. */
 export class AnthropicGenerationProvider implements GenerationProvider {
   readonly name = 'anthropic';
@@ -71,18 +77,24 @@ export class AnthropicGenerationProvider implements GenerationProvider {
         model: this.model,
         system: request.system,
         messages: request.messages,
-        max_tokens: request.maxTokens,
-        temperature: request.temperature ?? 0,
+        max_tokens: request.maxTokens + ANTHROPIC_THINKING_HEADROOM,
+        // No sampling parameters: current Claude models reject any non-default temperature.
       },
       { 'x-api-key': this.apiKey, 'anthropic-version': '2023-06-01' },
       this.timeoutMs
     );
-    const text = (data?.content ?? [])
+    if (data?.stop_reason === 'refusal') {
+      throw new AiProviderError('The AI provider declined this request', false);
+    }
+    if (!Array.isArray(data?.content)) {
+      throw new AiProviderError('Generation provider returned no text', true);
+    }
+    const text = data.content
       .filter((b) => b.type === 'text' && typeof b.text === 'string')
       .map((b) => b.text)
       .join('');
-    if (!data?.content) {
-      throw new AiProviderError('Generation provider returned no text', true);
+    if (!text) {
+      throw new AiProviderError('Generation provider returned no text', data.stop_reason !== 'max_tokens');
     }
     return {
       text,

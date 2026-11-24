@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { config } from '@config/index';
 import { createChildLogger } from '@common/logger';
 import { aiIndexingService } from './indexing.service';
+import prisma from '@database/prisma';
 import { setWorkerRunning } from './ai.status';
 
 const log = createChildLogger({ module: 'ai-worker' });
@@ -19,6 +20,17 @@ export class AiWorker {
   private stopping = false;
   private readonly inFlight = new Set<Promise<void>>();
   private lastRecovery = 0;
+
+  private async housekeeping(): Promise<void> {
+    await aiIndexingService.recoverStaleJobs();
+    // Structured queue depth: the CloudWatch metric filter and alarm read these fields.
+    const [queued, oldest] = await Promise.all([
+      prisma.aiJob.count({ where: { status: 'QUEUED', runAfter: { lte: new Date() } } }),
+      prisma.aiJob.findFirst({ where: { status: 'QUEUED' }, orderBy: { runAfter: 'asc' }, select: { runAfter: true } }),
+    ]);
+    const waitSeconds = oldest ? Math.max(0, Math.round((Date.now() - oldest.runAfter.getTime()) / 1000)) : 0;
+    log.info({ event: 'ai_queue', queued, waitSeconds, inFlight: this.inFlight.size }, 'AI queue');
+  }
 
   start(): void {
     if (this.timer || !aiIndexingService.isEnabled()) {
@@ -41,7 +53,7 @@ export class AiWorker {
     try {
       if (Date.now() - this.lastRecovery > 60_000) {
         this.lastRecovery = Date.now();
-        await aiIndexingService.recoverStaleJobs();
+        await this.housekeeping();
       }
       while (!this.stopping && this.inFlight.size < config.ai.worker.concurrency) {
         const job = await aiIndexingService.claimNextJob(this.id);

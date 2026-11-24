@@ -363,13 +363,22 @@ describe('Share Links Integration Tests', () => {
     });
 
     it('should reject expired share link', async () => {
-      const expiresAt = new Date(Date.now() - 1000).toISOString(); // Expired 1 second ago
+      const expiresAt = new Date(Date.now() + 3600_000).toISOString();
       const createResponse = await request(app)
         .post('/api/v1/share-links/protected')
         .set('Authorization', `Bearer ${userAccessToken}`)
         .send({ fileId, permission: 'VIEW', expiresAt });
 
       const token = createResponse.body.data.token;
+      // Time passes: the link expired one second ago.
+      await prisma.shareLink.update({ where: { id: createResponse.body.data.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+
+      // A link cannot be created already expired.
+      await request(app)
+        .post('/api/v1/share-links/protected')
+        .set('Authorization', `Bearer ${userAccessToken}`)
+        .send({ fileId, permission: 'VIEW', expiresAt: new Date(Date.now() - 1000).toISOString() })
+        .expect(400);
 
       const response = await request(app)
         .get(`/api/v1/share-links/public/${token}`)
@@ -467,7 +476,7 @@ describe('Share Links Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.downloadUrl).toBeDefined();
       expect(response.body.data.downloadUrl).toContain('localhost:4566');
-      expect(response.body.data.expiresIn).toBe(3600);
+      expect(response.body.data.expiresIn).toBe(config.storage.downloadUrlTtlSeconds);
       expect(response.body.data.filename).toBe('share-test.txt');
     });
 

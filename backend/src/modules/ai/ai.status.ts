@@ -36,7 +36,7 @@ export function getAiStatus() {
       semanticSearch: !!embedding,
       summaries: !!embedding && !!generation,
       questionAnswering: !!embedding && !!generation,
-      ocr: false,
+      ocr: !!embedding && config.ai.ocr.enabled,
     },
     worker: { running: workerRunning, concurrency: config.ai.worker.concurrency },
     limits: {

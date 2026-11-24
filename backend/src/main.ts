@@ -3,6 +3,7 @@ import { assertProductionConfig, config } from '@config/index';
 import { logger } from '@common/logger';
 import prisma from '@database/prisma';
 import { aiWorker } from '@modules/ai/worker';
+import { maintenance } from '@modules/maintenance/maintenance.service';
 
 const startServer = () => {
   try {
@@ -18,17 +19,21 @@ const startServer = () => {
       'NimbusVault backend listening'
     );
     if (config.ai.worker.enabled) aiWorker.start();
+    if (config.maintenance.enabled) maintenance.start();
   });
+  // Outlive the load balancer's 60 s idle timeout so it never reuses a socket we just closed.
+  server.keepAliveTimeout = 65_000;
+  server.headersTimeout = 70_000;
 
   let shuttingDown = false;
   const shutdown = async (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
     logger.info({ signal }, 'Shutting down');
-    const force = setTimeout(() => process.exit(1), 30_000);
-    force.unref();
-    server.close();
-    await aiWorker.stop();
+    setTimeout(() => process.exit(1), 30_000).unref();
+    const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+    server.closeIdleConnections();
+    await Promise.all([closed, aiWorker.stop(), maintenance.stop()]);
     await prisma.$disconnect().catch(() => {});
     process.exit(0);
   };

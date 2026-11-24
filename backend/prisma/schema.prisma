@@ -87,6 +87,10 @@ enum ActivityAction {
   share_link_create
   share_link_revoke
   ai_reindex
+  folder_restore
+  file_purge
+  folder_purge
+  auth_session_revoke
 }
 
 model User {
@@ -158,36 +162,45 @@ model Folder {
   children       Folder[]  @relation("FolderHierarchy")
   files          File[]
 
-  @@unique([ownerId, parentFolderId, name])
+  // Uniqueness of live folder names is enforced by the expression index
+  // "folders_live_name_key" (phase5_hardening migration), which Prisma cannot express.
   @@index([ownerId, parentFolderId])
+  @@index([ownerId, deletedAt])
   @@index([parentFolderId])
   @@map("folders")
 }
 
 model File {
-  id             String          @id @default(uuid())
-  filename       String
-  sizeBytes      BigInt
-  mimeType       String
-  category       FileCategory
-  ownerId        String
-  folderId       String?
-  s3Key          String          @unique
-  checksumSha256 String?
-  status         FileStatus      @default(UPLOADING)
-  aiStatus       AiStatus        @default(NA)
-  uploadedAt     DateTime        @default(now())
-  deletedAt      DateTime?
-  owner          User            @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  shareLinks     ShareLink[]
-  documentIndex  DocumentIndex?
-  documentChunks DocumentChunk[]
-  aiJobs         AiJob[]
+  id              String          @id @default(uuid())
+  filename        String
+  sizeBytes       BigInt
+  mimeType        String
+  category        FileCategory
+  ownerId         String
+  folderId        String?
+  s3Key           String          @unique
+  checksumSha256  String?
+  status          FileStatus      @default(UPLOADING)
+  /// Temporary object a presigned upload writes to; copied to s3Key when the upload completes.
+  stagingKey      String?         @unique
+  /// Reservation deadline of a presigned upload. Expired reservations are swept and refunded.
+  uploadExpiresAt DateTime?
+  aiStatus        AiStatus        @default(NA)
+  uploadedAt      DateTime        @default(now())
+  deletedAt       DateTime?
+  owner           User            @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  folder          Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  shareLinks      ShareLink[]
+  documentIndex   DocumentIndex?
+  documentChunks  DocumentChunk[]
+  aiJobs          AiJob[]
 
   @@index([ownerId, deletedAt, uploadedAt])
   @@index([ownerId, folderId, deletedAt])
   @@index([ownerId, category])
+  @@index([folderId])
+  @@index([status, uploadExpiresAt])
+  @@index([deletedAt])
   @@map("files")
 }
 

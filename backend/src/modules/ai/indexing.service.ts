@@ -118,10 +118,10 @@ export class AiIndexingService {
   async claimNextJob(workerId: string): Promise<AiJob | null> {
     const rows = await this.prismaClient.$queryRaw<AiJob[]>`
       UPDATE "ai_jobs" SET "status" = 'RUNNING'::"AiJobStatus", "attempts" = "attempts" + 1,
-        "lockedAt" = NOW(), "lockedBy" = ${workerId}, "updatedAt" = NOW()
+        "lockedAt" = (NOW() AT TIME ZONE 'UTC'), "lockedBy" = ${workerId}, "updatedAt" = (NOW() AT TIME ZONE 'UTC')
       WHERE "id" = (
         SELECT "id" FROM "ai_jobs"
-        WHERE "status" = 'QUEUED'::"AiJobStatus" AND "runAfter" <= NOW()
+        WHERE "status" = 'QUEUED'::"AiJobStatus" AND "runAfter" <= (NOW() AT TIME ZONE 'UTC')
         ORDER BY "runAfter", "createdAt"
         FOR UPDATE SKIP LOCKED
         LIMIT 1
@@ -130,9 +130,29 @@ export class AiIndexingService {
     return rows[0] ?? null;
   }
 
-  /** Returns jobs orphaned by a crashed/restarted worker to the queue. */
+  /** Extends a running job's lock so a long document is not mistaken for a crashed worker. */
+  async renewLock(job: Pick<AiJob, 'id' | 'lockedBy'>): Promise<void> {
+    await this.prismaClient.aiJob.updateMany({
+      where: { id: job.id, status: 'RUNNING', lockedBy: job.lockedBy },
+      data: { lockedAt: new Date() },
+    });
+  }
+
+  /**
+   * Returns jobs orphaned by a crashed/restarted worker to the queue. A job that has already
+   * used every attempt is failed instead, so a document that crashes the worker cannot do so forever.
+   */
   async recoverStaleJobs(staleMs = config.ai.worker.staleLockMs): Promise<number> {
     const cutoff = new Date(Date.now() - staleMs);
+    const exhausted = await this.prismaClient.$queryRaw<AiJob[]>`
+      SELECT * FROM "ai_jobs" WHERE "status" = 'RUNNING'::"AiJobStatus"
+        AND "lockedAt" < ${cutoff.toISOString()}::timestamp AND "attempts" >= "maxAttempts" LIMIT 100`;
+    for (const job of exhausted) {
+      const message = 'Processing was interrupted repeatedly';
+      await this.finishJob(job, 'FAILED', message);
+      await this.markFileFailed(job, 'FAILED', 'INTERNAL_ERROR', message);
+      log.error({ jobId: job.id, fileId: job.fileId, event: 'ai_job_failed' }, 'AI job abandoned after repeated crashes');
+    }
     const { count } = await this.prismaClient.aiJob.updateMany({
       where: { status: 'RUNNING', lockedAt: { lt: cutoff } },
       data: { status: 'QUEUED', lockedAt: null, lockedBy: null, runAfter: new Date() },
@@ -207,6 +227,8 @@ export class AiIndexingService {
         maxBytes: config.ai.limits.maxFileBytes,
         maxChars: config.ai.limits.maxExtractedChars,
         maxPdfPages: config.ai.limits.maxPdfPages,
+        maxUncompressedBytes: config.ai.limits.maxUncompressedBytes,
+        ocr: config.ai.ocr,
       };
       if (file.sizeBytes > BigInt(limits.maxBytes)) {
         throw new ExtractionError('FILE_TOO_LARGE', `File exceeds the ${Math.round(limits.maxBytes / 1048576)} MB AI processing limit`);
@@ -214,14 +236,18 @@ export class AiIndexingService {
 
       const buffer = await readObject(file.s3Key, limits.maxBytes);
       const extracted = await extractDocument(buffer, file.mimeType, limits);
+      await this.renewLock(job);
       const chunks = chunkText(extracted.text, { size: config.ai.limits.chunkChars, overlap: config.ai.limits.chunkOverlap }, extracted.pages);
 
       const vectors: number[][] = [];
       for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
         // Bail out early if the file was deleted or re-queued while we were working.
-        if (i > 0 && !(await this.isCurrent(job.fileId, job.generation))) {
-          await this.finishJob(job, 'CANCELLED', 'Superseded or file deleted');
-          return 'cancelled';
+        if (i > 0) {
+          if (!(await this.isCurrent(job.fileId, job.generation))) {
+            await this.finishJob(job, 'CANCELLED', 'Superseded or file deleted');
+            return 'cancelled';
+          }
+          await this.renewLock(job);
         }
         vectors.push(...(await embedder.embed(chunks.slice(i, i + EMBED_BATCH).map((c) => c.content))));
       }
@@ -305,7 +331,7 @@ export class AiIndexingService {
 
       await this.finishJob(job, 'FAILED', message);
       await this.markFileFailed(job, 'FAILED', err instanceof AiProviderError ? 'AI_PROVIDER_ERROR' : 'INTERNAL_ERROR', message);
-      jobLog.warn({ message }, 'Indexing failed permanently');
+      jobLog.error({ message, event: 'ai_job_failed' }, 'Indexing failed permanently');
       return 'failed';
     }
   }

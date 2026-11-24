@@ -18,14 +18,18 @@ export class Semaphore {
       if (this.waiters.length >= this.maxQueue) {
         throw AppError.tooManyRequests('The AI assistant is busy. Please try again shortly.', 'AI_BUSY');
       }
+      // The finishing call hands its slot over directly (active is not decremented), so a caller
+      // arriving in between cannot take it and exceed the limit.
       await new Promise<void>((resolve) => this.waiters.push(resolve));
+    } else {
+      this.active++;
     }
-    this.active++;
     try {
       return await fn();
     } finally {
-      this.active--;
-      this.waiters.shift()?.();
+      const next = this.waiters.shift();
+      if (next) next();
+      else this.active--;
     }
   }
 }

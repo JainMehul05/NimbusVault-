@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { emailSchema } from '@modules/auth/auth.validation';
+
+const pagination = z.object({
+  page: z.coerce.number().int().positive().max(100000).default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
 
 export const resourceTypeSchema = z.enum(['FILE', 'FOLDER']);
 
@@ -10,7 +16,7 @@ export const createShareSchema = z.object({
   body: z.object({
     resourceType: resourceTypeSchema,
     resourceId: z.string().uuid(),
-    granteeEmail: z.string().email(),
+    granteeEmail: emailSchema,
     level: permissionLevelSchema,
   }),
 });
@@ -41,16 +47,6 @@ export const listSharesSchema = z.object({
   }),
 });
 
-export const sharedWithMeSchema = z.object({
-  query: z.object({
-    page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)).pipe(z.number().int().positive()),
-    limit: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 20)).pipe(z.number().int().positive().max(100)),
-  }),
-});
+export const sharedWithMeSchema = z.object({ query: pagination });
 
-export const sharedByMeSchema = z.object({
-  query: z.object({
-    page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)).pipe(z.number().int().positive()),
-    limit: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 20)).pipe(z.number().int().positive().max(100)),
-  }),
-});
+export const sharedByMeSchema = z.object({ query: pagination });

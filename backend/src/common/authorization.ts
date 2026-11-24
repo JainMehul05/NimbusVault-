@@ -75,7 +75,7 @@ export function strongerLevel(a: PermissionLevel | null, b: PermissionLevel | nu
 }
 
 /** Folder ancestry is bounded; this guards against corrupted parent cycles. */
-const MAX_FOLDER_DEPTH = 64;
+export const MAX_FOLDER_DEPTH = 64;
 
 export class AuthorizationService {
   constructor(private readonly prismaClient: PrismaClient = prisma) {}

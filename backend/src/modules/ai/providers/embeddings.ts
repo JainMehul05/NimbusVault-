@@ -22,7 +22,8 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
   constructor(
     readonly model: string,
     readonly dimensions: number,
-    private readonly cacheDir: string
+    private readonly cacheDir: string,
+    private readonly allowRemoteModels = true
   ) {
     this.modelId = `local:${model}@${dimensions}`;
   }
@@ -42,7 +43,9 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
           );
         }
         transformers.env.cacheDir = path.resolve(this.cacheDir);
-        transformers.env.allowRemoteModels = true;
+        // With the model baked into the image, loading never touches the network.
+        transformers.env.allowRemoteModels = this.allowRemoteModels;
+        transformers.env.localModelPath = path.resolve(this.cacheDir);
         return transformers.pipeline('feature-extraction', this.model, { dtype: 'fp32' });
       })().catch((err) => {
         this.extractor = null; // allow a later retry (e.g. transient download failure)
@@ -103,7 +106,7 @@ export class OpenAICompatibleEmbeddingProvider implements EmbeddingProvider {
     }
     const vectors = [...data.data].sort((a, b) => a.index - b.index).map((d) => d.embedding);
     for (const v of vectors) {
-      if (!Array.isArray(v) || v.length !== this.dimensions) {
+      if (!Array.isArray(v) || v.length !== this.dimensions || !v.every((x) => Number.isFinite(x))) {
         throw new AiProviderError(
           `Embedding model returned ${v?.length ?? 0} dimensions but AI_EMBEDDING_DIMENSIONS is ${this.dimensions}`,
           false

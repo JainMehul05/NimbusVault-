@@ -1,75 +1,66 @@
-import type { PrismaClient, File } from '@prisma/client';
+import type { File, Prisma, PrismaClient } from '@prisma/client';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
-import { storageService } from '@common/storage';
-import { logger, createRequestLogger } from '@common/logger';
 import { authorizationService } from '@common/authorization';
+import { fileNamesLock, lockInTransaction } from '@common/locks';
+import { firstFreeName } from '@common/names';
+import { releaseQuota, reserveQuota } from './quota.service';
+
+export type FileCategoryName = 'pdf' | 'image' | 'video' | 'document' | 'other';
 
 export interface CreateFileInput {
   filename: string;
   sizeBytes: bigint;
   mimeType: string;
-  category: 'pdf' | 'image' | 'video' | 'document' | 'other';
+  category: FileCategoryName;
   ownerId: string;
   folderId: string | null;
   s3Key: string;
-  checksumSha256: string;
+  checksumSha256: string | null;
   status: 'UPLOADING' | 'READY' | 'FAILED';
+  stagingKey?: string;
+  uploadExpiresAt?: Date;
 }
 
 export interface FileListResult {
-  files: Array<{
-    id: string;
-    filename: string;
-    sizeBytes: bigint;
-    mimeType: string;
-    category: string;
-    folderId: string | null;
-    status: string;
-    uploadedAt: Date;
-    deletedAt: Date | null;
-  }>;
+  files: Array<
+    Pick<
+      File,
+      'id' | 'filename' | 'sizeBytes' | 'mimeType' | 'category' | 'folderId' | 'status' | 'aiStatus' | 'uploadedAt' | 'deletedAt'
+    >
+  >;
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface SafeFile {
-  id: string;
-  filename: string;
-  sizeBytes: string; // BigInt serialized as string
-  mimeType: string;
-  category: string;
-  folderId: string | null;
-  status: string;
-  uploadedAt: Date;
-  deletedAt: Date | null;
-}
+const ALLOWED_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'text/markdown',
+  'application/rtf',
+]);
 
 export class FileService {
   constructor(private readonly prismaClient: PrismaClient = prisma) {}
 
-  getPrismaClient(): PrismaClient {
-    return this.prismaClient;
-  }
-
-  private toSafeFile(file: File): SafeFile {
-    return {
-      id: file.id,
-      filename: file.filename,
-      sizeBytes: file.sizeBytes.toString(),
-      mimeType: file.mimeType,
-      category: file.category,
-      folderId: file.folderId,
-      status: file.status,
-      uploadedAt: file.uploadedAt,
-      deletedAt: file.deletedAt,
-    };
-  }
-
-  async getCategoryFromMimeType(mimeType: string): Promise<'pdf' | 'image' | 'video' | 'document' | 'other'> {
+  async getCategoryFromMimeType(mimeType: string): Promise<FileCategoryName> {
     if (mimeType === 'application/pdf') return 'pdf';
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
@@ -90,7 +81,9 @@ export class FileService {
    * Browsers often send Markdown (and sometimes other files) as an empty or generic MIME type.
    * Resolve a canonical type from the extension for those cases only.
    */
-  normalizeMimeType(mimeType: string, filename: string): string {
+  normalizeMimeType(rawMimeType: string, filename: string): string {
+    // Drop parameters such as "; charset=utf-8".
+    const mimeType = rawMimeType.split(';')[0].trim().toLowerCase();
     const ext = filename.toLowerCase().split('.').pop() ?? '';
     const generic = !mimeType || mimeType === 'application/octet-stream' || mimeType === 'text/x-markdown';
     if (ext === 'md' || ext === 'markdown') {
@@ -107,126 +100,56 @@ export class FileService {
     return mimeType;
   }
 
-  async validateFileType(mimeType: string, _filename: string): Promise<'pdf' | 'image' | 'video' | 'document' | 'other'> {
-    const allowedTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'video/mp4',
-      'video/webm',
-      'video/quicktime',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'text/plain',
-      'text/markdown',
-      'application/rtf',
-    ];
-
-    if (!allowedTypes.includes(mimeType)) {
+  async validateFileType(mimeType: string, _filename: string): Promise<FileCategoryName> {
+    if (!ALLOWED_TYPES.has(mimeType)) {
       throw AppError.badRequest('Unsupported file type', ErrorCodes.UNSUPPORTED_TYPE, { mimeType });
     }
-
     return this.getCategoryFromMimeType(mimeType);
   }
 
   async reserveQuota(userId: string, sizeBytes: bigint, requestId?: string): Promise<void> {
-    const log = requestId ? createRequestLogger(requestId) : logger;
-
-    // Single conditional UPDATE: the check and the increment are atomic, so concurrent
-    // uploads cannot together exceed the quota.
-    const updated = await this.prismaClient.$executeRaw`
-      UPDATE "users" SET "storageUsedBytes" = "storageUsedBytes" + ${sizeBytes}
-      WHERE "id" = ${userId} AND "storageUsedBytes" + ${sizeBytes} <= "storageQuotaBytes"`;
-
-    if (updated === 0) {
-      const user = await this.prismaClient.user.findUnique({
-        where: { id: userId },
-        select: { storageQuotaBytes: true, storageUsedBytes: true },
-      });
-      if (!user) {
-        throw AppError.notFound('User not found', ErrorCodes.NOT_OWNER);
-      }
-      log.warn({ userId, requested: sizeBytes.toString(), quota: user.storageQuotaBytes.toString(), used: user.storageUsedBytes.toString() }, 'Quota exceeded');
-      throw AppError.forbidden('Storage quota exceeded', ErrorCodes.QUOTA_EXCEEDED, {
-        quota: user.storageQuotaBytes.toString(),
-        used: user.storageUsedBytes.toString(),
-        requested: sizeBytes.toString(),
-      });
-    }
+    return reserveQuota(this.prismaClient, userId, sizeBytes, requestId);
   }
 
   async releaseQuota(userId: string, sizeBytes: bigint): Promise<void> {
-    await this.prismaClient.user.update({
-      where: { id: userId },
-      data: {
-        storageUsedBytes: {
-          decrement: sizeBytes,
-        },
-      },
-    });
+    return releaseQuota(this.prismaClient, userId, sizeBytes);
   }
 
-  async validateFolderOwnership(folderId: string, userId: string): Promise<{ id: string } | null> {
-    return this.prismaClient.folder.findFirst({
-      where: {
-        id: folderId,
-        ownerId: userId,
-        deletedAt: null,
-      },
-      select: { id: true },
+  /**
+   * Where an upload may go. Into the caller's own space, or into a folder shared with them as an
+   * Editor; in that case the folder's owner owns the file and their quota is charged.
+   */
+  async resolveUploadTarget(userId: string, folderId: string | null): Promise<{ ownerId: string; folderId: string | null }> {
+    if (!folderId) return { ownerId: userId, folderId: null };
+    const access = await authorizationService.authorizeFolderAccess({ userId, isAuthenticated: true }, folderId, 'write');
+    return { ownerId: access.folder!.ownerId, folderId };
+  }
+
+  /** Inserts a file, renaming it ("report (1).pdf") if the name is already used in that folder. */
+  async insertWithFreeName(tx: Prisma.TransactionClient, input: CreateFileInput): Promise<File> {
+    await lockInTransaction(tx, fileNamesLock(input.ownerId, input.folderId));
+    if (input.folderId) {
+      // The folder may have been deleted while the bytes were uploading.
+      const folder = await tx.folder.findFirst({
+        where: { id: input.folderId, ownerId: input.ownerId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!folder) throw AppError.notFound('Folder not found', ErrorCodes.FOLDER_NOT_FOUND);
+    }
+    const filename = await this.freeName(tx, input.ownerId, input.folderId, input.filename);
+    return tx.file.create({ data: { ...input, filename } });
+  }
+
+  private async freeName(tx: Prisma.TransactionClient, ownerId: string, folderId: string | null, name: string): Promise<string> {
+    const taken = await tx.file.findMany({
+      where: { ownerId, folderId, deletedAt: null },
+      select: { filename: true },
     });
+    return firstFreeName(name, new Set(taken.map((f) => f.filename)));
   }
 
   async createUploadRecord(input: CreateFileInput): Promise<File> {
-    return this.prismaClient.file.create({
-      data: {
-        filename: input.filename,
-        sizeBytes: input.sizeBytes,
-        mimeType: input.mimeType,
-        category: input.category,
-        ownerId: input.ownerId,
-        folderId: input.folderId,
-        s3Key: input.s3Key,
-        checksumSha256: input.checksumSha256,
-        status: input.status,
-      },
-    });
-  }
-
-  async finalizeUpload(fileId: string, status: 'READY' | 'FAILED' = 'READY'): Promise<File> {
-    return this.prismaClient.file.update({
-      where: { id: fileId },
-      data: { status },
-    });
-  }
-
-  async findById(fileId: string, userId: string): Promise<File | null> {
-    try {
-      const access = await authorizationService.authorizeFileAccess(
-        { userId, isAuthenticated: true },
-        fileId,
-        'read'
-      );
-      return access.file ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  async findByIdAnyStatus(fileId: string, userId: string): Promise<File | null> {
-    try {
-      const access = await authorizationService.getFileAccess(userId, fileId);
-      return access.file ?? null;
-    } catch {
-      return null;
-    }
+    return this.prismaClient.$transaction((tx) => this.insertWithFreeName(tx, input));
   }
 
   async listFiles(
@@ -242,28 +165,17 @@ export class FileService {
       sortOrder: 'asc' | 'desc';
     }
   ): Promise<FileListResult> {
-    const { folderId, category, status, search, page, limit, sortBy, sortOrder } = options;
+    const { folderId, category, status = 'READY', search, page, limit, sortBy, sortOrder } = options;
 
-    const where: any = {
+    const where: Prisma.FileWhereInput = {
       ownerId: userId,
       deletedAt: null,
+      status: status as Prisma.FileWhereInput['status'],
+      ...(folderId !== undefined ? { folderId } : {}),
+      ...(category ? { category: category as Prisma.FileWhereInput['category'] } : {}),
+      // Prisma passes `contains` to ILIKE unescaped, so wildcards typed by the user are escaped.
+      ...(search ? { filename: { contains: search.replace(/[\\%_]/g, '\\$&'), mode: 'insensitive' } } : {}),
     };
-
-    if (folderId !== undefined) {
-      where.folderId = folderId;
-    }
-
-    if (category) {
-      where.category = category;
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (search) {
-      where.filename = { contains: search, mode: 'insensitive' };
-    }
 
     const validSortFields = ['filename', 'sizeBytes', 'uploadedAt', 'category'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'uploadedAt';
@@ -271,7 +183,8 @@ export class FileService {
     const [files, total] = await Promise.all([
       this.prismaClient.file.findMany({
         where,
-        orderBy: { [sortField]: sortOrder },
+        // The id tiebreak keeps pages stable when many rows share a value.
+        orderBy: [{ [sortField]: sortOrder }, { id: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -290,39 +203,28 @@ export class FileService {
       this.prismaClient.file.count({ where }),
     ]);
 
-    return {
-      files,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { files, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  private async assertNameFree(tx: Prisma.TransactionClient, file: File, folderId: string | null, filename: string, message: string) {
+    const existing = await tx.file.findFirst({
+      where: { ownerId: file.ownerId, folderId, filename, deletedAt: null, NOT: { id: file.id } },
+      select: { id: true },
+    });
+    if (existing) throw AppError.conflict(message, ErrorCodes.NAME_CONFLICT);
   }
 
   async rename(fileId: string, userId: string, newFilename: string): Promise<{ file: File; oldFilename: string }> {
     const access = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'rename');
     const file = access.file!;
 
-    const existingFile = await this.prismaClient.file.findFirst({
-      where: {
-        ownerId: file.ownerId,
-        folderId: file.folderId,
-        filename: newFilename,
-        deletedAt: null,
-        NOT: { id: fileId },
-      },
+    const updated = await this.prismaClient.$transaction(async (tx) => {
+      await lockInTransaction(tx, fileNamesLock(file.ownerId, file.folderId));
+      await this.assertNameFree(tx, file, file.folderId, newFilename, 'A file with this name already exists in the folder');
+      return tx.file.update({ where: { id: fileId, deletedAt: null }, data: { filename: newFilename } });
     });
 
-    if (existingFile) {
-      throw AppError.conflict('A file with this name already exists in the folder', ErrorCodes.NAME_CONFLICT);
-    }
-
-    const updatedFile = await this.prismaClient.file.update({
-      where: { id: fileId },
-      data: { filename: newFilename },
-    });
-
-    return { file: updatedFile, oldFilename: file.filename };
+    return { file: updated, oldFilename: file.filename };
   }
 
   /**
@@ -349,71 +251,42 @@ export class FileService {
       }
     }
 
-    if (newFolderId !== file.folderId) {
-      const existingFile = await this.prismaClient.file.findFirst({
-        where: { ownerId: file.ownerId, folderId: newFolderId, filename: file.filename, deletedAt: null, NOT: { id: fileId } },
-      });
-      if (existingFile) {
-        throw AppError.conflict('A file with this name already exists in the destination folder', ErrorCodes.NAME_CONFLICT);
+    const updated = await this.prismaClient.$transaction(async (tx) => {
+      await lockInTransaction(tx, fileNamesLock(file.ownerId, newFolderId));
+      if (newFolderId !== file.folderId) {
+        await this.assertNameFree(tx, file, newFolderId, file.filename, 'A file with this name already exists in the destination folder');
       }
-    }
-
-    const updatedFile = await this.prismaClient.file.update({
-      where: { id: fileId },
-      data: { folderId: newFolderId },
+      return tx.file.update({ where: { id: fileId, deletedAt: null }, data: { folderId: newFolderId } });
     });
 
-    return { file: updatedFile, previousFolderId: file.folderId };
+    return { file: updated, previousFolderId: file.folderId };
   }
 
-  /** Soft-deletes a file (owner only) and returns its storage to the owner's quota. */
+  /** Moves a file to the trash (owner only) and returns its storage to the owner's quota. */
   async softDelete(fileId: string, userId: string): Promise<File> {
     const access = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'delete');
     const file = access.file!;
+    if (file.status === 'UPLOADING') {
+      throw AppError.conflict('This upload is still in progress. Cancel it instead.', ErrorCodes.UPLOAD_INCOMPLETE);
+    }
 
-    const deletedFile = await this.prismaClient.$transaction(async (tx) => {
+    return this.prismaClient.$transaction(async (tx) => {
       // Conditional update makes concurrent deletes idempotent: only one releases quota.
       const { count } = await tx.file.updateMany({ where: { id: fileId, deletedAt: null }, data: { deletedAt: new Date() } });
       if (count === 0) {
         throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
       }
-      await tx.user.update({ where: { id: file.ownerId }, data: { storageUsedBytes: { decrement: file.sizeBytes } } });
+      await releaseQuota(tx, file.ownerId, file.sizeBytes);
       return tx.file.findUniqueOrThrow({ where: { id: fileId } });
-    });
-
-    return deletedFile;
-  }
-
-  async permanentDelete(fileId: string, userId: string): Promise<void> {
-    const file = await this.findByIdAnyStatus(fileId, userId);
-    if (!file) {
-      throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
-    }
-
-    // Delete from storage
-    try {
-      await storageService.delete(file.s3Key);
-    } catch (error) {
-      logger.error({ err: error, s3Key: file.s3Key }, 'Failed to delete file from storage');
-      // Continue with DB deletion even if storage deletion fails
-    }
-
-    await this.prismaClient.file.delete({
-      where: { id: fileId },
     });
   }
 
   async getFileForDownload(fileId: string, userId: string): Promise<File> {
-    const file = await this.findById(fileId, userId);
-    if (!file) {
-      throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
+    const { file } = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'download');
+    if (file!.status !== 'READY') {
+      throw AppError.badRequest('File is not ready for download', ErrorCodes.UPLOAD_INCOMPLETE, { status: file!.status });
     }
-
-    if (file.status !== 'READY') {
-      throw AppError.badRequest('File is not ready for download', ErrorCodes.ALREADY_FINALIZED, { status: file.status });
-    }
-
-    return file;
+    return file!;
   }
 
   async getStorageInfo(userId: string): Promise<{ quota: string; used: string; remaining: string }> {

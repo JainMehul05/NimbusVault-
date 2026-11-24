@@ -1,12 +1,8 @@
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.test' });
-
-import { PrismaClient } from '@prisma/client';
 import { prisma } from '@/database/prisma';
+import { assertDisposableDatabase } from './db-guard';
 
 // BigInt serialization for Jest
-(BigInt.prototype as any).toJSON = function() {
+(BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
 
@@ -15,6 +11,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  assertDisposableDatabase(process.env.DATABASE_URL);
   // Final cleanup - delete in correct order to respect foreign key constraints
   await prisma.activityLog.deleteMany();
   await prisma.shareLink.deleteMany();

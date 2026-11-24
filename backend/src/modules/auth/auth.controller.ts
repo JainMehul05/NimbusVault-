@@ -1,80 +1,98 @@
 import type { Request, Response, NextFunction } from 'express';
 import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
-import { authService } from './auth.service';
-import type { RegisterInput, LoginInput, RefreshInput, LogoutInput } from './auth.validation';
+import { AppError, ErrorCodes } from '@common/errors';
+import { authService, type AuthResult, type RequestMeta } from './auth.service';
+import { clearRefreshCookie, readRefreshCookie, setRefreshCookie, wantsCookieTransport } from './auth.cookies';
+import type { RegisterInput, LoginInput, RefreshInput, LogoutInput, ChangePasswordInput } from './auth.validation';
+import type { AccessTokenPayload } from './jwt.utils';
 
 interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    type: string;
-  };
+  user?: AccessTokenPayload;
 }
+
+const metaOf = (req: Request): RequestMeta => ({
+  ipAddress: req.ip,
+  requestId: req.requestId,
+  userAgent: req.get('user-agent'),
+});
+
+/** Cookie clients receive only the access token; API clients also get the refresh token. */
+const authBody = (req: Request, result: AuthResult) =>
+  wantsCookieTransport(req)
+    ? { user: result.user, tokens: { accessToken: result.tokens.accessToken, expiresIn: result.tokens.expiresIn } }
+    : result;
 
 export const authController = {
   register: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const input = req.body as RegisterInput;
-    const result = await authService.register(input);
-
-    res.cookie('refreshToken', result.tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: result.tokens.expiresIn * 1000,
-    });
-
-    res.status(201).json(successResponse(result, 'Registration successful'));
+    const result = await authService.register(req.body as RegisterInput, metaOf(req));
+    setRefreshCookie(res, result.tokens);
+    res.status(201).json(successResponse(authBody(req, result), 'Registration successful', req.requestId));
   }),
 
   login: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const input = req.body as LoginInput;
-    const result = await authService.login(input, { ipAddress: req.ip, requestId: req.requestId });
-
-    res.cookie('refreshToken', result.tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: result.tokens.expiresIn * 1000,
-    });
-
-    res.json(successResponse(result, 'Login successful'));
+    const result = await authService.login(req.body as LoginInput, metaOf(req));
+    setRefreshCookie(res, result.tokens);
+    res.json(successResponse(authBody(req, result), 'Login successful', req.requestId));
   }),
 
   refresh: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const input = req.body as RefreshInput;
-    const tokens = await authService.refresh(input.refreshToken, input.tokenFamily);
+    const body = (req.body ?? {}) as RefreshInput;
+    const fromBody =
+      body.refreshToken && body.tokenFamily ? { refreshToken: body.refreshToken, tokenFamily: body.tokenFamily } : null;
+    const credentials = fromBody ?? readRefreshCookie(req);
+    if (!credentials) {
+      throw AppError.unauthorized('Refresh token required', ErrorCodes.INVALID_REFRESH_TOKEN);
+    }
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: tokens.expiresIn * 1000,
-    });
+    let tokens;
+    try {
+      tokens = await authService.refresh(credentials.refreshToken, credentials.tokenFamily, metaOf(req));
+    } catch (error) {
+      // A dead cookie would otherwise be resent forever. It is kept on a benign race (409).
+      if (!fromBody && error instanceof AppError && error.statusCode === 401) clearRefreshCookie(res);
+      throw error;
+    }
 
-    res.json(successResponse(tokens, 'Token refreshed'));
+    setRefreshCookie(res, tokens);
+    // A cookie-authenticated refresh never reveals the new token to script.
+    const payload = fromBody ? tokens : { accessToken: tokens.accessToken, expiresIn: tokens.expiresIn };
+    res.json(successResponse(payload, 'Token refreshed', req.requestId));
   }),
 
   logout: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const input = req.body as LogoutInput;
-    await authService.logout(input.tokenFamily, { ipAddress: req.ip, requestId: req.requestId });
+    const { tokenFamily } = (req.body ?? {}) as LogoutInput;
+    const cookie = readRefreshCookie(req);
+    if (tokenFamily) await authService.logout(tokenFamily, metaOf(req));
+    else if (cookie) await authService.logoutByRefreshToken(cookie.refreshToken, cookie.tokenFamily, metaOf(req));
 
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    });
-
-    res.json(successResponse(null, 'Logged out successfully'));
+    clearRefreshCookie(res);
+    res.json(successResponse(null, 'Logged out successfully', req.requestId));
   }),
 
   me: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const userId = req.user?.userId;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized', error: { code: 'UNAUTHORIZED' } });
-    }
+    const user = await authService.me(req.user!.userId);
+    res.json(successResponse(user, 'User profile retrieved', req.requestId));
+  }),
 
-    const user = await authService.me(userId);
-    res.json(successResponse(user, 'User profile retrieved'));
+  listSessions: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const sessions = await authService.listSessions(req.user!.userId, req.user!.sid);
+    res.json(successResponse({ sessions }, 'Active sessions', req.requestId));
+  }),
+
+  revokeSession: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    await authService.revokeSession(req.user!.userId, req.params.sessionId, metaOf(req));
+    res.json(successResponse(null, 'Session signed out', req.requestId));
+  }),
+
+  revokeOtherSessions: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const count = await authService.revokeOtherSessions(req.user!.userId, req.user!.sid, metaOf(req));
+    res.json(successResponse({ revoked: count }, 'Other sessions signed out', req.requestId));
+  }),
+
+  changePassword: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const { currentPassword, newPassword } = req.body as ChangePasswordInput;
+    await authService.changePassword(req.user!.userId, req.user!.sid, currentPassword, newPassword, metaOf(req));
+    res.json(successResponse(null, 'Password changed', req.requestId));
   }),
 };

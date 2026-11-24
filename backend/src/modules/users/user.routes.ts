@@ -1,23 +1,14 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { authenticate } from '@modules/auth/auth.routes';
+import { authenticate } from '@modules/auth/auth.middleware';
+import { successResponse } from '@common/response';
+import type { AccessTokenPayload } from '@modules/auth/jwt.utils';
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    type: string;
-  };
-}
-
-router.get('/profile', authenticate, (req: AuthenticatedRequest, res: Response) => {
-  res.json({
-    success: true,
-    message: 'User profile',
-    data: req.user,
-  });
+router.get('/profile', authenticate, (req: Request & { user?: AccessTokenPayload }, res: Response) => {
+  const { userId, email } = req.user!;
+  res.json(successResponse({ userId, email, type: 'access' }, 'User profile', req.requestId));
 });
 
 export default router;

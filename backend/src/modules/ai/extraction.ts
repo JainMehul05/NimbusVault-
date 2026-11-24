@@ -1,4 +1,6 @@
 import type * as PdfParseModule from 'pdf-parse';
+import { ocrPdf, type OcrOptions } from './ocr';
+import { zipWithinLimit } from './zip-guard';
 
 /**
  * Server-side text extraction for PDF, DOCX, Markdown and plain text.
@@ -9,8 +11,10 @@ import type * as PdfParseModule from 'pdf-parse';
  *    embedded JavaScript and forms are never executed.
  *  - DOCX is read with mammoth (document XML only); macros are never run, and macro-enabled
  *    formats (.docm) are not accepted.
+ *  - DOCX archives are measured while inflating under a hard cap (zip-bomb protection).
  *  - Page and character limits bound CPU and memory; output is normalized and capped.
- *  - Empty / image-only PDFs are reported as OCR_REQUIRED instead of "succeeding" with no text.
+ *  - Image-only PDFs are read with local OCR when enabled, and otherwise reported as
+ *    OCR_REQUIRED instead of "succeeding" with no text.
  */
 
 export const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -60,6 +64,8 @@ export interface ExtractionLimits {
   maxBytes: number;
   maxChars: number;
   maxPdfPages: number;
+  maxUncompressedBytes?: number;
+  ocr?: OcrOptions;
 }
 
 export function isAiSupportedMimeType(mimeType: string): boolean {
@@ -147,10 +153,13 @@ async function extractPdf(buffer: Buffer, limits: ExtractionLimits): Promise<Ext
     const total = result.total ?? result.pages.length;
     const meaningful = raw.replace(/\s+/g, '').length;
     if (meaningful < 20 || (total > 0 && meaningful / total < 15)) {
-      throw new ExtractionError(
-        'OCR_REQUIRED',
-        'No extractable text found — this PDF appears to be scanned or image-only. OCR is not enabled.'
-      );
+      if (!limits.ocr?.enabled) {
+        throw new ExtractionError(
+          'OCR_REQUIRED',
+          'No extractable text found — this PDF appears to be scanned or image-only. OCR is not enabled.'
+        );
+      }
+      return await extractScannedPdf(buffer, limits, limits.ocr, total);
     }
 
     // Already normalized per page; finalize clamps length.
@@ -162,9 +171,38 @@ async function extractPdf(buffer: Buffer, limits: ExtractionLimits): Promise<Ext
   }
 }
 
+async function extractScannedPdf(
+  buffer: Buffer,
+  limits: ExtractionLimits,
+  options: OcrOptions,
+  total: number
+): Promise<ExtractionResult> {
+  // PDF.js takes ownership of (detaches) its input, so each parser needs its own copy.
+  const { pages: recognised } = await ocrPdf(new Uint8Array(buffer), options);
+  let raw = '';
+  const pages: PageSpan[] = [];
+  for (const page of recognised) {
+    const text = normalizeText(page.text);
+    if (!text) continue;
+    if (raw) raw += '\n\n';
+    const start = raw.length;
+    raw += text;
+    pages.push({ page: page.page, start, end: raw.length });
+  }
+  if (raw.replace(/\s+/g, '').length < 20) {
+    throw new ExtractionError('OCR_REQUIRED', 'This PDF is scanned and no readable text was recognised in it.');
+  }
+  const out = finalize(raw, limits, 'tesseract-ocr', pages, total);
+  if (total > options.maxPages) out.truncated = true;
+  return out;
+}
+
 async function extractDocx(buffer: Buffer, limits: ExtractionLimits): Promise<ExtractionResult> {
   if (!startsWith(buffer, [0x50, 0x4b, 0x03, 0x04])) {
     throw new ExtractionError('CONTENT_MISMATCH', 'File is not a valid DOCX document');
+  }
+  if (!zipWithinLimit(buffer, limits.maxUncompressedBytes ?? 150 * 1024 * 1024)) {
+    throw new ExtractionError('CORRUPTED', 'DOCX document is damaged or expands beyond the processing limit');
   }
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const mammoth = require('mammoth') as { extractRawText(input: { buffer: Buffer }): Promise<{ value: string }> };

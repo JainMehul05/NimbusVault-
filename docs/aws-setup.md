@@ -1,3 +1,5 @@
+> **Superseded.** This Phase 2 document describes a manual set-up with an IAM user and long-lived access keys. Use the [Phase 5 deployment guide](phase-5/aws-deployment.md), which needs no stored keys. Kept for history.
+
 # AWS Setup for Phase 2
 
 ## Overview

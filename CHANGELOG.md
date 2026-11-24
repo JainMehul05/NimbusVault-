@@ -5,7 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-11-23
+## [Unreleased] - 2026-11-25: Phase 5 and hardening of Phases 1–4
+
+### Security
+- Presigned uploads reserve quota and create a record first; size, type, content and checksum are verified before a file exists, and finished files cannot be altered through the URL (was: unlimited, unaccounted storage).
+- Refresh token moved to an HttpOnly, SameSite=Strict cookie with CSRF protection; access token kept in memory. Rotation is atomic, replay ends the session, sign-out invalidates access tokens at once.
+- Session list and revocation, password change, account-level throttling, case-insensitive e-mails, uniform timing for unknown accounts.
+- Share links stop working when their creator loses access. Tokens no longer reach logs.
+- Downloads: 5-minute URLs, forced attachment, safe types. Uploads: executables and disguised HTML refused, random keys.
+- Correct client IPs behind proxies, stricter production checks, dependency upgrades (zod 4, vite 8, vitest 5, React Router 7, transformers 4).
+- AI: zip-bomb guard, access re-checked after generation, local-network detection fixed, no redirects.
+
+### Added
+- Trash with restore, permanent deletion and retention; background maintenance (expired uploads, quota reconciliation, token clean-up).
+- Editors can upload into shared folders. Shared-by-you, Trash and Account pages.
+- Local OCR (opt-in), HNSW search for large libraries, standalone worker.
+- Phase 5: AWS CDK infrastructure, production images, deploy workflow and scripts, monitoring, budgets, runbooks.
+- Playwright suite, upgrade test, smoke test, frontend component tests.
+
+### Fixed
+- Silent token refresh never worked in the browser (wrong response shape).
+- Anthropic requests would always have been rejected (`temperature`).
+- The test suite deleted the development database.
+- `.env.example` produced `/api/api/v1` routes; Compose presigned URLs pointed at an unreachable host.
+- Deleted folder names could not be reused; trash never left storage; shared-item pagination was cosmetic; `inline=false` meant true; UTF-8 filenames were garbled; action menus closed on layout shifts; landing page buttons and logo were unstyled.
+- The documentation workflow was an empty file that failed on every push.
+
+### Changed (breaking)
+- See [API reference](docs/guides/api.md#breaking-changes-in-this-release).
+- Compose: separate worker, migrate and nginx frontend services; ports bind to localhost.
+
+## [0.4.0] - 2026-11-23
 
 ### Security
 - Activity feed is derived from the access token; `GET /activity?userId=<other>` now returns 403 (was an IDOR exposing any user's history). Per-resource history requires ownership; other actors' IP addresses are never returned.

@@ -8,7 +8,7 @@ exactly as before and every AI endpoint reports `503 AI_PROVIDER_UNAVAILABLE`.
 ## 1. Architecture
 
 ```
-upload ──► files + S3 ──► ai_jobs (QUEUED) ──► in-process worker (FOR UPDATE SKIP LOCKED)
+upload ──► files + S3 ──► ai_jobs (QUEUED) ──► worker (separate process in production; FOR UPDATE SKIP LOCKED)
                                                    │
                      download from S3 ◄────────────┘
                      extract (pdf-parse/pdf.js · mammoth · UTF-8 text)
@@ -39,7 +39,7 @@ search / ask ──► embed query ──► SQL: accessible_files CTE ⋈ chunk
 
 | Purpose | Provider (`AI_*_PROVIDER`) | Default model | Notes |
 |---|---|---|---|
-| Embeddings | `local` | `Xenova/all-MiniLM-L6-v2`, 384 dims (ADR-010) | Runs on server CPU via `@huggingface/transformers` (optional dependency). Text never leaves the server. Model (~23 MB) is cached in `AI_LOCAL_MODEL_CACHE_DIR`. |
+| Embeddings | `local` | `Xenova/all-MiniLM-L6-v2`, 384 dims (ADR-010) | Runs on server CPU via `@huggingface/transformers` (optional dependency). Text never leaves the server. Model (about 90 MB, fp32; baked into the production image) is cached in `AI_LOCAL_MODEL_CACHE_DIR`. |
 | Embeddings | `openai` | `text-embedding-3-small`, 1536 dims | Any OpenAI-compatible `/embeddings` endpoint (OpenAI, Ollama, vLLM). |
 | Generation | `openai` | `gpt-4o-mini` (ADR-012) | OpenAI-compatible `/chat/completions` (also local Ollama). |
 | Generation | `anthropic` | `claude-haiku-5-5` | Anthropic Messages API (documented fallback). |
@@ -48,7 +48,9 @@ Every vector stores its model id (`local:Xenova/all-MiniLM-L6-v2@384`). Search o
 vectors with the currently configured id, so changing model or dimensions never mixes
 incompatible embeddings — re-index documents after switching (Document insights → Re-index).
 The `embedding` column is an untyped pgvector `vector` so different deployments can choose
-different dimensions; search is an exact scan restricted to the caller's accessible files.
+different dimensions. Search is an exact scan restricted to the caller's accessible files; above
+`AI_SEARCH_ANN_THRESHOLD` (20,000) accessible chunks, 384-dimension models use an HNSW index with
+pgvector iterative scans and the same permission filter.
 
 ### Data model (migration `20261123000000_security_fixes_and_ai_documents`)
 
@@ -103,7 +105,8 @@ in S3 and core metadata are untouched.
   header, text must be valid UTF-8 without NUL bytes). PDF.js runs with `isEvalSupported:false`,
   XFA off, text extraction only — embedded JavaScript is never executed. DOCX is read with mammoth
   (XML text only; macros never run). Encrypted, corrupted and scanned/image-only PDFs are reported
-  as `ENCRYPTED`, `CORRUPTED`, `OCR_REQUIRED` — never as an empty success. OCR is not enabled.
+  as `ENCRYPTED`, `CORRUPTED`, `OCR_REQUIRED` — never as an empty success. With `AI_OCR_ENABLED=true`,
+  scanned PDFs are read locally with tesseract.js (bundled data, page and time limits); it is off by default.
 - **Logging.** No document text, questions, prompts or keys are logged; the `ai_query` audit
   event stores only the question length and outcome. Provider error messages never include
   request bodies.
@@ -214,3 +217,14 @@ The worker starts with the API (`AI_WORKER_ENABLED`, default on outside tests). 
   (upload → index → paraphrase search → share → revoke → delete).
 - **Not verified here:** a real hosted LLM (no API key was available) — Q&A and summary
   generation against OpenAI/Anthropic should be smoke-tested once a key is configured.
+
+
+## Phase 5 additions
+
+- **OCR** (`ocr.ts`, opt-in): pages rendered with PDF.js, recognised with tesseract.js in-process. English data is bundled; nothing is downloaded and nothing leaves the server.
+- **Resilience**: locks are renewed during long jobs; a document that keeps crashing the worker is failed after its last attempt instead of looping; DOCX expansion is measured under a hard cap.
+- **Answers** are withheld (`409 SOURCES_CHANGED`) if access to a source is lost while the model is writing.
+- **Anthropic**: requests no longer send `temperature` (current models reject it, so every call would have failed) and leave room for adaptive thinking; refusals are reported. The client is a plain HTTP implementation behind the provider interface.
+- **Provider errors**: the timeout covers the response body, redirects are refused, and only a short machine code from the provider is kept.
+- **Relevance check** (real MiniLM, five representative documents, paraphrased queries): 5 of 5 ranked the right document first; an unrelated query scored nothing above 0.4. This is a smoke check, not a benchmark.
+- **Not verified**: summaries and answers from a live hosted LLM (no API key was available).

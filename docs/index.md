@@ -2,7 +2,9 @@
 
 **NimbusVault** is an AI-powered cloud storage and document intelligence platform: secure file storage, folder organization, sharing with fine-grained controls, and an AI assistant that answers questions about your documents using Retrieval-Augmented Generation (RAG).
 
-## Phase 0 — Planning & Architecture (current)
+> **Current state:** start with the [status page](guides/status.md) and the guides. The Phase 0 and Phase 1 documents below are the original plans; where they differ from the guides (NestJS, Redis, EC2, for example) the guides describe what was built.
+
+## Phase 0 — Planning & Architecture
 
 | # | Document | Contents |
 |---|---|---|
@@ -18,7 +20,7 @@
 | 10 | [Team](phase-0/10-Team.md) | Four-member end-to-end ownership: responsibilities, deliverables, dependencies, interface map, accountability defaults |
 | 11 | [Roadmap](phase-0/11-Roadmap.md) | Definition of done · 16-week phased plan with acceptance criteria · sprint cadence · RACI · risk register |
 
-## Phase 1 — Foundation Implementation (current)
+## Phase 1 — Foundation Implementation
 
 | # | Document | Contents |
 |---|---|---|

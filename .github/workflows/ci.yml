@@ -204,13 +204,9 @@ jobs:
           "const t=require('@huggingface/transformers');t.env.cacheDir='/app/models';t.env.localModelPath='/app/models';t.env.allowRemoteModels=false;
           t.pipeline('feature-extraction','Xenova/all-MiniLM-L6-v2',{dtype:'fp32'}).then(e=>e(['x'],{pooling:'mean'})).then(o=>{if(o.dims.at(-1)!==384)process.exit(1)})"
       - name: Scan image for fixable critical vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: nimbusvault-backend:local
-          severity: CRITICAL
-          ignore-unfixed: true
-          exit-code: '1'
-          scanners: vuln
+        run: >
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image
+          --severity CRITICAL --ignore-unfixed --exit-code 1 --scanners vuln --no-progress nimbusvault-backend:local
       - if: failure()
         run: docker compose ps -a && docker compose logs --tail 200
 

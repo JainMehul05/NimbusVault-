@@ -1,6 +1,10 @@
 site_name: NimbusVault
 site_description: AI-Powered Cloud Storage & Document Intelligence Platform — Project Documentation
-repo_url: https://github.com/example/nimbusvault
+repo_url: https://github.com/JainMehul05/NimbusVault-
+# Empty placeholder files from the project template; they would shadow the theme's directories.
+exclude_docs: |
+  /assets
+  /journals
 theme:
   name: material
   palette:
@@ -16,7 +20,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:pymdownx.superfences.mermaid_code_format
+          format: !!python/name:pymdownx.superfences.fence_code_format
 nav:
   - Home: index.md
   - Phase 0 — Planning & Architecture:
@@ -35,3 +39,21 @@ nav:
       - Implementation Plan: phase-1/01-phase1-implementation-plan.md
   - Phase 4 — AI Document Intelligence:
       - Architecture, Security & API: phase-4/ai-document-intelligence.md
+  - Guides:
+      - Status: guides/status.md
+      - Architecture: guides/architecture.md
+      - Local development: guides/local-development.md
+      - Docker: guides/docker.md
+      - Environment variables: guides/environment.md
+      - Migrations: guides/migrations.md
+      - API: guides/api.md
+      - Security: guides/security.md
+      - Troubleshooting: guides/troubleshooting.md
+  - Phase 5 — AWS:
+      - Architecture: phase-5/aws-architecture.md
+      - Deployment: phase-5/aws-deployment.md
+      - CI/CD: phase-5/ci-cd.md
+      - Operations: phase-5/operations.md
+      - Costs: phase-5/cost.md
+  - Releases:
+      - Integration report: release/integration-report.md

@@ -27,7 +27,7 @@
       "@lib/*": ["src/lib/*"],
       "@styles/*": ["src/styles/*"]
     },
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src", "tests"],
   "references": [{ "path": "./tsconfig.node.json" }]

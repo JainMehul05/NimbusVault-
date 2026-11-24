@@ -186,8 +186,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Build and start the whole stack
-        run: docker compose up --build --detach --wait --wait-timeout 300
+      - name: Build images
+        run: |
+          set -o pipefail
+          docker compose --progress plain build 2>&1 | tee build.log || {
+            # Annotations are readable without opening the log.
+            echo "::error title=Image build failed::$(tail -n 40 build.log | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          }
+      - name: Start the whole stack
+        run: docker compose up --detach --wait --wait-timeout 300
       - name: Smoke test through the front door
         run: bash scripts/smoke-test.sh http://localhost:5173
       - name: Survives restart and recreation with data intact
@@ -208,7 +216,10 @@ jobs:
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image
           --severity CRITICAL --ignore-unfixed --exit-code 1 --scanners vuln --no-progress nimbusvault-backend:local
       - if: failure()
-        run: docker compose ps -a && docker compose logs --tail 200
+        run: |
+          docker compose ps -a
+          docker compose logs --tail 200 | tee compose.log
+          echo "::error title=Container logs::$(grep -viE 'GET /api/v1/health|/_localstack/health' compose.log | tail -n 60 | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
 
   security:
     name: Dependency and secret checks

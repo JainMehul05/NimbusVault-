@@ -168,7 +168,8 @@ export const sharingController = {
     res.json(
       successResponse(
         {
-          files: result.files,
+          // BigInt cannot be JSON-serialized; expose sizes as strings like the files API does.
+          files: result.files.map((file) => ({ ...file, sizeBytes: file.sizeBytes.toString() })),
           folders: result.folders,
           pagination: {
             page,

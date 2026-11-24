@@ -34,7 +34,11 @@ export function generateRefreshToken(payload: Omit<RefreshTokenPayload, 'type'>)
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, config.jwt.accessSecret) as AccessTokenPayload;
+  const payload = jwt.verify(token, config.jwt.accessSecret, { algorithms: ['HS256'] }) as AccessTokenPayload;
+  if (payload.type !== 'access' || typeof payload.userId !== 'string') {
+    throw new Error('Not an access token');
+  }
+  return payload;
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {

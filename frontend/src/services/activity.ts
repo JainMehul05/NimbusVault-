@@ -15,8 +15,14 @@ export type ActivityAction =
   | 'folder_delete'
   | 'share_create'
   | 'share_revoke'
+  | 'share_update'
   | 'share_access'
-  | 'ai_query';
+  | 'share_link_create'
+  | 'share_link_revoke'
+  | 'folder_rename'
+  | 'folder_move'
+  | 'ai_query'
+  | 'ai_reindex';
 
 export type ResourceType = 'FILE' | 'FOLDER' | 'SHARE_LINK' | 'USER';
 
@@ -34,10 +40,14 @@ export interface ActivityLogEntry {
     name: string;
     email: string;
   } | null;
+  /** True when the signed-in user performed the action. */
+  performedByYou?: boolean;
+  /** True for share-link visitors without an account. */
+  anonymous?: boolean;
 }
 
+/** The feed is always scoped to the signed-in user server-side; there is no user filter. */
 export interface ActivityLogFilters {
-  userId?: string;
   resourceType?: ResourceType;
   resourceId?: string;
   action?: ActivityAction;
@@ -49,10 +59,12 @@ export interface ActivityLogFilters {
 
 export interface ActivityLogResponse {
   entries: ActivityLogEntry[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export const activityApi = {
@@ -61,7 +73,6 @@ export const activityApi = {
       page: filters.page.toString(),
       limit: filters.limit.toString(),
     });
-    if (filters.userId) params.append('userId', filters.userId);
     if (filters.resourceType) params.append('resourceType', filters.resourceType);
     if (filters.resourceId) params.append('resourceId', filters.resourceId);
     if (filters.action) params.append('action', filters.action);

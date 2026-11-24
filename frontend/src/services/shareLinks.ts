@@ -2,23 +2,12 @@ import { api, type ApiResponse } from './api';
 
 export interface ShareLink {
   id: string;
-  fileId: string;
-  createdBy: string;
-  token: string;
   permission: 'VIEW' | 'DOWNLOAD';
-  passwordHash: string | null;
   expiresAt: string | null;
   maxDownloads: number | null;
   downloadCount: number;
   revokedAt: string | null;
   createdAt: string;
-  file?: {
-    id: string;
-    filename: string;
-    sizeBytes: string;
-    mimeType: string;
-    category: string;
-  };
 }
 
 export interface ShareLinkCreateInput {
@@ -49,7 +38,10 @@ export interface ShareLinkAccessResponse {
     category: string;
   };
   permission: 'VIEW' | 'DOWNLOAD';
+  expiresAt: string | null;
   requiresPassword: boolean;
+  /** null = unlimited */
+  downloadsRemaining?: number | null;
 }
 
 export interface ShareLinkDownloadResponse {
@@ -74,15 +66,18 @@ export const shareLinkApi = {
     return response.data;
   },
 
+  // The password travels in a header, not the URL, so it never lands in logs or history.
   accessShareLink: async (token: string, password?: string): Promise<ApiResponse<ShareLinkAccessResponse>> => {
-    const params = password ? `?password=${encodeURIComponent(password)}` : '';
-    const response = await api.get(`/share-links/public/${token}${params}`);
+    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}`, {
+      headers: password ? { 'X-Share-Password': password } : undefined,
+    });
     return response.data;
   },
 
   downloadShareLink: async (token: string, password?: string): Promise<ApiResponse<ShareLinkDownloadResponse>> => {
-    const params = password ? `?password=${encodeURIComponent(password)}` : '';
-    const response = await api.get(`/share-links/public/${token}/download${params}`);
+    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}/download`, {
+      headers: password ? { 'X-Share-Password': password } : undefined,
+    });
     return response.data;
   },
 };

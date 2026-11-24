@@ -6,6 +6,9 @@ import { authController } from './auth.controller';
 import { registerSchema, loginSchema, refreshSchema, logoutSchema } from './auth.validation';
 import { verifyAccessToken } from './jwt.utils';
 import { AppError } from '@common/errors';
+import rateLimit from 'express-rate-limit';
+import { config } from '@config/index';
+import { errorResponse } from '@common/response';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -35,9 +38,18 @@ export const authenticate = asyncHandler(async (req: AuthenticatedRequest, res: 
   }
 });
 
-router.post('/register', validate(registerSchema), authController.register);
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/refresh', validate(refreshSchema), authController.refresh);
+// Brute-force protection for credential endpoints (per IP), stricter than the global limit.
+const credentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: config.rateLimit.authMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: errorResponse('Too many attempts. Please wait and try again.', 'RATE_LIMIT_EXCEEDED'),
+});
+
+router.post('/register', credentialLimiter, validate(registerSchema), authController.register);
+router.post('/login', credentialLimiter, validate(loginSchema), authController.login);
+router.post('/refresh', credentialLimiter, validate(refreshSchema), authController.refresh);
 router.post('/logout', validate(logoutSchema), authController.logout);
 router.get('/me', authenticate, authController.me);
 

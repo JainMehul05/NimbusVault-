@@ -1,362 +1,248 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@context/AuthContext';
-import { api, type ApiResponse } from '@services/api';
+import { getErrorMessage } from '@lib/format';
+import {
+  filesApi,
+  findNode,
+  flattenTree,
+  foldersApi,
+  MAX_UPLOAD_BYTES,
+  pathTo,
+  type FileRecord,
+  type FileSortField,
+  type FolderNode,
+  type Pagination,
+  type StorageInfo,
+} from '@services/files';
 
-export interface File {
-  id: string;
-  filename: string;
-  sizeBytes: string;
-  mimeType: string;
-  category: string;
-  folderId: string | null;
-  status: string;
-  uploadedAt: string;
-}
+export type { FileRecord, FolderNode, StorageInfo } from '@services/files';
+export { formatFileSize } from '@lib/format';
 
-export interface Folder {
+export interface UploadItem {
   id: string;
   name: string;
-  parentFolderId: string | null;
-  depth: number;
-  createdAt: string;
-  updatedAt: string;
-  childrenCount: number;
-  filesCount: number;
-  children?: Folder[];
+  size: number;
+  progress: number;
+  status: 'queued' | 'uploading' | 'done' | 'error';
+  error?: string;
 }
 
-export interface StorageInfo {
-  quota: string;
-  used: string;
-  remaining: string;
+export interface SortState {
+  by: FileSortField;
+  order: 'asc' | 'desc';
 }
 
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+const PAGE_SIZE = 50;
 
-export interface FileListData {
-  files: File[];
-  pagination: PaginationInfo;
-}
-
-export interface FolderListData {
-  folders: Folder[];
-  pagination: PaginationInfo;
-}
-
-type UploadProgressMap = Record<string, number>;
-
-export type FileManagerReturn = ReturnType<typeof useFileManager>;
-
-export const formatFileSize = (bytes: string | number): string => {
-  const numBytes = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
-  if (numBytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(numBytes) / Math.log(k));
-  return `${parseFloat((numBytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-};
-
-export const getFileIcon = (_mimeType: string, category: string): string => {
-  if (category === 'image') return '🖼️';
-  if (category === 'video') return '🎬';
-  if (category === 'pdf') return '📄';
-  if (category === 'document') return '📝';
-  return '📎';
-};
-
-export const useFileManager = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [files, setFiles] = useState<File[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [folderTree, setFolderTree] = useState<Folder[]>([]);
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [folderPath, setFolderPath] = useState<Folder[]>([]);
-  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<UploadProgressMap>({});
+/**
+ * State and actions for one folder view. The whole folder tree is fetched once (a single
+ * request) and used for breadcrumbs, subfolders, the sidebar tree, and move targets.
+ */
+export const useFileManager = (currentFolderId: string | null) => {
+  const { isAuthenticated } = useAuth();
+  const [files, setFiles] = useState<FileRecord[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 0 });
+  const [tree, setTree] = useState<FolderNode[]>([]);
+  const [treeLoaded, setTreeLoaded] = useState(false);
+  const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [searchQuery, setSearchQuery] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [sort, setSort] = useState<SortState>({ by: 'uploadedAt', order: 'desc' });
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const requestSeq = useRef(0);
 
-  const fetchStorageInfo = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
+  const fetchStorage = useCallback(async () => {
+    try { setStorage(await filesApi.storage()); } catch { /* non-blocking */ }
+  }, []);
+
+  const fetchTree = useCallback(async () => {
     try {
-      const response = await api.get<ApiResponse<StorageInfo>>('/files/storage/info');
-      if (response.data.success && response.data.data) {
-        setStorageInfo(response.data.data);
-      }
+      setTree(await foldersApi.tree());
     } catch (err) {
-      console.error('Failed to fetch storage info:', err);
+      setError(getErrorMessage(err, 'Couldn’t load your folders.'));
+    } finally {
+      setTreeLoaded(true);
     }
-  }, [isAuthenticated, user]);
+  }, []);
 
   const fetchFiles = useCallback(async (page = 1) => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated) return;
+    const seq = ++requestSeq.current;
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        sortBy: 'uploadedAt',
-        sortOrder: 'desc',
+      const data = await filesApi.list({
+        // A search looks across every folder; otherwise list only this folder's direct files.
+        folderId: search ? undefined : currentFolderId,
+        search: search || undefined,
+        category: category || undefined,
+        page,
+        limit: PAGE_SIZE,
+        sortBy: sort.by,
+        sortOrder: sort.order,
       });
-      if (currentFolderId) params.append('folderId', currentFolderId);
-      if (searchQuery) params.append('search', searchQuery);
-
-      const response = await api.get<ApiResponse<FileListData>>(`/files?${params.toString()}`);
-      if (response.data.success && response.data.data) {
-        setFiles(response.data.data.files);
-        setPagination(response.data.data.pagination);
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to load files');
+      if (seq !== requestSeq.current) return;
+      setFiles(data.files);
+      setPagination(data.pagination);
+    } catch (err) {
+      if (seq !== requestSeq.current) return;
+      setError(getErrorMessage(err, 'Couldn’t load files.'));
     } finally {
-      setIsLoading(false);
+      if (seq === requestSeq.current) setIsLoading(false);
     }
-  }, [isAuthenticated, user, currentFolderId, searchQuery]);
-
-  const fetchFolders = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
-    try {
-      const params = new URLSearchParams({
-        page: '1',
-        limit: '100',
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-      if (currentFolderId !== null) {
-        params.append('parentFolderId', currentFolderId);
-      } else {
-        params.append('parentFolderId', '');
-      }
-
-      const response = await api.get<ApiResponse<FolderListData>>(`/folders?${params.toString()}`);
-      if (response.data.success && response.data.data) {
-        setFolders(response.data.data.folders);
-      }
-    } catch (err) {
-      console.error('Failed to load folders:', err);
-    }
-  }, [isAuthenticated, user, currentFolderId]);
-
-  const fetchFolderPath = useCallback(async () => {
-    if (!isAuthenticated || !user || !currentFolderId) {
-      setFolderPath([]);
-      return;
-    }
-    try {
-      const response = await api.get<ApiResponse<Folder>>(`/folders/${currentFolderId}/contents`);
-      if (response.data.success && response.data.data) {
-        // Build path from root to current folder
-        const path: Folder[] = [];
-        const current = response.data.data as Folder & { parentFolder?: Folder };
-        path.unshift(current);
-        // We'd need a separate API call to get parent, for now just use what we have
-        setFolderPath(path);
-      }
-    } catch (err) {
-      console.error('Failed to load folder path:', err);
-    }
-  }, [isAuthenticated, user, currentFolderId]);
-
-  const fetchFolderTree = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
-    try {
-      const params = new URLSearchParams();
-      if (currentFolderId !== null) {
-        params.append('folderId', currentFolderId);
-      }
-      const response = await api.get<ApiResponse<Folder[]>>(`/folders/tree?${params.toString()}`);
-      if (response.data.success && response.data.data) {
-        setFolderTree(response.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load folder tree:', err);
-    }
-  }, [isAuthenticated, user, currentFolderId]);
+  }, [isAuthenticated, currentFolderId, search, category, sort]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchStorageInfo();
-      fetchFiles();
-      fetchFolders();
-      fetchFolderPath();
-      fetchFolderTree();
-    }
-  }, [isAuthenticated, user, fetchStorageInfo, fetchFiles, fetchFolders, fetchFolderPath, fetchFolderTree]);
+    if (!isAuthenticated) return;
+    fetchTree();
+    fetchStorage();
+  }, [isAuthenticated, fetchTree, fetchStorage]);
 
-  const handleUpload = async (fileList: FileList) => {
-    if (!isAuthenticated || !user) return;
-    
-    const filesArray = Array.from(fileList);
-    setIsUploading(true);
-    
-    for (const file of filesArray) {
-      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-      
+  useEffect(() => { fetchFiles(1); }, [fetchFiles]);
+
+  // While any visible file is queued or being indexed, refresh quietly so its AI badge updates.
+  const indexing = files.some((f) => f.aiStatus === 'PENDING' || f.aiStatus === 'PROCESSING')
+  useEffect(() => {
+    if (!indexing) return
+    const t = window.setInterval(async () => {
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        if (currentFolderId) {
-          formData.append('folderId', currentFolderId);
-        }
+        const data = await filesApi.list({
+          folderId: search ? undefined : currentFolderId,
+          search: search || undefined,
+          category: category || undefined,
+          page: pagination.page,
+          limit: PAGE_SIZE,
+          sortBy: sort.by,
+          sortOrder: sort.order,
+        })
+        setFiles(data.files)
+      } catch { /* transient; next tick retries */ }
+    }, 4000)
+    return () => window.clearInterval(t)
+  }, [indexing, currentFolderId, search, category, sort, pagination.page])
 
-        const response = await api.post<ApiResponse<File>>('/files', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
-            }
-          },
-        });
+  // Leaving a folder clears its search so the next folder opens unfiltered.
+  useEffect(() => { setSearch(''); }, [currentFolderId]);
 
-        if (response.data.success) {
-          setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
-          // Refresh file list
-          fetchFiles(pagination.page);
-          fetchStorageInfo();
-        } else {
-          setError(response.data.message || `Failed to upload ${file.name}`);
-        }
-      } catch (err: unknown) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || `Failed to upload ${file.name}`);
+  const refresh = useCallback(async () => {
+    await Promise.all([fetchFiles(pagination.page), fetchTree(), fetchStorage()]);
+  }, [fetchFiles, fetchTree, fetchStorage, pagination.page]);
+
+  // ---- Derived folder data ----
+  const allFolders = useMemo(() => flattenTree(tree), [tree]);
+  const folderPath = useMemo(() => pathTo(tree, currentFolderId), [tree, currentFolderId]);
+  const currentFolder = useMemo(() => findNode(tree, currentFolderId), [tree, currentFolderId]);
+  const subfolders = useMemo(() => {
+    const list = currentFolderId ? currentFolder?.children ?? [] : tree;
+    const filtered = search ? allFolders.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())) : list;
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  }, [tree, currentFolder, currentFolderId, search, allFolders]);
+  const folderMissing = treeLoaded && currentFolderId !== null && !currentFolder;
+
+  // ---- File actions (throw on failure; callers show feedback) ----
+  const renameFile = async (file: FileRecord, name: string) => {
+    await filesApi.rename(file.id, name);
+    setFiles((prev) => prev.map((f) => (f.id === file.id ? { ...f, filename: name } : f)));
+  };
+
+  const moveFiles = async (ids: string[], folderId: string | null) => {
+    const results = await Promise.allSettled(ids.map((id) => filesApi.move(id, folderId)));
+    await fetchFiles(pagination.page);
+    const failed = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+    if (failed.length) throw failed[0].reason;
+  };
+
+  const deleteFiles = async (ids: string[]) => {
+    const results = await Promise.allSettled(ids.map((id) => filesApi.remove(id)));
+    await Promise.all([fetchFiles(pagination.page), fetchStorage()]);
+    const failed = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+    if (failed.length) throw failed[0].reason;
+  };
+
+  // ---- Folder actions ----
+  const createFolder = async (name: string, parentId: string | null = currentFolderId) => {
+    await foldersApi.create(name, parentId);
+    await fetchTree();
+  };
+  const renameFolder = async (id: string, name: string) => {
+    await foldersApi.rename(id, name);
+    await fetchTree();
+  };
+  const moveFolder = async (id: string, parentId: string | null) => {
+    await foldersApi.move(id, parentId);
+    await fetchTree();
+  };
+  const deleteFolder = async (id: string) => {
+    await foldersApi.remove(id);
+    await Promise.all([fetchTree(), fetchStorage(), fetchFiles(1)]);
+  };
+
+  // ---- Uploads ----
+  const upload = async (list: FileList | File[]) => {
+    const picked = Array.from(list);
+    if (!picked.length) return;
+    let remaining = storage ? Number(storage.remaining) : Infinity;
+    const items: UploadItem[] = picked.map((f, i) => {
+      const id = `${Date.now()}-${i}-${f.name}`;
+      if (f.size > MAX_UPLOAD_BYTES) return { id, name: f.name, size: f.size, progress: 0, status: 'error', error: 'Larger than the 100 MB limit' };
+      if (f.size > remaining) return { id, name: f.name, size: f.size, progress: 0, status: 'error', error: 'Not enough storage left' };
+      remaining -= f.size;
+      return { id, name: f.name, size: f.size, progress: 0, status: 'queued' };
+    });
+    setUploads((prev) => [...prev.filter((u) => u.status === 'uploading' || u.status === 'queued'), ...items]);
+    const targetFolder = currentFolderId;
+
+    for (let i = 0; i < picked.length; i++) {
+      const item = items[i];
+      if (item.status === 'error') continue;
+      const patch = (p: Partial<UploadItem>) => setUploads((prev) => prev.map((u) => (u.id === item.id ? { ...u, ...p } : u)));
+      patch({ status: 'uploading' });
+      try {
+        await filesApi.upload(picked[i], targetFolder, (progress) => patch({ progress }));
+        patch({ status: 'done', progress: 100 });
+      } catch (err) {
+        patch({ status: 'error', error: getErrorMessage(err, 'Upload failed') });
       }
     }
-    
-    setIsUploading(false);
-    // Clear progress after a delay
-    setTimeout(() => setUploadProgress({}), 2000);
+    await Promise.all([fetchFiles(1), fetchStorage()]);
   };
 
-  const handleDownload = async (file: File) => {
-    try {
-      const response = await api.get<ApiResponse<{ downloadUrl: string }>>(`/files/${file.id}/download`);
-      if (response.data.success && response.data.data) {
-        const { downloadUrl } = response.data.data;
-        window.open(downloadUrl, '_blank');
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to download file');
-    }
-  };
-
-  const handleRename = async (file: File, newName: string) => {
-    try {
-      const response = await api.patch<ApiResponse<File>>(`/files/${file.id}/rename`, { filename: newName });
-      if (response.data.success) {
-        fetchFiles(pagination.page);
-      } else {
-        setError(response.data.message || 'Failed to rename file');
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to rename file');
-    }
-  };
-
-  const handleMove = async (file: File, newFolderId: string | null) => {
-    try {
-      const response = await api.patch<ApiResponse<File>>(`/files/${file.id}/move`, { folderId: newFolderId });
-      if (response.data.success) {
-        fetchFiles(pagination.page);
-      } else {
-        setError(response.data.message || 'Failed to move file');
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to move file');
-    }
-  };
-
-  const handleDelete = async (file: File) => {
-    if (!window.confirm(`Are you sure you want to delete "${file.filename}"?`)) return;
-    
-    try {
-      const response = await api.delete<ApiResponse<File>>(`/files/${file.id}`);
-      if (response.data.success) {
-        fetchFiles(pagination.page);
-        fetchStorageInfo();
-      } else {
-        setError(response.data.message || 'Failed to delete file');
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to delete file');
-    }
-  };
-
-  const handleCreateFolder = async (name: string) => {
-    try {
-      const response = await api.post<ApiResponse<Folder>>('/folders', { 
-        name, 
-        parentFolderId: currentFolderId 
-      });
-      if (response.data.success) {
-        fetchFolders();
-      } else {
-        setError(response.data.message || 'Failed to create folder');
-      }
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Failed to create folder');
-    }
-  };
-
-  const handleNavigateToFolder = (folderId: string | null) => {
-    setCurrentFolderId(folderId);
-    setSearchQuery('');
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
-  const handleNavigateUp = () => {
-    if (folderPath.length > 1) {
-      const parentFolder = folderPath[folderPath.length - 2];
-      setCurrentFolderId(parentFolder.id);
-      setSearchQuery('');
-      setPagination(prev => ({ ...prev, page: 1 }));
-    } else {
-      setCurrentFolderId(null);
-      setSearchQuery('');
-      setPagination(prev => ({ ...prev, page: 1 }));
-    }
-  };
+  const clearFinishedUploads = () => setUploads((prev) => prev.filter((u) => u.status === 'uploading' || u.status === 'queued'));
 
   return {
     files,
-    folders,
-    folderTree,
-    currentFolderId,
-    folderPath,
-    storageInfo,
-    isLoading,
-    isUploading,
-    uploadProgress,
-    error,
     pagination,
-    searchQuery,
-    setSearchQuery,
+    tree,
+    treeLoaded,
+    allFolders,
+    folderPath,
+    currentFolder,
+    subfolders,
+    folderMissing,
+    storage,
+    isLoading,
+    error,
+    search,
+    setSearch,
+    category,
+    setCategory,
+    sort,
+    setSort,
+    uploads,
     fetchFiles,
-    fetchFolders,
-    fetchFolderTree,
-    fetchStorageInfo,
-    handleUpload,
-    handleDownload,
-    handleRename,
-    handleMove,
-    handleDelete,
-    handleCreateFolder,
-    handleNavigateToFolder,
-    handleNavigateUp,
+    refresh,
+    renameFile,
+    moveFiles,
+    deleteFiles,
+    createFolder,
+    renameFolder,
+    moveFolder,
+    deleteFolder,
+    upload,
+    clearFinishedUploads,
   };
 };
+
+export type FileManager = ReturnType<typeof useFileManager>;

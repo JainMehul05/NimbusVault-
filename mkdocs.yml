@@ -33,3 +33,5 @@ nav:
       - Roadmap: phase-0/11-Roadmap.md
   - Phase 1 — Foundation Implementation:
       - Implementation Plan: phase-1/01-phase1-implementation-plan.md
+  - Phase 4 — AI Document Intelligence:
+      - Architecture, Security & API: phase-4/ai-document-intelligence.md

@@ -3,7 +3,15 @@ import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
 import { shareLinkService } from './share-links.service';
 import { createRequestLogger } from '@common/logger';
-import prisma from '@database/prisma';
+import { activityLogService } from '@modules/activity/activity.service';
+
+/** Password from the X-Share-Password header (preferred: not logged in URLs) or legacy ?password=. */
+const sharePassword = (req: Request): string | undefined => {
+  const header = req.get('x-share-password');
+  if (header) return header;
+  const q = req.query.password;
+  return typeof q === 'string' && q ? q : undefined;
+};
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -113,16 +121,10 @@ export const shareLinkController = {
     req.logger = log;
 
     const { token } = req.params;
-    const { password } = req.query;
 
-    const result = await shareLinkService.validateShareLinkAccess(
-      token,
-      'read',
-      password as string | undefined
-    );
+    const result = await shareLinkService.validateShareLinkAccess(token, 'read', sharePassword(req));
 
-    // Log share access
-    await shareLinkService.logShareAccess(result.shareLink.id, req.ip, req.get('user-agent'));
+    await shareLinkService.logShareAccess(result.shareLink, result.file, req.ip, requestId);
 
     log.info({ shareLinkId: result.shareLink.id }, 'Share link accessed');
 
@@ -140,6 +142,8 @@ export const shareLinkController = {
           permission: result.shareLink.permission,
           expiresAt: result.shareLink.expiresAt,
           requiresPassword: !!result.shareLink.passwordHash,
+          downloadsRemaining:
+            result.shareLink.maxDownloads === null ? null : Math.max(0, result.shareLink.maxDownloads - result.shareLink.downloadCount),
         },
         'Share link accessed successfully',
         requestId
@@ -154,19 +158,10 @@ export const shareLinkController = {
     req.logger = log;
 
     const { token } = req.params;
-    const { password } = req.query;
 
-    const result = await shareLinkService.validateShareLinkAccess(
-      token,
-      'download',
-      password as string | undefined
-    );
+    const result = await shareLinkService.validateShareLinkAccess(token, 'download', sharePassword(req));
 
-    // Increment download count
-    await shareLinkService.incrementDownloadCount(result.shareLink.id);
-
-    // Log share access
-    await shareLinkService.logShareAccess(result.shareLink.id, req.ip, req.get('user-agent'));
+    // Generate the URL first so a storage failure does not consume a download.
 
     log.info({ shareLinkId: result.shareLink.id }, 'Share link download initiated');
 
@@ -182,15 +177,15 @@ export const shareLinkController = {
       3600
     );
 
-    // Log download activity
-    await prisma.activityLog.create({
-      data: {
-        action: 'file_download',
-        resourceType: 'FILE',
-        resourceId: result.file.id,
-        ipAddress: req.ip,
-        metadata: { filename: result.file.filename, viaShareLink: result.shareLink.id },
-      },
+    await shareLinkService.consumeDownload(result.shareLink.id);
+
+    await activityLogService.logActivity(null, 'file_download', {
+      resourceType: 'FILE',
+      resourceId: result.file.id,
+      targetOwnerId: result.file.ownerId,
+      ipAddress: req.ip,
+      metadata: { filename: result.file.filename, viaShareLink: result.shareLink.id },
+      requestId,
     });
 
     res.json(

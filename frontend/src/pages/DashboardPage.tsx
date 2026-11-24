@@ -1,253 +1,239 @@
-import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, Clock, LogOut } from 'lucide-react';
-import { useAuth } from '@context/AuthContext';
-import { useFileManager } from '@hooks/useFileManager';
-import { useSharing } from '@hooks/useSharing';
-import { UploadZone } from '@components/UploadZone';
-import { FileList } from '@components/FileList';
-import { FolderTree } from '@components/FolderTree';
-import { StorageIndicator } from '@components/StorageIndicator';
-import { Breadcrumb } from '@components/Breadcrumb';
-import { SearchBar } from '@components/SearchBar';
-import { ShareDialog } from '@components/ShareDialog';
-import { ShareLinkDialog } from '@components/ShareLinkDialog';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Activity, ArrowRight, Download, FileText, FolderClosed, FolderPlus, HardDrive, Upload, UserPlus, Users } from 'lucide-react'
+import { useAuth } from '@context/AuthContext'
+import { useFileManager } from '@hooks/useFileManager'
+import { filesApi, openDownload, type FileRecord } from '@services/files'
+import { sharingApi } from '@services/sharing'
+import { activityApi, type ActivityLogEntry } from '@services/activity'
+import { formatFileSize, formatRelative, getErrorMessage } from '@lib/format'
+import { cn } from '@lib/utils'
+import { AppShell } from '@components/layout/AppShell'
+import { Button } from '@components/ui/Button'
+import { EmptyState, ErrorState, Panel, Skeleton } from '@components/ui/primitives'
+import { useToast } from '@components/ui/Toast'
+import { FileTypeIcon } from '@components/files/FileTypeIcon'
+import { NameDialog } from '@components/files/FileDialogs'
+import { UploadPanel } from '@components/files/UploadPanel'
+import { ActivityItem, type NameResolver } from '@components/activity/ActivityItem'
+import { ShareDialog, type ShareTarget } from '@components/ShareDialog'
 
-export const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+const greeting = () => {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+}
 
-  // Dialog states
-  const [shareDialog, setShareDialog] = useState<{
-    isOpen: boolean;
-    resourceType: 'FILE' | 'FOLDER';
-    resourceId: string;
-    resourceName: string;
-  } | null>(null);
+function Stat({ label, value, icon: Icon, to, loading }: { label: string; value: string | number; icon: typeof FileText; to: string; loading: boolean }) {
+  return (
+    <Link to={to} className="group flex items-center gap-4 border border-border bg-surface p-4 shadow-e1 transition-colors hover:border-border-strong hover:bg-white/[0.02]">
+      <span className="grid h-10 w-10 place-items-center bg-primary/10 text-primary"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-medium text-muted-foreground">{label}</span>
+        {loading ? <Skeleton className="mt-1.5 h-6 w-12" /> : <span className="app-title block text-2xl font-bold tabular-nums text-foreground">{value}</span>}
+      </span>
+      <ArrowRight className="h-4 w-4 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" aria-hidden="true" />
+    </Link>
+  )
+}
 
-  const [shareLinkDialog, setShareLinkDialog] = useState<{
-    isOpen: boolean;
-    fileId: string;
-    fileName: string;
-  } | null>(null);
+export function DashboardPage() {
+  const { user } = useAuth()
+  const toast = useToast()
+  // Root-level manager powers quick upload / new folder, the folder count, and storage.
+  const fm = useFileManager(null)
+  const [recent, setRecent] = useState<FileRecord[]>([])
+  const [fileTotal, setFileTotal] = useState(0)
+  const [recentState, setRecentState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [sharedCount, setSharedCount] = useState<number | null>(null)
+  const [activity, setActivity] = useState<ActivityLogEntry[]>([])
+  const [activityState, setActivityState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [newFolderOpen, setNewFolderOpen] = useState(false)
+  const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null)
+  const uploadInput = useRef<HTMLInputElement>(null)
 
-  const fileManager = useFileManager();
-  const sharing = useSharing();
+  const loadRecent = useCallback(async () => {
+    setRecentState('loading')
+    try {
+      const data = await filesApi.list({ limit: 6, sortBy: 'uploadedAt', sortOrder: 'desc' })
+      setRecent(data.files)
+      setFileTotal(data.pagination.total)
+      setRecentState('ready')
+    } catch {
+      setRecentState('error')
+    }
+  }, [])
 
-  // Override search handling
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-  }, []);
+  const loadActivity = useCallback(async () => {
+    setActivityState('loading')
+    try {
+      const res = await activityApi.getActivityLog({ page: 1, limit: 6 })
+      setActivity(res.data?.entries ?? [])
+      setActivityState('ready')
+    } catch {
+      setActivityState('error')
+    }
+  }, [])
 
-  const handleSearch = useCallback((value: string) => {
-    fileManager.setSearchQuery(value);
-    fileManager.fetchFiles(1);
-  }, [fileManager]);
+  useEffect(() => {
+    loadRecent()
+    loadActivity()
+    sharingApi.getSharedWithMe(1, 100)
+      .then((r) => setSharedCount((r.data?.files.length ?? 0) + (r.data?.folders.length ?? 0)))
+      .catch(() => setSharedCount(null))
+  }, [loadRecent, loadActivity])
 
-  const handleCreateFolder = useCallback((_parentId: string | null, name: string) => {
-    fileManager.handleCreateFolder(name);
-  }, [fileManager]);
+  // Refresh recent files once a batch of uploads finishes.
+  const activeUploads = fm.uploads.some((u) => u.status === 'uploading' || u.status === 'queued')
+  const prevActive = useRef(false)
+  useEffect(() => {
+    if (prevActive.current && !activeUploads) { loadRecent(); loadActivity() }
+    prevActive.current = activeUploads
+  }, [activeUploads, loadRecent, loadActivity])
 
-  const handleRenameFolder = useCallback((folderId: string, newName: string) => {
-    console.log('Rename folder:', folderId, newName);
-  }, []);
+  const folderNames = useMemo(() => new Map(fm.allFolders.map((f) => [f.id, f.name])), [fm.allFolders])
+  const resolve: NameResolver = useCallback(
+    (type, id) => (id ? (type === 'FOLDER' ? folderNames.get(id) : recent.find((f) => f.id === id)?.filename) : undefined),
+    [folderNames, recent]
+  )
 
-  const handleDeleteFolder = useCallback((folderId: string) => {
-    console.log('Delete folder:', folderId);
-  }, []);
-
-  const handleNavigate = useCallback((folderId: string | null) => {
-    fileManager.handleNavigateToFolder(folderId);
-  }, [fileManager]);
-
-  // Share handlers
-  const handleShare = useCallback((file: any) => {
-    setShareDialog({
-      isOpen: true,
-      resourceType: 'FILE',
-      resourceId: file.id,
-      resourceName: file.filename,
-    });
-  }, []);
-
-  const handleCreateShareLink = useCallback((file: any) => {
-    setShareLinkDialog({
-      isOpen: true,
-      fileId: file.id,
-      fileName: file.filename,
-    });
-  }, []);
-
-  // Clear error when user interacts
-  const clearError = useCallback(() => setError(null), []);
+  const quota = Number(fm.storage?.quota ?? 0)
+  const used = Number(fm.storage?.used ?? 0)
+  const pct = quota ? Math.min(100, (used / quota) * 100) : 0
+  const firstName = user?.name?.split(' ')[0] ?? ''
 
   return (
-    <div className="min-h-screen bg-background" onClick={clearError}>
-      <nav className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="container-custom">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-6">
-              <h1 className="text-xl font-bold text-foreground">NimbusVault</h1>
-              <nav className="hidden md:flex items-center space-x-4">
-                <Link
-                  to="/dashboard"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Files
-                </Link>
-                <Link
-                  to="/shared-with-me"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <Users className="w-4 h-4" />
-                  Shared with me
-                </Link>
-                <Link
-                  to="/activity"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <Clock className="w-4 h-4" />
-                  Activity
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground hidden sm:block">Welcome, {user?.name}</span>
-              <button
-                onClick={() => logout()}
-                className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <AppShell
+      title={`${greeting()}${firstName ? `, ${firstName}` : ''}`}
+      description="Here’s what’s happening in your vault."
+      storage={fm.storage}
+      actions={
+        <>
+          <Button variant="secondary" onClick={() => setNewFolderOpen(true)}><FolderPlus className="h-4 w-4" /> New folder</Button>
+          <Button onClick={() => uploadInput.current?.click()}><Upload className="h-4 w-4" /> Upload</Button>
+          <input ref={uploadInput} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
+            onChange={(e) => { if (e.target.files?.length) fm.upload(e.target.files); e.target.value = '' }} />
+        </>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat label="Files" value={fileTotal} icon={FileText} to="/files" loading={recentState === 'loading'} />
+        <Stat label="Folders" value={fm.allFolders.length} icon={FolderClosed} to="/files" loading={!fm.treeLoaded} />
+        <Stat label="Shared with you" value={sharedCount ?? '—'} icon={Users} to="/shared-with-me" loading={sharedCount === null && recentState === 'loading'} />
+      </div>
 
-      <main className="container-custom py-6">
-        {/* Error Toast */}
-        {(fileManager.error || error) && (
-          <div className="fixed top-20 right-4 z-50 max-w-md animate-slide-in" role="alert">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm text-destructive">{fileManager.error || error}</p>
-                </div>
-                <button
-                  onClick={() => { setError(null); fileManager.fetchFiles(fileManager.pagination.page); }}
-                  className="text-destructive hover:text-destructive/80"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar - Folder Tree */}
-          <aside className="lg:col-span-3 xl:col-span-2">
-            <FolderTree
-              fileManager={fileManager}
-              currentFolderId={fileManager.currentFolderId}
-              onNavigate={handleNavigate}
-              onCreateFolder={handleCreateFolder}
-              onRenameFolder={handleRenameFolder}
-              onDeleteFolder={handleDeleteFolder}
-            />
-
-            {/* Storage Indicator */}
-            <div className="mt-6">
-              <StorageIndicator storageInfo={fileManager.storageInfo} />
-            </div>
-          </aside>
-
-          {/* Main Content - File List */}
-          <div className="lg:col-span-9 xl:col-span-10">
-            {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div className="flex items-center space-x-4">
-                <Breadcrumb
-                  folderPath={fileManager.folderPath}
-                  currentFolderId={fileManager.currentFolderId}
-                  onNavigate={handleNavigate}
-                />
-              </div>
-              <div className="flex items-center space-x-4 w-full sm:w-auto">
-                <SearchBar
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onSearch={handleSearch}
-                  placeholder="Search files..."
-                />
-                <UploadZone
-                  fileManager={fileManager}
-                  onFileSelect={fileManager.handleUpload}
-                />
-              </div>
-            </div>
-
-            {/* File List */}
-            <div className="bg-card rounded-lg border border-border overflow-hidden">
-              <FileList
-                fileManager={fileManager}
-                onShare={handleShare}
-                onCreateShareLink={handleCreateShareLink}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6">
+          <Panel
+            title="Recent files"
+            action={<Link to="/files" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">View all <ArrowRight className="h-3.5 w-3.5" /></Link>}
+          >
+            {recentState === 'loading' ? (
+              <ul className="divide-y divide-border">{Array.from({ length: 4 }).map((_, i) => (
+                <li key={i} className="flex items-center gap-3 px-4 py-3 sm:px-5"><Skeleton className="h-7 w-7" /><Skeleton className="h-3 flex-1 max-w-[260px]" /><Skeleton className="ml-auto h-3 w-16" /></li>
+              ))}</ul>
+            ) : recentState === 'error' ? (
+              <ErrorState title="Couldn’t load recent files" onRetry={loadRecent} className="py-10" />
+            ) : recent.length === 0 ? (
+              <EmptyState
+                compact
+                icon={Upload}
+                title="No files yet"
+                description="Upload your first file to see it here."
+                action={<Button size="sm" onClick={() => uploadInput.current?.click()}><Upload className="h-4 w-4" /> Upload files</Button>}
               />
-            </div>
-
-            {/* Empty state for when no files but not loading */}
-            {!fileManager.isLoading && fileManager.files.length === 0 && !fileManager.isUploading && (
-              <div className="mt-6 text-center">
-                <svg className="mx-auto h-16 w-16 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 002-2h-6l-2-2H5a2 2 0 002-2z" />
-                </svg>
-                <p className="mt-4 text-lg text-muted-foreground">No files in this folder</p>
-                <p className="mt-1 text-sm text-muted-foreground">Drag and drop files above or click the upload area to add files</p>
-              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {recent.map((file) => (
+                  <li key={file.id} className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/[0.02] sm:px-5">
+                    <FileTypeIcon filename={file.filename} mimeType={file.mimeType} category={file.category} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground" title={file.filename}>{file.filename}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {formatFileSize(file.sizeBytes)} · {file.folderId ? (
+                          <Link to={`/files/${file.folderId}`} className="hover:text-foreground hover:underline">{folderNames.get(file.folderId) ?? 'Folder'}</Link>
+                        ) : (
+                          <Link to="/files" className="hover:text-foreground hover:underline">My Files</Link>
+                        )} · {formatRelative(file.uploadedAt)}
+                      </p>
+                    </div>
+                    <div className="flex gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                      <Button size="icon-sm" variant="ghost" aria-label={`Share ${file.filename}`}
+                        onClick={() => setShareTarget({ resourceType: 'FILE', resourceId: file.id, resourceName: file.filename, mimeType: file.mimeType, category: file.category })}>
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon-sm" variant="ghost" aria-label={`Download ${file.filename}`}
+                        onClick={() => openDownload(file.id).catch((err) => toast.error('Download failed', getErrorMessage(err, 'Please try again.')))}>
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
+          </Panel>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { to: '/shared-with-me', icon: Users, title: 'Shared with me', body: 'Files and folders other people gave you access to.' },
+              { to: '/activity', icon: Activity, title: 'Activity history', body: 'Downloads, renames, moves, deletions, and sharing changes.' },
+            ].map((card) => (
+              <Link key={card.to} to={card.to} className="group flex gap-3 border border-border bg-surface p-4 transition-colors hover:border-border-strong hover:bg-white/[0.02]">
+                <card.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <span>
+                  <span className="flex items-center gap-1 text-sm font-semibold text-foreground">{card.title} <ArrowRight className="h-3.5 w-3.5 text-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{card.body}</span>
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
-      </main>
 
-      {/* Share Dialog */}
-      {shareDialog && (
-        <ShareDialog
-          isOpen={shareDialog.isOpen}
-          onClose={() => setShareDialog(null)}
-          resourceType={shareDialog.resourceType}
-          resourceId={shareDialog.resourceId}
-          resourceName={shareDialog.resourceName}
-          onShare={async (granteeEmail, level) => {
-            await sharing.createShare({
-              resourceType: shareDialog.resourceType,
-              resourceId: shareDialog.resourceId,
-              granteeEmail,
-              level,
-            });
-            // Refresh shares list
-            sharing.listShares(shareDialog.resourceType, shareDialog.resourceId);
-          }}
-          existingShares={sharing.shares}
-        />
-      )}
+        <div className="space-y-6">
+          <Panel title="Storage" bodyClassName="p-4 sm:p-5">
+            {fm.storage ? (
+              <>
+                <div className="flex items-end justify-between">
+                  <p><span className="app-title text-3xl font-bold tabular-nums text-foreground">{formatFileSize(used)}</span> <span className="text-sm text-muted-foreground">of {formatFileSize(quota)}</span></p>
+                  <HardDrive className="h-5 w-5 text-subtle" aria-hidden="true" />
+                </div>
+                <div className="mt-3 h-2 overflow-hidden bg-white/[0.08]" role="progressbar" aria-label="Storage used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+                  <div className={cn('h-full', pct >= 90 ? 'bg-danger' : pct >= 75 ? 'bg-warning' : 'bg-primary')} style={{ width: `${Math.max(pct, used > 0 ? 1 : 0)}%` }} />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {formatFileSize(fm.storage.remaining)} available{pct >= 90 && <span className="text-[#ff7b70]"> · Almost full — delete files to free space</span>}
+                </p>
+              </>
+            ) : (
+              <div className="space-y-3"><Skeleton className="h-8 w-32" /><Skeleton className="h-2 w-full" /><Skeleton className="h-3 w-24" /></div>
+            )}
+          </Panel>
 
-      {/* Share Link Dialog */}
-      {shareLinkDialog && (
-        <ShareLinkDialog
-          isOpen={shareLinkDialog.isOpen}
-          onClose={() => setShareLinkDialog(null)}
-          fileId={shareLinkDialog.fileId}
-          fileName={shareLinkDialog.fileName}
-        />
-      )}
-    </div>
-  );
-};
+          <Panel
+            title="Recent activity"
+            action={<Link to="/activity" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">View all <ArrowRight className="h-3.5 w-3.5" /></Link>}
+            bodyClassName="px-4 sm:px-5"
+          >
+            {activityState === 'loading' ? (
+              <div className="space-y-4 py-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="flex gap-3"><Skeleton className="h-8 w-8" /><div className="flex-1 space-y-1.5"><Skeleton className="h-3 w-4/5" /><Skeleton className="h-3 w-1/3" /></div></div>)}</div>
+            ) : activityState === 'error' ? (
+              <ErrorState title="Couldn’t load activity" onRetry={loadActivity} className="py-10" />
+            ) : activity.length === 0 ? (
+              <EmptyState compact icon={Activity} title="No activity yet" description="Downloads, sharing, and file changes will appear here." />
+            ) : (
+              <ul className="divide-y divide-border">{activity.map((e) => <ActivityItem key={e.id} entry={e} resolve={resolve} compact />)}</ul>
+            )}
+          </Panel>
+        </div>
+      </div>
+
+      <UploadPanel uploads={fm.uploads} onClear={fm.clearFinishedUploads} />
+      <NameDialog
+        open={newFolderOpen}
+        mode="create-folder"
+        onClose={() => setNewFolderOpen(false)}
+        onSubmit={async (name) => { await fm.createFolder(name, null); toast.success('Folder created', `“${name}” is in My Files.`) }}
+      />
+      <ShareDialog open={!!shareTarget} target={shareTarget} onClose={() => setShareTarget(null)} />
+    </AppShell>
+  )
+}

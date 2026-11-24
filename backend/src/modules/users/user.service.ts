@@ -55,6 +55,10 @@ export class UserService {
     });
   }
 
+  async touchLastLogin(id: string): Promise<void> {
+    await this.prismaClient.user.update({ where: { id }, data: { lastLoginAt: new Date() } });
+  }
+
   async findById(id: string): Promise<SafeUser | null> {
     const user = await this.prismaClient.user.findUnique({
       where: { id },

@@ -25,8 +25,8 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/••••••••••••/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /enter workspace/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('shows error on failed login', async () => {
@@ -37,12 +37,25 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/••••••••••••/i), { target: { value: 'wrongpassword' } });
-    fireEvent.click(screen.getByRole('button', { name: /enter workspace/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrongpassword' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
     });
+  });
+
+  it('validates fields before calling the API', async () => {
+    renderWithProviders(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'not-an-email' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/enter a valid email address/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/enter your password/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('calls login API on valid submit', async () => {
@@ -54,8 +67,8 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/••••••••••••/i), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /enter workspace/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('/auth/login', {

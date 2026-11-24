@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # PostgreSQL 16 with the pgvector extension (required by the AI migration).
+    # Same major version as the previous postgres:16-alpine image, so existing volumes keep working.
+    image: pgvector/pgvector:pg16
     container_name: nimbusvault-postgres
     environment:
       POSTGRES_USER: postgres
@@ -29,6 +31,8 @@ services:
       - "4566:4566"
     volumes:
       - localstack_data:/var/lib/localstack
+      # Creates the S3 bucket when LocalStack is ready.
+      - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 10s
@@ -57,18 +61,29 @@ services:
       AWS_S3_BUCKET: nimbusvault
       S3_ENDPOINT: http://localstack:4566
       S3_FORCE_PATH_STYLE: "true"
+      # --- Phase 4 AI (optional; core storage works with these unset) ---
+      # Embeddings: none | local (all-MiniLM-L6-v2 on CPU, no data leaves the server) | openai
+      AI_EMBEDDING_PROVIDER: ${AI_EMBEDDING_PROVIDER:-local}
+      AI_LOCAL_MODEL_CACHE_DIR: /models
+      # Generation (summaries + Q&A): none | openai | anthropic — needs an API key
+      AI_GENERATION_PROVIDER: ${AI_GENERATION_PROVIDER:-none}
+      AI_GENERATION_MODEL: ${AI_GENERATION_MODEL:-}
+      AI_GENERATION_API_KEY: ${AI_GENERATION_API_KEY:-}
+      AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-}
     ports:
       - "3002:3000"
     volumes:
       - ./backend:/app
       - /app/node_modules
       - /app/dist
+      - model_cache:/models
     depends_on:
       postgres:
         condition: service_healthy
       localstack:
         condition: service_healthy
-    command: npm run start:dev
+    # Apply reviewed migrations, then start the API (which also runs the AI worker).
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
 
   frontend:
     build:
@@ -89,3 +104,4 @@ services:
 volumes:
   postgres_data:
   localstack_data:
+  model_cache:

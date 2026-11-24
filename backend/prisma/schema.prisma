@@ -38,12 +38,30 @@ enum FileStatus {
   FAILED
 }
 
+/// AI indexing lifecycle of a file.
+/// NA = never queued (e.g. uploaded before AI was enabled), INDEXED = ready for search/Q&A.
 enum AiStatus {
   PENDING
   PROCESSING
   INDEXED
   FAILED
   NA
+  UNSUPPORTED
+}
+
+enum AiJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum AiSummaryStatus {
+  NONE
+  READY
+  FAILED
+  UNAVAILABLE
 }
 
 enum ActivityAction {
@@ -63,41 +81,47 @@ enum ActivityAction {
   share_revoke
   share_access
   ai_query
+  folder_rename
+  folder_move
+  share_update
+  share_link_create
+  share_link_revoke
+  ai_reindex
 }
 
 model User {
-  id                String           @id @default(uuid())
+  id                String         @id @default(uuid())
   name              String
-  email             String           @unique
+  email             String         @unique
   passwordHash      String
-  role              String           @default("user")
-  status            String           @default("active")
-  storageQuotaBytes BigInt           @default(5368709120)
-  storageUsedBytes  BigInt           @default(0)
+  role              String         @default("user")
+  status            String         @default("active")
+  storageQuotaBytes BigInt         @default(5368709120)
+  storageUsedBytes  BigInt         @default(0)
   lastLoginAt       DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   refreshTokens     RefreshToken[]
   sessions          UserSession[]
   activityLogs      ActivityLog[]
-  ownedFolders      Folder[]         @relation("FolderOwner")
-  ownedFiles        File[]           @relation("FileOwner")
-  createdShareLinks ShareLink[]      @relation("ShareLinkCreator")
-  permissions       Permission[]     @relation("PermissionGrantee")
+  ownedFolders      Folder[]       @relation("FolderOwner")
+  ownedFiles        File[]         @relation("FileOwner")
+  createdShareLinks ShareLink[]    @relation("ShareLinkCreator")
+  permissions       Permission[]   @relation("PermissionGrantee")
 
   @@index([email])
   @@map("users")
 }
 
 model UserSession {
-  id           String   @id @default(uuid())
-  userId       String
-  device       String?
-  ipAddress    String?
-  createdAt    DateTime @default(now())
-  lastUsedAt   DateTime @default(now())
-  revokedAt    DateTime?
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  userId     String
+  device     String?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([lastUsedAt])
@@ -105,14 +129,14 @@ model UserSession {
 }
 
 model RefreshToken {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   tokenHash   String
   tokenFamily String
   expiresAt   DateTime
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   revokedAt   DateTime?
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tokenFamily])
@@ -121,18 +145,18 @@ model RefreshToken {
 }
 
 model Folder {
-  id                String   @id @default(uuid())
-  name              String
-  ownerId           String
-  parentFolderId    String?
-  depth             Int      @default(0)
-  deletedAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  owner             User     @relation("FolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  parent            Folder?  @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
-  children          Folder[] @relation("FolderHierarchy")
-  files             File[]
+  id             String    @id @default(uuid())
+  name           String
+  ownerId        String
+  parentFolderId String?
+  depth          Int       @default(0)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  owner          User      @relation("FolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  parent         Folder?   @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
+  children       Folder[]  @relation("FolderHierarchy")
+  files          File[]
 
   @@unique([ownerId, parentFolderId, name])
   @@index([ownerId, parentFolderId])
@@ -141,22 +165,25 @@ model Folder {
 }
 
 model File {
-  id              String   @id @default(uuid())
-  filename        String
-  sizeBytes       BigInt
-  mimeType        String
-  category        FileCategory
-  ownerId         String
-  folderId        String?
-  s3Key           String   @unique
-  checksumSha256  String?
-  status          FileStatus @default(UPLOADING)
-  aiStatus        AiStatus   @default(NA)
-  uploadedAt      DateTime @default(now())
-  deletedAt       DateTime?
-  owner           User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  shareLinks      ShareLink[]
+  id             String          @id @default(uuid())
+  filename       String
+  sizeBytes      BigInt
+  mimeType       String
+  category       FileCategory
+  ownerId        String
+  folderId       String?
+  s3Key          String          @unique
+  checksumSha256 String?
+  status         FileStatus      @default(UPLOADING)
+  aiStatus       AiStatus        @default(NA)
+  uploadedAt     DateTime        @default(now())
+  deletedAt      DateTime?
+  owner          User            @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  shareLinks     ShareLink[]
+  documentIndex  DocumentIndex?
+  documentChunks DocumentChunk[]
+  aiJobs         AiJob[]
 
   @@index([ownerId, deletedAt, uploadedAt])
   @@index([ownerId, folderId, deletedAt])
@@ -165,19 +192,21 @@ model File {
 }
 
 model ShareLink {
-  id             String         @id @default(uuid())
-  fileId         String
-  createdBy      String
-  token          String         @unique
-  permission     SharePermission
-  passwordHash   String?
-  expiresAt      DateTime?
-  maxDownloads   Int?
-  downloadCount  Int            @default(0)
-  revokedAt      DateTime?
-  createdAt      DateTime       @default(now())
-  file           File           @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  creator        User           @relation("ShareLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  id            String          @id @default(uuid())
+  fileId        String
+  createdBy     String
+  token         String          @unique
+  /// SHA-256 of the token: an O(1), non-reversible lookup key. `token` keeps the bcrypt hash.
+  tokenLookup   String?         @unique
+  permission    SharePermission
+  passwordHash  String?
+  expiresAt     DateTime?
+  maxDownloads  Int?
+  downloadCount Int             @default(0)
+  revokedAt     DateTime?
+  createdAt     DateTime        @default(now())
+  file          File            @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  creator       User            @relation("ShareLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([fileId])
   @@index([token])
@@ -185,14 +214,14 @@ model ShareLink {
 }
 
 model Permission {
-  id               String           @id @default(uuid())
-  resourceType     ResourceType
-  resourceId       String
-  granteeUserId    String
-  level            PermissionLevel
-  grantedBy        String
-  createdAt        DateTime         @default(now())
-  user             User             @relation("PermissionGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
+  id            String          @id @default(uuid())
+  resourceType  ResourceType
+  resourceId    String
+  granteeUserId String
+  level         PermissionLevel
+  grantedBy     String
+  createdAt     DateTime        @default(now())
+  user          User            @relation("PermissionGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
 
   @@unique([resourceType, resourceId, granteeUserId])
   @@index([resourceType, resourceId])
@@ -202,7 +231,10 @@ model Permission {
 
 model ActivityLog {
   id            BigInt         @id @default(autoincrement())
+  /// The actor. Null for anonymous (share-link) events.
   userId        String?
+  /// Owner of the affected resource, so owners see events others (or anonymous visitors) cause.
+  targetOwnerId String?
   action        ActivityAction
   resourceType  ResourceType?
   resourceId    String?
@@ -212,6 +244,83 @@ model ActivityLog {
   user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
+  @@index([targetOwnerId, createdAt])
   @@index([resourceType, resourceId, createdAt])
   @@map("activity_logs")
+}
+
+/// Extracted text, summary and index metadata for one file (Phase 4).
+/// `generation` increases on every (re)index request; chunks and jobs from older
+/// generations are stale and ignored/purged.
+model DocumentIndex {
+  fileId             String          @id
+  generation         Int             @default(1)
+  extractor          String?
+  textContent        String?
+  textLength         Int?
+  textTruncated      Boolean         @default(false)
+  pageCount          Int?
+  sourceChecksum     String?
+  embeddingModel     String?
+  embeddingDim       Int?
+  chunkCount         Int             @default(0)
+  errorCode          String?
+  errorMessage       String?
+  summary            String?
+  summaryStatus      AiSummaryStatus @default(NONE)
+  summaryModel       String?
+  summaryCoverage    Float?
+  summaryError       String?
+  summaryGeneratedAt DateTime?
+  indexedAt          DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  file               File            @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("document_indexes")
+}
+
+/// A retrievable passage of a document with its embedding (pgvector).
+model DocumentChunk {
+  id             String                 @id @default(uuid())
+  fileId         String
+  generation     Int
+  chunkIndex     Int
+  content        String
+  charStart      Int
+  charEnd        Int
+  pageStart      Int?
+  pageEnd        Int?
+  tokenEstimate  Int
+  embeddingModel String
+  embedding      Unsupported("vector")?
+  createdAt      DateTime               @default(now())
+  file           File                   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, generation, chunkIndex])
+  @@index([fileId, generation])
+  @@index([embeddingModel])
+  @@map("document_chunks")
+}
+
+/// Durable, database-backed background job (indexing). Claimed with FOR UPDATE SKIP LOCKED.
+model AiJob {
+  id          String      @id @default(uuid())
+  fileId      String
+  generation  Int
+  status      AiJobStatus @default(QUEUED)
+  attempts    Int         @default(0)
+  maxAttempts Int         @default(3)
+  runAfter    DateTime    @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+  lastError   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  completedAt DateTime?
+  file        File        @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAfter])
+  @@index([fileId])
+  @@map("ai_jobs")
 }

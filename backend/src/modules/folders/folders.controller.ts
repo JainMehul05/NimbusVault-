@@ -4,6 +4,8 @@ import { successResponse } from '@common/response';
 import { folderService } from './folders.service';
 import { createRequestLogger } from '@common/logger';
 import type { FolderCreateInput, FolderListQuery } from './folders.validation';
+import { activityLogService } from '@modules/activity/activity.service';
+import { aiIndexingService } from '@modules/ai/indexing.service';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -40,7 +42,16 @@ export const foldersController = {
       depth,
     });
 
-    log.info({ folderId: folder.id, name }, 'Folder created successfully');
+    await activityLogService.logActivity(userId, 'folder_create', {
+      resourceType: 'FOLDER',
+      resourceId: folder.id,
+      targetOwnerId: userId,
+      ipAddress: req.ip,
+      metadata: { name: folder.name, parentFolderId: folder.parentFolderId },
+      requestId,
+    });
+
+    log.info({ folderId: folder.id }, 'Folder created successfully');
 
     res.status(201).json(
       successResponse(
@@ -117,31 +128,26 @@ export const foldersController = {
     const userId = req.user!.userId;
     const { folderId } = req.params;
 
-    let targetFolderId: string | null = null;
-    if (folderId && folderId !== 'root') {
-      const folder = await folderService.validateFolderOwnership(folderId, userId);
-      targetFolderId = folder.id;
-    }
-
-    const contents = await folderService.getFolderContents(targetFolderId || '', userId);
-
-    const safeFolders = contents.folders.map((folder) => ({
-      id: folder.id,
-      name: folder.name,
-      parentFolderId: folder.parentFolderId,
-      depth: folder.depth,
-      createdAt: folder.createdAt,
-      updatedAt: folder.updatedAt,
-    }));
-
-    const safeFiles = contents.files.map((file) => ({
-      ...file,
-      sizeBytes: file.sizeBytes.toString(),
-    }));
+    const contents = await folderService.getFolderContents(folderId && folderId !== 'root' ? folderId : null, userId);
 
     res.json(
       successResponse(
-        { folders: safeFolders, files: safeFiles },
+        {
+          folder: contents.folder
+            ? { id: contents.folder.id, name: contents.folder.name, parentFolderId: contents.folder.parentFolderId, ownerId: contents.folder.ownerId }
+            : null,
+          permission: contents.permission,
+          path: contents.path,
+          folders: contents.folders.map((folder) => ({
+            id: folder.id,
+            name: folder.name,
+            parentFolderId: folder.parentFolderId,
+            depth: folder.depth,
+            createdAt: folder.createdAt,
+            updatedAt: folder.updatedAt,
+          })),
+          files: contents.files.map((file) => ({ ...file, sizeBytes: file.sizeBytes.toString() })),
+        },
         'Folder contents retrieved successfully',
         req.requestId
       )
@@ -153,7 +159,18 @@ export const foldersController = {
     const { folderId } = req.params;
     const { name } = req.body;
 
-    const folder = await folderService.rename(folderId, userId, name);
+    const { folder, oldName } = await folderService.rename(folderId, userId, name);
+
+    if (oldName !== folder.name) {
+      await activityLogService.logActivity(userId, 'folder_rename', {
+        resourceType: 'FOLDER',
+        resourceId: folder.id,
+        targetOwnerId: folder.ownerId,
+        ipAddress: req.ip,
+        metadata: { oldName, newName: folder.name, name: folder.name },
+        requestId: req.requestId,
+      });
+    }
 
     res.json(
       successResponse(
@@ -175,7 +192,18 @@ export const foldersController = {
     const { folderId } = req.params;
     const { parentFolderId } = req.body;
 
-    const folder = await folderService.move(folderId, userId, parentFolderId || null);
+    const { folder, previousParentId } = await folderService.move(folderId, userId, parentFolderId || null);
+
+    if (previousParentId !== folder.parentFolderId) {
+      await activityLogService.logActivity(userId, 'folder_move', {
+        resourceType: 'FOLDER',
+        resourceId: folder.id,
+        targetOwnerId: folder.ownerId,
+        ipAddress: req.ip,
+        metadata: { name: folder.name, previousParentId, newParentId: folder.parentFolderId },
+        requestId: req.requestId,
+      });
+    }
 
     res.json(
       successResponse(
@@ -200,8 +228,17 @@ export const foldersController = {
       ? deleteDescendantsRaw[0] === 'true'
       : deleteDescendantsRaw === 'true';
 
-    const folder = await folderService.softDelete(folderId, userId, {
-      deleteDescendants,
+    const { folder, deletedFileIds } = await folderService.softDelete(folderId, userId, { deleteDescendants });
+
+    await aiIndexingService.purgeFiles(deletedFileIds);
+
+    await activityLogService.logActivity(userId, 'folder_delete', {
+      resourceType: 'FOLDER',
+      resourceId: folder.id,
+      targetOwnerId: folder.ownerId,
+      ipAddress: req.ip,
+      metadata: { name: folder.name, deletedFiles: deletedFileIds.length },
+      requestId: req.requestId,
     });
 
     res.json(
@@ -210,6 +247,7 @@ export const foldersController = {
           id: folder.id,
           name: folder.name,
           deletedAt: folder.deletedAt,
+          deletedFiles: deletedFileIds.length,
         },
         'Folder deleted successfully',
         req.requestId

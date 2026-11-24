@@ -33,7 +33,8 @@ export const fileMoveSchema = z.object({
 
 export const fileListQuerySchema = z.object({
   query: z.object({
-    folderId: z.string().uuid('Invalid folder ID').optional(),
+    // 'root' lists only files that are not inside any folder; omitting folderId lists all files.
+    folderId: z.union([z.literal('root'), z.string().uuid('Invalid folder ID')]).optional(),
     category: z.nativeEnum(FileCategory).optional(),
     status: z.enum(['UPLOADING', 'READY', 'FAILED']).optional(),
     search: z.string().max(100, 'Search query too long').optional(),

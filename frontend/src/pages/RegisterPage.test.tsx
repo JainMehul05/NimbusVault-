@@ -26,8 +26,8 @@ describe('RegisterPage', () => {
 
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/create access key/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /start building/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
   it('shows error when password is too short', async () => {
@@ -35,12 +35,14 @@ describe('RegisterPage', () => {
 
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'Test User' } });
     fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/create access key/i), { target: { value: 'short' } });
-    fireEvent.click(screen.getByRole('button', { name: /start building/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/use at least 8 characters/i)).toBeInTheDocument();
     });
+    expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('calls register API on valid submit', async () => {
@@ -59,8 +61,8 @@ describe('RegisterPage', () => {
 
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'Test User' } });
     fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/create access key/i), { target: { value: 'password123' } });
-    fireEvent.click(screen.getByRole('button', { name: /start building/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith('/auth/register', {

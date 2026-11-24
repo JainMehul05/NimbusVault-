@@ -4,9 +4,7 @@ export interface SharePermission {
   id: string;
   resourceType: 'FILE' | 'FOLDER';
   resourceId: string;
-  granteeUserId: string;
   level: 'VIEWER' | 'EDITOR';
-  grantedBy: string;
   createdAt: string;
   grantee: {
     id: string;
@@ -33,6 +31,7 @@ export interface SharedWithMeFile {
   mimeType: string;
   category: string;
   folderId: string | null;
+  aiStatus?: string;
   permission: 'VIEWER' | 'EDITOR';
   owner: {
     id: string;

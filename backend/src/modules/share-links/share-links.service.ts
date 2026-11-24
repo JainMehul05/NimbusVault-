@@ -1,12 +1,13 @@
 import type { PrismaClient, ShareLink, SharePermission, File } from '@prisma/client';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import prisma from '@database/prisma';
 import { authorizationService } from '@common/authorization';
 import { createRequestLogger } from '@common/logger';
 import { config } from '@config/index';
+import { activityLogService } from '@modules/activity/activity.service';
 
 export interface CreateShareLinkInput {
   fileId: string;
@@ -29,6 +30,8 @@ export interface ShareLinkResult {
   url: string;
 }
 
+const BCRYPT_PREFIX = /^\$2[aby]\$\d+\$/;
+
 export class ShareLinkService {
   constructor(private readonly prismaClient: PrismaClient = prisma) {}
 
@@ -36,27 +39,27 @@ export class ShareLinkService {
     return randomBytes(32).toString('base64url');
   }
 
-  private async hashToken(token: string): Promise<string> {
-    return bcrypt.hash(token, config.bcrypt.rounds);
+  /**
+   * Deterministic, non-reversible lookup key for a 256-bit random token. Lets a public request
+   * find its link with one indexed query instead of bcrypt-comparing against every link
+   * (which was O(n) CPU per request and an easy denial-of-service).
+   */
+  static lookupKey(token: string): string {
+    return createHash('sha256').update(token, 'utf8').digest('hex');
   }
 
-  private async verifyToken(token: string, tokenHash: string): Promise<boolean> {
-    return bcrypt.compare(token, tokenHash);
+  private async hashToken(token: string): Promise<string> {
+    return bcrypt.hash(token, config.bcrypt.rounds);
   }
 
   private async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, config.bcrypt.rounds);
   }
 
-  private async verifyPassword(password: string, passwordHash: string): Promise<boolean> {
-    return bcrypt.compare(password, passwordHash);
-  }
-
   async createShareLink(input: CreateShareLinkInput): Promise<ShareLinkResult> {
     const log = input.requestId ? createRequestLogger(input.requestId) : undefined;
 
-    // Validate file access and permission to create share link
-    await authorizationService.authorizeFileAccess(
+    const access = await authorizationService.authorizeFileAccess(
       { userId: input.createdBy, isAuthenticated: true },
       input.fileId,
       'create_share_link'
@@ -64,7 +67,6 @@ export class ShareLinkService {
 
     const token = this.generateToken();
     const tokenHash = await this.hashToken(token);
-
     const passwordHash = input.password ? await this.hashPassword(input.password) : null;
 
     const shareLink = await this.prismaClient.shareLink.create({
@@ -72,6 +74,7 @@ export class ShareLinkService {
         fileId: input.fileId,
         createdBy: input.createdBy,
         token: tokenHash,
+        tokenLookup: ShareLinkService.lookupKey(token),
         permission: input.permission,
         passwordHash,
         expiresAt: input.expiresAt ?? null,
@@ -79,23 +82,24 @@ export class ShareLinkService {
       },
     });
 
-    log?.info(
-      { shareLinkId: shareLink.id, fileId: input.fileId, permission: input.permission, expiresAt: input.expiresAt },
-      'Share link created'
-    );
+    log?.info({ shareLinkId: shareLink.id, fileId: input.fileId, permission: input.permission }, 'Share link created');
 
-    // Log activity
-    await this.prismaClient.activityLog.create({
-      data: {
-        userId: input.createdBy,
-        action: 'share_create',
-        resourceType: 'SHARE_LINK',
-        resourceId: shareLink.id,
-        metadata: { fileId: input.fileId, permission: input.permission, expiresAt: input.expiresAt },
+    await activityLogService.logActivity(input.createdBy, 'share_link_create', {
+      resourceType: 'SHARE_LINK',
+      resourceId: shareLink.id,
+      targetOwnerId: access.file!.ownerId,
+      metadata: {
+        fileId: input.fileId,
+        filename: access.file!.filename,
+        permission: input.permission,
+        expiresAt: input.expiresAt?.toISOString() ?? null,
+        maxDownloads: input.maxDownloads ?? null,
+        passwordProtected: !!passwordHash,
       },
+      requestId: input.requestId,
     });
 
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const baseUrl = config.frontend.url;
     const url = `${baseUrl}/share/${token}`;
 
     return {
@@ -110,26 +114,19 @@ export class ShareLinkService {
     };
   }
 
+  /** Links for a file. Visible to people who may create links (owner, editors). Tokens are never returned. */
   async listShareLinks(fileId: string, userId: string, _requestId?: string): Promise<ShareLink[]> {
-    // Validate file ownership
-    await authorizationService.authorizeFileAccess(
-      { userId, isAuthenticated: true },
-      fileId,
-      'read'
-    );
+    await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'create_share_link');
 
     const shareLinks = await this.prismaClient.shareLink.findMany({
       where: { fileId },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Don't expose tokens in list view (tokens are now hashed)
-    return shareLinks.map(link => ({
-      ...link,
-      token: '',
-    }));
+    return shareLinks.map((link) => ({ ...link, token: '', tokenLookup: null }));
   }
 
+  /** The link's creator or the file's owner may revoke it. */
   async revokeShareLink(shareLinkId: string, userId: string, requestId?: string): Promise<void> {
     const log = requestId ? createRequestLogger(requestId) : undefined;
 
@@ -142,9 +139,9 @@ export class ShareLinkService {
       throw AppError.notFound('Share link not found', ErrorCodes.SHARE_NOT_FOUND);
     }
 
-    // Verify ownership
-    if (shareLink.createdBy !== userId) {
-      throw AppError.forbidden('Only the creator can revoke this share link', ErrorCodes.FORBIDDEN);
+    const isOwner = shareLink.file.ownerId === userId;
+    if (shareLink.createdBy !== userId && !isOwner) {
+      throw AppError.forbidden('Only the creator or the file owner can revoke this share link', ErrorCodes.FORBIDDEN);
     }
 
     if (shareLink.revokedAt) {
@@ -158,16 +155,44 @@ export class ShareLinkService {
 
     log?.info({ shareLinkId }, 'Share link revoked');
 
-    // Log activity
-    await this.prismaClient.activityLog.create({
-      data: {
-        userId,
-        action: 'share_revoke',
-        resourceType: 'SHARE_LINK',
-        resourceId: shareLinkId,
-        metadata: { fileId: shareLink.fileId },
-      },
+    await activityLogService.logActivity(userId, 'share_link_revoke', {
+      resourceType: 'SHARE_LINK',
+      resourceId: shareLinkId,
+      targetOwnerId: shareLink.file.ownerId,
+      metadata: { fileId: shareLink.fileId, filename: shareLink.file.filename },
+      requestId,
     });
+  }
+
+  private async findByToken(token: string): Promise<(ShareLink & { file: File }) | null> {
+    // Tokens are 32 random bytes in base64url; anything else cannot be valid.
+    if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null;
+
+    const byLookup = await this.prismaClient.shareLink.findUnique({
+      where: { tokenLookup: ShareLinkService.lookupKey(token) },
+      include: { file: true },
+    });
+    if (byLookup) {
+      // Defence in depth: the bcrypt hash must also match.
+      return (await bcrypt.compare(token, byLookup.token)) ? byLookup : null;
+    }
+
+    // Links created before lookup keys existed: bcrypt-compare only those legacy rows, then
+    // backfill the key so each legacy link pays this cost at most once.
+    const legacy = await this.prismaClient.shareLink.findMany({
+      where: { tokenLookup: null },
+      include: { file: true },
+    });
+    for (const link of legacy) {
+      if (!BCRYPT_PREFIX.test(link.token)) continue; // plaintext legacy tokens are not honoured
+      if (await bcrypt.compare(token, link.token)) {
+        await this.prismaClient.shareLink
+          .update({ where: { id: link.id }, data: { tokenLookup: ShareLinkService.lookupKey(token) } })
+          .catch(() => {});
+        return link;
+      }
+    }
+    return null;
   }
 
   async validateShareLinkAccess(
@@ -175,25 +200,7 @@ export class ShareLinkService {
     action: 'read' | 'download' = 'read',
     password?: string
   ): Promise<{ shareLink: ShareLink; file: File }> {
-    // Find share link by token hash - we need to check all links (including expired/revoked)
-    // Expired/revoked links are checked after token verification to return proper error
-    const shareLinks = await this.prismaClient.shareLink.findMany({
-      include: { file: true },
-    });
-
-    let shareLink: ShareLink & { file: File } | null = null;
-
-    for (const link of shareLinks) {
-      // Verify token using bcrypt (all tokens are now stored as bcrypt hashes)
-      // High-entropy tokens (32 bytes = 256 bits) are not susceptible to brute-force,
-      // so bcrypt's computational cost is acceptable and provides defense-in-depth.
-      const isValid = await this.verifyToken(token, link.token);
-      
-      if (isValid) {
-        shareLink = link;
-        break;
-      }
-    }
+    const shareLink = await this.findByToken(token);
 
     if (!shareLink) {
       throw AppError.notFound('Invalid share link', ErrorCodes.SHARE_NOT_FOUND);
@@ -211,24 +218,19 @@ export class ShareLinkService {
       throw AppError.forbidden('Share link download limit exceeded', ErrorCodes.SHARE_EXHAUSTED);
     }
 
-    if (shareLink.file.deletedAt) {
+    if (shareLink.file.deletedAt || shareLink.file.status !== 'READY') {
       throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
     }
 
-    // Check password if required - passwords are stored as bcrypt hashes
     if (shareLink.passwordHash) {
       if (!password) {
         throw AppError.forbidden('Password required', ErrorCodes.PASSWORD_REQUIRED);
       }
-      
-      const passwordValid = await this.verifyPassword(password, shareLink.passwordHash);
-      
-      if (!passwordValid) {
+      if (!(await bcrypt.compare(password, shareLink.passwordHash))) {
         throw AppError.forbidden('Invalid password', ErrorCodes.INVALID_PASSWORD);
       }
     }
 
-    // Check permission
     if (action === 'download' && shareLink.permission !== 'DOWNLOAD') {
       throw AppError.forbidden('Download not permitted for this share link', ErrorCodes.FORBIDDEN);
     }
@@ -236,22 +238,34 @@ export class ShareLinkService {
     return { shareLink, file: shareLink.file };
   }
 
-  async incrementDownloadCount(shareLinkId: string): Promise<void> {
-    await this.prismaClient.shareLink.update({
-      where: { id: shareLinkId },
-      data: { downloadCount: { increment: 1 } },
-    });
+  /**
+   * Atomically consumes one download. The limit is enforced in the UPDATE itself, so two
+   * concurrent requests cannot both take the last remaining download.
+   */
+  async consumeDownload(shareLinkId: string): Promise<void> {
+    const updated = await this.prismaClient.$executeRaw`
+      UPDATE "share_links" SET "downloadCount" = "downloadCount" + 1
+      WHERE "id" = ${shareLinkId} AND "revokedAt" IS NULL
+        AND ("maxDownloads" IS NULL OR "downloadCount" < "maxDownloads")`;
+    if (updated === 0) {
+      throw AppError.forbidden('Share link download limit exceeded', ErrorCodes.SHARE_EXHAUSTED);
+    }
   }
 
-  async logShareAccess(shareLinkId: string, ipAddress?: string, userAgent?: string): Promise<void> {
-    await this.prismaClient.activityLog.create({
-      data: {
-        action: 'share_access',
-        resourceType: 'SHARE_LINK',
-        resourceId: shareLinkId,
-        ipAddress,
-        metadata: { userAgent },
-      },
+  /** @deprecated use consumeDownload (atomic) */
+  async incrementDownloadCount(shareLinkId: string): Promise<void> {
+    await this.consumeDownload(shareLinkId);
+  }
+
+  /** Anonymous visit: attributed to the file owner's feed, never to an invented actor. */
+  async logShareAccess(shareLink: ShareLink, file: File, ipAddress?: string, requestId?: string): Promise<void> {
+    await activityLogService.logActivity(null, 'share_access', {
+      resourceType: 'SHARE_LINK',
+      resourceId: shareLink.id,
+      targetOwnerId: file.ownerId,
+      ipAddress,
+      metadata: { fileId: file.id, filename: file.filename },
+      requestId,
     });
   }
 }

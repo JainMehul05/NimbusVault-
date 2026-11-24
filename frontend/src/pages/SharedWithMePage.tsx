@@ -1,145 +1,268 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@context/AuthContext';
-import { useFileManager } from '@hooks/useFileManager';
-import { useSharing } from '@hooks/useSharing';
-import { FileList } from '@components/FileList';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Download, Folder, FolderOpen, Link2, MoreHorizontal, Pencil, Search, SearchX, Sparkles, Users, X } from 'lucide-react'
+import { sharingApi, type SharedWithMeFile, type SharedWithMeFolder } from '@services/sharing'
+import { filesApi, openDownload } from '@services/files'
+import { formatFileSize, getErrorMessage, getFileTypeMeta } from '@lib/format'
+import { cn } from '@lib/utils'
+import { AppShell } from '@components/layout/AppShell'
+import { Button } from '@components/ui/Button'
+import { Input } from '@components/ui/Input'
+import { Avatar, EmptyState, ErrorState, RoleBadge, Skeleton } from '@components/ui/primitives'
+import { useToast } from '@components/ui/Toast'
+import { FileTypeIcon, FolderIcon } from '@components/files/FileTypeIcon'
+import { NameDialog } from '@components/files/FileDialogs'
+import { DropdownMenu } from '@components/ui/DropdownMenu'
+import { ShareLinkDialog } from '@components/ShareLinkDialog'
+import { AiStatusBadge } from '@components/ai/AiStatusBadge'
+import { DocumentInsightsDialog, type InsightsTarget } from '@components/ai/DocumentInsightsDialog'
+import { AI_SUPPORTED_MIME } from '@services/ai'
 
-export const SharedWithMePage: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'files' | 'folders'>('files');
+type Tab = 'files' | 'folders'
 
-  const fileManager = useFileManager();
-  const sharing = useSharing();
+function Owner({ owner }: { owner?: { name: string; email: string } }) {
+  if (!owner) return <span className="text-subtle">Unknown</span>
+  return (
+    <span className="flex min-w-0 items-center gap-2" title={owner.email}>
+      <Avatar name={owner.name} size="sm" />
+      <span className="min-w-0">
+        <span className="block truncate text-sm text-foreground">{owner.name}</span>
+        <span className="block truncate text-xs text-muted-foreground">{owner.email}</span>
+      </span>
+    </span>
+  )
+}
 
-  useEffect(() => {
-    if (user) {
-      sharing.fetchSharedWithMe();
+export function SharedWithMePage() {
+  const toast = useToast()
+  const [files, setFiles] = useState<SharedWithMeFile[]>([])
+  const [folders, setFolders] = useState<SharedWithMeFolder[]>([])
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('files')
+  const [query, setQuery] = useState('')
+  const [folderFilter, setFolderFilter] = useState<SharedWithMeFolder | null>(null)
+  const [downloading, setDownloading] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<SharedWithMeFile | null>(null)
+  const [linkFile, setLinkFile] = useState<SharedWithMeFile | null>(null)
+  const [insights, setInsights] = useState<InsightsTarget | null>(null)
+
+  const load = useCallback(async () => {
+    setState('loading')
+    try {
+      const res = await sharingApi.getSharedWithMe(1, 100)
+      // A file can appear twice (direct share + inherited from a shared folder); keep the stronger role.
+      const byId = new Map<string, SharedWithMeFile>()
+      for (const f of res.data?.files ?? []) {
+        const prev = byId.get(f.id)
+        if (!prev || (prev.permission === 'VIEWER' && f.permission === 'EDITOR')) byId.set(f.id, f)
+      }
+      setFiles([...byId.values()].sort((a, b) => a.filename.localeCompare(b.filename)))
+      setFolders([...(res.data?.folders ?? [])].sort((a, b) => a.name.localeCompare(b.name)))
+      setState('ready')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Couldn’t load items shared with you.'))
+      setState('error')
     }
-  }, [user, sharing]);
+  }, [])
 
-  const sharedFiles = sharing.sharedWithMe?.files || [];
-  const sharedFolders = sharing.sharedWithMe?.folders || [];
+  useEffect(() => { load() }, [load])
+
+  const q = query.trim().toLowerCase()
+  const visibleFiles = useMemo(
+    () => files.filter((f) =>
+      (!folderFilter || f.folderId === folderFilter.id) &&
+      (!q || f.filename.toLowerCase().includes(q) || f.owner?.name.toLowerCase().includes(q) || f.owner?.email.toLowerCase().includes(q))),
+    [files, q, folderFilter]
+  )
+  const visibleFolders = useMemo(
+    () => folders.filter((f) => !q || f.name.toLowerCase().includes(q) || f.owner?.name.toLowerCase().includes(q)),
+    [folders, q]
+  )
+  const filesInFolder = useCallback((id: string) => files.filter((f) => f.folderId === id).length, [files])
+
+  const download = async (file: SharedWithMeFile) => {
+    setDownloading(file.id)
+    try { await openDownload(file.id) } catch (err) { toast.error('Download failed', getErrorMessage(err, 'Please try again.')) } finally { setDownloading(null) }
+  }
+
+  const tabs: Array<{ id: Tab; label: string; count: number }> = [
+    { id: 'files', label: 'Files', count: files.length },
+    { id: 'folders', label: 'Folders', count: folders.length },
+  ]
+  const nothingShared = state === 'ready' && files.length === 0 && folders.length === 0
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="container-custom">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-foreground">NimbusVault</h1>
-              <span className="ml-4 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">
-                Shared with me
-              </span>
+    <AppShell title="Shared with me" description="Files and folders other people have given you access to.">
+      {state === 'error' ? (
+        <div className="border border-border bg-surface"><ErrorState title="Couldn’t load shared items" message={error} onRetry={load} /></div>
+      ) : nothingShared ? (
+        <div className="border border-dashed border-border-strong bg-surface">
+          <EmptyState icon={Users} title="Nothing shared with you yet" description="When someone shares a file or folder with your email address, it shows up here with your role." />
+        </div>
+      ) : (
+        <>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div role="tablist" aria-label="Shared item types" className="flex border-b border-border md:border-0">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  type="button"
+                  id={`tab-${t.id}`}
+                  aria-selected={tab === t.id}
+                  aria-controls={`panel-${t.id}`}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    '-mb-px flex h-10 items-center gap-2 border-b-2 px-4 text-sm font-semibold transition-colors md:mb-0',
+                    tab === t.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t.label}
+                  <span className={cn('rounded-sm px-1.5 text-2xs tabular-nums', tab === t.id ? 'bg-primary/15 text-primary' : 'bg-white/[0.06] text-muted-foreground')}>
+                    {state === 'loading' ? '…' : t.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="relative md:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden="true" />
+              <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter by name or owner" aria-label="Filter shared items" className="pl-9 [&::-webkit-search-cancel-button]:hidden" />
             </div>
           </div>
-        </div>
-      </nav>
 
-      <main className="container-custom py-6">
-        {/* Tabs */}
-        <div className="flex border-b border-border mb-6">
-          <button
-            onClick={() => setActiveTab('files')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'files'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Files ({sharedFiles.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('folders')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'folders'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Folders ({sharedFolders.length})
-          </button>
-        </div>
+          {folderFilter && tab === 'files' && (
+            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+              Showing files in <strong className="text-foreground">{folderFilter.name}</strong>
+              <Button size="xs" variant="ghost" onClick={() => setFolderFilter(null)}><X className="h-3.5 w-3.5" /> Clear</Button>
+            </div>
+          )}
 
-        {activeTab === 'files' ? (
-          <FileList
-            fileManager={{
-              ...fileManager,
-              files: sharedFiles.map(f => ({
-                ...f,
-                status: 'READY',
-                uploadedAt: f.owner?.name || '',
-              })),
-              isLoading: sharing.isLoading,
-              error: sharing.error,
-              handleDownload: fileManager.handleDownload,
-              handleRename: fileManager.handleRename,
-              handleMove: fileManager.handleMove,
-              handleDelete: fileManager.handleDelete,
-              fetchFiles: async () => { await sharing.fetchSharedWithMe(); },
-            }}
-          />
-        ) : (
-          <div className="bg-card rounded-lg border border-border p-6">
-            {sharedFolders.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <svg className="mx-auto h-16 w-16 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-                <p className="mt-4 text-lg">No shared folders</p>
-                <p className="mt-1">Folders shared with you will appear here</p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sharedFolders.map((folder) => (
-                  <div
-                    key={folder.id}
-                    className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-3xl">📁</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{folder.name}</p>
-                        <p className="text-sm text-muted-foreground">Shared by {folder.owner?.name}</p>
-                      </div>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        folder.permission === 'EDITOR'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {folder.permission}
-                      </span>
-                    </div>
+          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+            {state === 'loading' ? (
+              <div className="border border-border bg-surface">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex h-16 items-center gap-3 border-b border-border px-4 last:border-0">
+                    <Skeleton className="h-7 w-7" /><Skeleton className="h-3 w-48" /><Skeleton className="ml-auto hidden h-6 w-40 md:block" /><Skeleton className="h-5 w-14" />
                   </div>
                 ))}
               </div>
+            ) : tab === 'files' ? (
+              visibleFiles.length === 0 ? (
+                <div className="border border-border bg-surface">
+                  {q || folderFilter
+                    ? <EmptyState icon={SearchX} title="No matching files" description="Try a different name or owner." action={<Button variant="secondary" size="sm" onClick={() => { setQuery(''); setFolderFilter(null) }}>Clear filters</Button>} />
+                    : <EmptyState icon={Users} title="No files shared with you" description="Files shared directly with you, or inside a shared folder, appear here." />}
+                </div>
+              ) : (
+                <div className="overflow-hidden border border-border bg-surface">
+                  <table className="w-full table-fixed text-sm">
+                    <thead className="border-b border-border bg-surface-sunken text-xs text-muted-foreground">
+                      <tr className="h-10">
+                        <th scope="col" className="px-4 text-left font-semibold">Name</th>
+                        <th scope="col" className="hidden w-[240px] px-3 text-left font-semibold md:table-cell">Owner</th>
+                        <th scope="col" className="hidden w-[96px] px-3 text-left font-semibold lg:table-cell">Size</th>
+                        <th scope="col" className="w-[92px] px-3 text-left font-semibold">Your role</th>
+                        <th scope="col" className="w-14 pr-3"><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {visibleFiles.map((file) => (
+                        <tr key={file.id} className="h-16 transition-colors hover:bg-white/[0.02]">
+                          <td className="px-4">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <FileTypeIcon filename={file.filename} mimeType={file.mimeType} category={file.category} />
+                              <div className="min-w-0">
+                                <p className="flex min-w-0 items-center gap-2"><span className="truncate font-medium text-foreground" title={file.filename}>{file.filename}</span><AiStatusBadge status={file.aiStatus} /></p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {getFileTypeMeta(file.filename, file.mimeType, file.category).label} · {formatFileSize(file.sizeBytes)}
+                                  <span className="md:hidden"> · {file.owner?.name}</span>
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="hidden px-3 md:table-cell"><Owner owner={file.owner} /></td>
+                          <td className="hidden px-3 tabular-nums text-muted-foreground lg:table-cell">{formatFileSize(file.sizeBytes)}</td>
+                          <td className="px-3"><RoleBadge role={file.permission} /></td>
+                          <td className="pr-3 text-right">
+                            {file.permission === 'EDITOR' || AI_SUPPORTED_MIME.includes(file.mimeType) ? (
+                              <DropdownMenu
+                                label={`Actions for ${file.filename}`}
+                                items={[
+                                  { label: 'Download', icon: Download, onSelect: () => download(file) },
+                                  ...(AI_SUPPORTED_MIME.includes(file.mimeType) ? [{ label: 'Document insights', icon: Sparkles, onSelect: () => setInsights({ id: file.id, filename: file.filename }) }] : []),
+                                  ...(file.permission === 'EDITOR' ? [
+                                  { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(file), separated: true },
+                                  { label: 'Create share link', icon: Link2, onSelect: () => setLinkFile(file) },
+                                  ] : []),
+                                ]}
+                                trigger={(props) => (
+                                  <button {...props} type="button" aria-label={`Actions for ${file.filename}`} className="grid h-8 w-8 place-items-center rounded text-muted-foreground hover:bg-white/[0.06] hover:text-foreground">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </button>
+                                )}
+                              />
+                            ) : (
+                              <Button size="icon-sm" variant="ghost" onClick={() => download(file)} loading={downloading === file.id} aria-label={`Download ${file.filename}`}>
+                                {downloading !== file.id && <Download className="h-4 w-4" />}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : visibleFolders.length === 0 ? (
+              <div className="border border-border bg-surface">
+                {q
+                  ? <EmptyState icon={SearchX} title="No matching folders" action={<Button variant="secondary" size="sm" onClick={() => setQuery('')}>Clear filter</Button>} />
+                  : <EmptyState icon={Folder} title="No folders shared with you" description="When someone shares a folder, you get access to every file inside it." />}
+              </div>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {visibleFolders.map((folder) => {
+                  const count = filesInFolder(folder.id)
+                  return (
+                    <li key={folder.id} className="flex flex-col border border-border bg-surface p-4 shadow-e1">
+                      <div className="flex items-start gap-3">
+                        <FolderIcon size="md" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-foreground" title={folder.name}>{folder.name}</p>
+                          <p className="text-xs text-muted-foreground">{count} {count === 1 ? 'file' : 'files'} available</p>
+                        </div>
+                        <RoleBadge role={folder.permission} />
+                      </div>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+                        <Owner owner={folder.owner} />
+                        <Link to={`/shared-with-me/folders/${folder.id}`} className="inline-flex h-8 items-center gap-1.5 rounded border border-border-strong bg-surface-raised px-3 text-sm font-semibold text-foreground hover:bg-[#1f1f1f]">
+                          <FolderOpen className="h-4 w-4" aria-hidden="true" /> Open
+                        </Link>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </div>
-        )}
-
-        {/* Error Toast */}
-        {sharing.error && (
-          <div className="fixed bottom-4 right-4 z-50 animate-slide-in">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 shadow-lg max-w-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 001.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm text-destructive">{sharing.error}</p>
-                </div>
-                <button
-                  onClick={() => sharing.clearError()}
-                  className="text-destructive hover:text-destructive/80"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
+          <p className="mt-4 text-xs text-subtle">Viewers can view and download. Editors can also rename files and create share links. Owners can change or remove your access at any time.</p>
+        </>
+      )}
+      <NameDialog
+        open={!!renaming}
+        mode="rename-file"
+        initialValue={renaming?.filename ?? ''}
+        onClose={() => setRenaming(null)}
+        onSubmit={async (name) => {
+          if (!renaming) return
+          await filesApi.rename(renaming.id, name)
+          setFiles((prev) => prev.map((f) => (f.id === renaming.id ? { ...f, filename: name } : f)))
+          toast.success('File renamed', name)
+        }}
+      />
+      <ShareLinkDialog open={!!linkFile} file={linkFile} onClose={() => setLinkFile(null)} />
+      <DocumentInsightsDialog target={insights} onClose={() => setInsights(null)} onStatusChange={load} />
+    </AppShell>
+  )
+}

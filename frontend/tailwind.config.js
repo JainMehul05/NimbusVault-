@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+// NimbusVault design tokens. Values live as CSS variables in src/index.css (:root);
+// Tailwind only maps names to them so every screen draws from one palette.
+const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: [
     "./index.html",
@@ -8,85 +12,115 @@ export default {
   theme: {
     extend: {
       colors: {
-        // NimbusVault design system colors
-        background: 'var(--background, #050505)',
-        foreground: 'var(--foreground, #f3f3f1)',
-        card: 'var(--card, #0a0a0a)',
-        'card-foreground': 'var(--card-foreground, #f3f3f1)',
-        primary: 'var(--primary, #ff5100)',
-        'primary-foreground': 'var(--primary-foreground, #050505)',
-        secondary: 'var(--secondary, #1a1a1a)',
-        'secondary-foreground': 'var(--secondary-foreground, #f3f3f1)',
-        muted: 'var(--muted, #1a1a1a)',
-        'muted-foreground': 'var(--muted-foreground, #888)',
-        accent: 'var(--accent, #1a1a1a)',
-        'accent-foreground': 'var(--accent-foreground, #f3f3f1)',
-        destructive: 'var(--destructive, #ff5100)',
-        'destructive-foreground': 'var(--destructive-foreground, #050505)',
-        border: 'var(--border, rgba(255,255,255,.14))',
-        ring: 'var(--ring, #ff5100)',
+        background: token('background'),
+        foreground: token('foreground'),
+        card: token('card'),
+        'card-foreground': token('foreground'),
+        surface: {
+          DEFAULT: token('surface'),
+          raised: token('surface-raised'),
+          sunken: token('surface-sunken'),
+        },
+        primary: {
+          DEFAULT: token('primary'),
+          hover: token('primary-hover'),
+          foreground: token('primary-foreground'),
+        },
+        'primary-foreground': token('primary-foreground'),
+        secondary: token('surface-raised'),
+        'secondary-foreground': token('foreground'),
+        muted: token('surface-raised'),
+        'muted-foreground': token('muted-foreground'),
+        subtle: token('subtle-foreground'),
+        accent: token('surface-raised'),
+        'accent-foreground': token('foreground'),
+        destructive: token('danger'),
+        'destructive-foreground': token('danger-foreground'),
+        danger: token('danger'),
+        success: token('success'),
+        warning: token('warning'),
+        info: token('info'),
+        border: {
+          DEFAULT: 'rgb(var(--border) / 0.10)',
+          strong: 'rgb(var(--border) / 0.18)',
+        },
+        ring: token('primary'),
       },
       borderRadius: {
-        lg: 'var(--radius, 0.5rem)',
-        md: 'calc(var(--radius, 0.5rem) - 2px)',
-        sm: 'calc(var(--radius, 0.5rem) - 4px)',
+        // The brand is sharp-edged; radii stay small and consistent.
+        none: '0',
+        sm: '2px',
+        DEFAULT: '4px',
+        md: '4px',
+        lg: '6px',
+        xl: '8px',
+        full: '9999px',
       },
       fontFamily: {
         sans: ['Arial', 'Helvetica', 'sans-serif'],
-        condensed: ['Arial Narrow', 'Roboto Condensed', 'Impact', 'Haettenschweiler', 'sans-serif'],
+        condensed: ['"Arial Narrow"', '"Roboto Condensed"', 'Arial', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['11px', { lineHeight: '16px' }],
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['13px', { lineHeight: '20px' }],
+        base: ['14px', { lineHeight: '22px' }],
+        md: ['16px', { lineHeight: '24px' }],
+        lg: ['18px', { lineHeight: '26px' }],
+        xl: ['22px', { lineHeight: '28px' }],
+        '2xl': ['28px', { lineHeight: '32px' }],
+        '3xl': ['36px', { lineHeight: '40px' }],
+      },
+      boxShadow: {
+        // Elevation scale: e1 cards, e2 menus/popovers, e3 dialogs. "brand" is the offset accent shadow.
+        e1: '0 1px 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4)',
+        e2: '0 8px 24px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.08)',
+        e3: '0 24px 64px rgb(0 0 0 / 0.65), 0 0 0 1px rgb(255 255 255 / 0.10)',
+        brand: '6px 6px 0 rgb(255 81 0 / 0.12)',
+      },
+      transitionDuration: {
+        fast: '120ms',
+        base: '180ms',
+        slow: '280ms',
       },
       animation: {
         'rise-in': 'rise-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both',
-        'core-float': 'core-float 5s ease-in-out infinite',
-        'orbit-spin': 'orbit-spin 20s linear infinite',
-        'node-pulse': 'node-pulse 2.4s ease-in-out infinite',
-        'soft-pulse': 'soft-pulse 3.5s ease-in-out infinite',
-        'grid-drift': 'grid-drift 18s linear infinite',
-        'scan-sweep': 'scan-sweep 0.9s ease',
-        'section-reveal': 'section-reveal 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both',
-        'orb-pulse': 'orb-pulse 3.2s ease-in-out infinite',
-        'auth-page-in': 'auth-page-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both',
         'slide-in': 'slide-in 0.3s ease-out',
+        'fade-in': 'fade-in 160ms ease-out both',
+        'dialog-in': 'dialog-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'toast-in': 'toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'drawer-in': 'drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        shimmer: 'shimmer 1.4s ease-in-out infinite',
       },
       keyframes: {
         'rise-in': {
           from: { opacity: '0', transform: 'translateY(24px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
-        'core-float': {
-          '0%, 100%': { transform: 'rotate(-8deg) skewY(3deg) translateY(0)' },
-          '50%': { transform: 'rotate(-5deg) skewY(3deg) translateY(-11px)' },
-        },
-        'orbit-spin': {
-          to: { transform: 'rotate(394deg)' },
-        },
-        'node-pulse': {
-          '50%': { transform: 'scale(1.8)', opacity: '0.55' },
-        },
-        'soft-pulse': {
-          '50%': { boxShadow: '0 0 40px rgba(94, 220, 243, 0.22)' },
-        },
-        'grid-drift': {
-          to: { backgroundPosition: '72px 72px' },
-        },
-        'scan-sweep': {
-          to: { transform: 'translateX(100%)' },
-        },
-        'section-reveal': {
-          from: { opacity: '0.35', transform: 'translateY(34px) scale(0.985)', filter: 'blur(5px)' },
-          to: { opacity: '1', transform: 'translateY(0) scale(1)', filter: 'blur(0)' },
-        },
-        'orb-pulse': {
-          '0%, 100%': { boxShadow: '0 0 70px rgba(135, 103, 240, 0.42), inset 0 0 27px rgba(226, 217, 255, 0.2)' },
-          '50%': { boxShadow: '0 0 110px rgba(135, 103, 240, 0.7), inset 0 0 38px rgba(226, 217, 255, 0.35)' },
-        },
-        'auth-page-in': {
-          from: { opacity: '0', transform: 'scale(1.015)' },
-          to: { opacity: '1', transform: 'scale(1)' },
-        },
         'slide-in': {
           from: { transform: 'translateX(100%)', opacity: '0' },
           to: { transform: 'translateX(0)', opacity: '1' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'dialog-in': {
+          from: { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'toast-in': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'drawer-in': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        shimmer: {
+          '0%, 100%': { opacity: '0.45' },
+          '50%': { opacity: '0.9' },
         },
       },
     },

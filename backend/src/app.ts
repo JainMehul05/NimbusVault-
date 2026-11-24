@@ -16,6 +16,11 @@ import folderRoutes from '@modules/folders/folders.routes';
 import sharingRoutes from '@modules/sharing/sharing.routes';
 import shareLinkRoutes from '@modules/share-links/share-links.routes';
 import activityRoutes from '@modules/activity/activity.routes';
+import aiRoutes from '@modules/ai/ai.routes';
+import { getAiStatus } from '@modules/ai/ai.status';
+
+/** Strips query strings (which may carry share-link passwords) from logged URLs. */
+const safeUrl = (url: string) => url.split('?')[0];
 
 const app = express();
 
@@ -37,7 +42,7 @@ app.use((req, res, next) => {
     const duration = Date.now() - startTime;
     const logData = {
       method: req.method,
-      url: req.originalUrl,
+      url: safeUrl(req.originalUrl),
       statusCode: res.statusCode,
       durationMs: duration,
       ip: req.ip,
@@ -61,14 +66,16 @@ app.use(cors({
   origin: config.frontend.url,
   credentials: true,
 }));
-app.use(morgan('dev'));
-app.use(express.json());
+if (config.nodeEnv === 'development') {
+  app.use(morgan((tokens, req, res) => `${tokens.method(req, res)} ${safeUrl(tokens.url(req, res) ?? '')} ${tokens.status(req, res)} ${tokens['response-time'](req, res)} ms`));
+}
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: config.nodeEnv === 'test' ? 10000 : 100,
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
   message: errorResponse('Too many requests', 'RATE_LIMIT_EXCEEDED', undefined, 'unknown'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -84,30 +91,38 @@ app.get(`/api/${config.apiPrefix}/health`, (req, res) => {
 });
 
 app.get(`/api/${config.apiPrefix}/health/ready`, async (req, res) => {
-  try {
-    // Check database
-    const { prisma } = await import('@database/prisma');
-    await prisma.$queryRaw`SELECT 1`;
+  // Reports subsystem state without exposing endpoints, credentials or error details.
+  const { prisma } = await import('@database/prisma');
+  const { storageService } = await import('@common/storage');
 
-    // Check Redis
-    // TODO: Add Redis health check when Redis is configured
+  const database = await prisma.$queryRaw`SELECT 1`.then(() => 'ok' as const).catch(() => 'unavailable' as const);
+  const storage = (await storageService.healthCheck()) ? ('ok' as const) : ('unavailable' as const);
+  const ai = getAiStatus();
+  const ready = database === 'ok' && storage === 'ok';
 
-    res.json(successResponse({
-      status: 'ready',
-      checks: {
-        database: 'ok',
-        redis: 'ok',
+  const body = {
+    status: ready ? 'ready' : 'degraded',
+    checks: {
+      database,
+      storage,
+      // AI is optional: core storage and sharing work without it.
+      ai: {
+        embeddings: ai.embedding.configured ? 'configured' : 'disabled',
+        generation: ai.generation.configured ? 'configured' : 'disabled',
+        worker: ai.worker.running ? 'running' : 'stopped',
       },
-    }, 'Service ready', req.requestId));
-  } catch (error) {
+    },
+  };
+
+  if (ready) {
+    res.json(successResponse(body, 'Service ready', req.requestId));
+  } else {
     res.status(503).json({
       success: false,
       message: 'Service not ready',
+      data: body,
       error: { code: 'SERVICE_UNAVAILABLE' },
-      meta: {
-        requestId: req.requestId,
-        timestamp: new Date().toISOString(),
-      },
+      meta: { requestId: req.requestId, timestamp: new Date().toISOString() },
     });
   }
 });
@@ -119,6 +134,7 @@ app.use(`/api/${config.apiPrefix}/folders`, folderRoutes);
 app.use(`/api/${config.apiPrefix}/sharing`, sharingRoutes);
 app.use(`/api/${config.apiPrefix}/share-links`, shareLinkRoutes);
 app.use(`/api/${config.apiPrefix}/activity`, activityRoutes);
+app.use(`/api/${config.apiPrefix}/ai`, aiRoutes);
 
 app.use((req, res) => {
   res.status(404).json(errorResponse('Route not found', 'NOT_FOUND', undefined, req.requestId));
@@ -134,6 +150,17 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
       success: false,
       message: err.message,
       error: { code: err.code, details: err.details },
+      meta: { requestId, timestamp: new Date().toISOString() },
+    });
+  }
+
+  // Malformed JSON bodies are client errors, not server faults.
+  if ((err as { type?: string }).type === 'entity.parse.failed' || (err as { type?: string }).type === 'entity.too.large') {
+    const tooLarge = (err as { type?: string }).type === 'entity.too.large';
+    return res.status(tooLarge ? 413 : 400).json({
+      success: false,
+      message: tooLarge ? 'Request body too large' : 'Malformed JSON body',
+      error: { code: tooLarge ? 'PAYLOAD_TOO_LARGE' : 'VALIDATION_ERROR' },
       meta: { requestId, timestamp: new Date().toISOString() },
     });
   }

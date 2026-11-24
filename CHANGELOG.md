@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-11-23
+
+### Security
+- Activity feed is derived from the access token; `GET /activity?userId=<other>` now returns 403 (was an IDOR exposing any user's history). Per-resource history requires ownership; other actors' IP addresses are never returned.
+- Viewers/editors can no longer delete files; viewers can no longer move them; editors cannot move a file out of the owner's tree. Quota is released from the owner, exactly once.
+- Editors can no longer change or revoke the owner's grants or grant the owner a role.
+- Inherited folder permissions now apply at any depth and stop when an ancestor is deleted.
+- Share links: O(1) SHA-256 lookup key (previously every public request bcrypt-scanned all links), atomic download limits, owners may revoke editor-created links, password accepted via `X-Share-Password` header, query strings stripped from request logs.
+- Dedicated credential rate limit; access tokens must carry `type: access`; production refuses to start with weak or identical JWT secrets.
+
+### Fixed
+- Root folder contents endpoint returned nothing; shared folders (and subfolders) can now be browsed by collaborators.
+- Folder-ID validation accepted any string; malformed JSON returned 500.
+- Recursive folder delete did not release storage quota; concurrent uploads could exceed quota.
+- Missing activity events (uploads, sign-ins, failed sign-ins, sign-out, folder create/rename/move/delete); rename events recorded `unknown` old names; permission updates were logged as revocations.
+- Compiled backend failed to start (`Cannot find module '@config/index'`); the build now rewrites path aliases.
+- Markdown uploads were rejected; text files were categorized as "other".
+- Global rate limit (100 requests / 15 min) was low enough to break normal use; now configurable (default 1000).
+- Readiness check reported a non-existent Redis as healthy; it now checks database, storage and AI.
+
+### Added
+- Phase 4 AI document intelligence: extraction, chunking, local or OpenAI-compatible embeddings, pgvector search, summaries, grounded Q&A with citations, durable background worker, Document insights dialog and Ask NimbusVault page.
+- Prisma migrations (`0_init` baseline + additive Phase 4 migration); CI now applies migrations, runs LocalStack, and smoke-starts the compiled server.
+- 64 new backend tests and 14 new frontend tests.
+
+### Changed
+- `bcrypt` 5 -> 6 (prebuilt binaries ship in the npm package; fixes installs on Node 24/Windows without build tools). API unchanged.
+- Docker Compose uses `pgvector/pgvector:pg16`, applies migrations on start, creates the LocalStack bucket, and caches the embedding model.
+
 ## [v0.1.0] - 2026-08-23
 
 ### Added

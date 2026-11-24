@@ -44,14 +44,17 @@ NimbusVault is being developed as a secure, modular file-management platform wit
 - File metadata and folder navigation in the frontend.
 - Local development support using LocalStack instead of requiring an AWS account.
 
-### Planned collaboration and document intelligence
+### Collaboration and activity
 
-- Registered-user sharing with explicit roles and authorization checks.
-- Secure, expiring, revocable share links.
-- Activity history and sharing management UI.
-- AI-assisted document processing, semantic search, and retrieval-augmented generation (RAG).
+- Registered-user sharing with Owner / Editor / Viewer roles, inherited through nested folders; collaborators can browse shared folders and their subfolders.
+- Secure, expiring, password-protected, download-limited, revocable share links (tokens stored hashed, shown once).
+- Activity history covering uploads, downloads, renames, moves, deletions, folder changes, sign-ins and sharing — including what collaborators and anonymous link visitors did with your files.
 
-Features in the planned sections are not represented as completed until implemented and verified in the repository.
+### Document intelligence (Phase 4)
+
+- Background extraction and indexing of PDF, Word (.docx), Markdown and text files (pgvector).
+- Semantic search, AI summaries, and grounded question answering with citations — only over documents the user can currently access.
+- Optional: requires an AI provider on the server (local embeddings need no API key). See [docs/phase-4/ai-document-intelligence.md](docs/phase-4/ai-document-intelligence.md).
 
 ## Current implementation status
 
@@ -59,13 +62,13 @@ Features in the planned sections are not represented as completed until implemen
 |---|---|---|
 | Phase 0 | Architecture and planning | Complete |
 | Phase 1 | Foundation and authentication | Complete |
-| Phase 2 | Cloud storage and file management | Implemented locally; reported tests passing |
-| Phase 3 | Collaboration, sharing, and activity history | In progress |
-| Phase 4 | Document processing, semantic search, and RAG assistant | Planned |
+| Phase 2 | Cloud storage and file management | Complete (verified locally) |
+| Phase 3 | Collaboration, sharing, and activity history | Complete (verified locally) |
+| Phase 4 | Document processing, semantic search, and RAG assistant | Implemented; hosted-LLM answers not yet verified with a real key |
 | Phase 5 | Infrastructure, deployment, and operational hardening | Planned |
 | Phase 6 | End-to-end validation and portfolio release | Planned |
 
-**Phase 2 verification note:** The development report for the current implementation recorded 57 passing backend tests and 7 passing frontend tests, with backend and frontend builds passing. Re-run the commands in this README on your current checkout to verify the state of the code you are using. Passing local tests alone does not establish production readiness.
+**Verification note (2026-11-23):** 169 backend tests (unit + integration against PostgreSQL/pgvector and S3-compatible storage) and 21 frontend tests passed; lint, typecheck and production builds passed; the compiled backend started and reported ready. Browser-level E2E was not run. Re-run the commands in this README on your checkout. Passing local tests alone does not establish production readiness.
 
 ## Architecture
 
@@ -200,6 +203,22 @@ npm run db:migrate
 
 Run these only if those scripts exist in the current package manifest. Prefer migrations for reproducible schema setup. `db push` is intended for development workflows where it is explicitly supported, not as a replacement for reviewed migrations.
 
+The schema is managed by migrations in `backend/prisma/migrations` and needs PostgreSQL with the **pgvector** extension (`docker compose` uses `pgvector/pgvector:pg16`, a drop-in replacement for `postgres:16-alpine`). Apply them with:
+
+```bash
+cd backend && npx prisma migrate deploy
+```
+
+**Upgrading a database created earlier with `prisma db push`** (no migration history): back it up, switch the Postgres image to `pgvector/pgvector:pg16`, then mark the baseline as already applied before deploying the additive Phase 4 migration:
+
+```bash
+cd backend
+npx prisma migrate resolve --applied 0_init
+npx prisma migrate deploy
+```
+
+No data is dropped; existing activity events are back-filled so owners see events on their resources.
+
 ### 6. Start the application
 
 Use the scripts actually defined in the root `package.json`. In this repository, the intended development workflow is to run the backend and frontend in separate terminals, for example:
@@ -314,7 +333,9 @@ Implemented API areas include:
 - Authentication and current-user endpoints.
 - Health checks.
 - File operations, including listing, uploading, downloading, renaming, moving, and deleting.
-- Folder operations, including creation, listing, hierarchy navigation, renaming, moving, and deletion.
+- Folder operations, including creation, listing, hierarchy navigation (including shared folders via `GET /folders/:id/contents`), renaming, moving, and deletion.
+- Sharing (`/sharing`), share links (`/share-links`), and the caller-scoped activity feed (`/activity`).
+- AI document intelligence (`/ai/status`, `/ai/files/:id`, `/ai/search`, `/ai/ask`, ...) — see [docs/phase-4/ai-document-intelligence.md](docs/phase-4/ai-document-intelligence.md) for the contract and examples.
 
 Routes, request schemas, response shapes, and authorization behavior may change during development. Consult the backend route definitions and API documentation for the exact current contract. Do not assume an endpoint exists merely because it appears in the roadmap.
 
@@ -372,13 +393,15 @@ Routes, request schemas, response shapes, and authorization behavior may change 
 - [ ] Review of folder permission inheritance and presigned-URL revocation limitations
 
 ### Phase 4 — AI document intelligence
-- [ ] Document processing pipeline
-- [ ] Text extraction for supported document formats
-- [ ] Embedding generation and vector storage
-- [ ] Semantic search
-- [ ] Retrieval-augmented generation (RAG) query engine
-- [ ] AI document question-answering interface
-- [ ] Evaluation, privacy, and access-control tests for AI retrieval
+- [x] Document processing pipeline (durable DB-backed jobs, retries, recovery)
+- [x] Text extraction for PDF, DOCX, Markdown and text (OCR not included)
+- [x] Embedding generation and vector storage (pgvector)
+- [x] Semantic search
+- [x] Retrieval-augmented generation (RAG) query engine with citation validation
+- [x] AI document question-answering interface
+- [x] Privacy and access-control tests for AI retrieval
+- [ ] Answer-quality evaluation against a real hosted LLM (needs an API key)
+- [ ] OCR for scanned PDFs
 
 ### Phase 5 — Infrastructure and operations
 - [ ] Deployment architecture and environment separation

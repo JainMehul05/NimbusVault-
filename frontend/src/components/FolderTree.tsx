@@ -1,245 +1,82 @@
-import React, { useState } from 'react';
-import type { FileManagerReturn, Folder } from '@hooks/useFileManager';
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronRight, Folder, FolderOpen } from 'lucide-react'
+import type { FolderNode } from '@services/files'
+import { cn } from '@lib/utils'
+import { folderHref } from './Breadcrumb'
 
 interface FolderTreeProps {
-  fileManager: FileManagerReturn;
-  currentFolderId: string | null;
-  onNavigate: (folderId: string | null) => void;
-  onCreateFolder: (parentId: string | null, name: string) => void;
-  onRenameFolder: (folderId: string, newName: string) => void;
-  onDeleteFolder: (folderId: string) => void;
+  tree: FolderNode[]
+  currentFolderId: string | null
+  /** Ancestors of the current folder; auto-expanded so the active node is visible. */
+  activePath: FolderNode[]
 }
 
-const FolderNode: React.FC<{
-  folder: Folder;
-  fileManager: FileManagerReturn;
-  currentFolderId: string | null;
-  onNavigate: (folderId: string | null) => void;
-  onCreateFolder: (parentId: string | null, name: string) => void;
-  onRenameFolder: (folderId: string, newName: string) => void;
-  onDeleteFolder: (folderId: string) => void;
-  depth: number;
-}> = ({
-  folder,
-  fileManager,
-  currentFolderId,
-  onNavigate,
-  onCreateFolder,
-  onRenameFolder,
-  onDeleteFolder,
-  depth,
-}) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState(folder.name);
-  const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-
-  const handleCreateSubFolder = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newFolderName.trim()) {
-      onCreateFolder(folder.id, newFolderName.trim());
-      setShowCreateFolder(false);
-      setNewFolderName('');
-    }
-  };
-
-  const handleRenameSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (renameValue.trim() && renameValue !== folder.name) {
-      onRenameFolder(folder.id, renameValue.trim());
-    }
-    setIsRenaming(false);
-  };
-
-  const handleDelete = () => {
-    if (window.confirm(`Delete folder "${folder.name}" and all its contents?`)) {
-      onDeleteFolder(folder.id);
-    }
-  };
-
-  const hasChildren = (folder.children?.length ?? 0) > 0;
-  const isActive = currentFolderId === folder.id;
-
+function Node({ node, depth, currentFolderId, expanded, toggle }: {
+  node: FolderNode
+  depth: number
+  currentFolderId: string | null
+  expanded: Set<string>
+  toggle: (id: string) => void
+}) {
+  const hasChildren = node.children?.length > 0
+  const open = expanded.has(node.id)
+  const active = node.id === currentFolderId
   return (
-    <div className="select-none">
+    <li role="treeitem" aria-expanded={hasChildren ? open : undefined} aria-selected={active}>
       <div
-        className={`flex items-center space-x-1 py-1 px-2 rounded transition-colors ${
-          isActive ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/50'
-        }`}
-        style={{ paddingLeft: `${12 + depth * 16}px` }}
+        className={cn('group flex h-8 items-center rounded pr-2 transition-colors', active ? 'bg-primary/10 text-foreground' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground')}
+        style={{ paddingLeft: 4 + depth * 14 }}
       >
-        {hasChildren && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 text-muted-foreground hover:text-foreground"
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-          >
-            {isExpanded ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            )}
-          </button>
-        )}
-
         <button
-          onClick={() => onNavigate(folder.id)}
-          className={`flex-1 flex items-center space-x-2 text-left ${isRenaming ? 'hidden' : ''}`}
+          type="button"
+          onClick={() => toggle(node.id)}
+          className={cn('grid h-6 w-6 shrink-0 place-items-center rounded text-subtle hover:text-foreground', !hasChildren && 'invisible')}
+          aria-label={open ? `Collapse ${node.name}` : `Expand ${node.name}`}
+          tabIndex={hasChildren ? 0 : -1}
         >
-          <span className="text-lg">📁</span>
-          {isRenaming ? (
-            <form onSubmit={handleRenameSubmit} className="flex-1 flex space-x-1">
-              <input
-                type="text"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                className="flex-1 px-1 py-0.5 border border-primary rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-card"
-                autoFocus
-              />
-              <button type="submit" className="px-1.5 py-0.5 text-xs text-primary-foreground bg-primary rounded hover:bg-primary/90">✓</button>
-              <button type="button" onClick={() => setIsRenaming(false)} className="px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">✕</button>
-            </form>
-          ) : (
-            <span className="truncate font-medium text-sm">{folder.name}</span>
-          )}
+          <ChevronRight className={cn('h-3.5 w-3.5 transition-transform duration-fast', open && 'rotate-90')} />
         </button>
-
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100">
-          {!isRenaming && (
-            <>
-              <button
-                onClick={() => setShowCreateFolder(!showCreateFolder)}
-                className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
-                title="Create subfolder"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setIsRenaming(true)}
-                className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
-                title="Rename"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                onClick={handleDelete}
-                className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
-                title="Delete"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
+        <Link to={folderHref(node.id)} className="flex min-w-0 flex-1 items-center gap-2 text-sm" aria-current={active ? 'page' : undefined}>
+          {active || open ? <FolderOpen className={cn('h-4 w-4 shrink-0', active ? 'text-primary' : '')} aria-hidden="true" /> : <Folder className="h-4 w-4 shrink-0" aria-hidden="true" />}
+          <span className="truncate">{node.name}</span>
+        </Link>
       </div>
-
-      {showCreateFolder && (
-        <form onSubmit={handleCreateSubFolder} className="flex items-center space-x-1 mt-1" style={{ paddingLeft: `${12 + depth * 16}px` }}>
-          <input
-            type="text"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            placeholder="New folder name"
-            className="flex-1 px-2 py-1 border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-card"
-            autoFocus
-          />
-          <button type="submit" className="px-2 py-1 text-xs text-primary-foreground bg-primary rounded hover:bg-primary/90">Create</button>
-          <button type="button" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-        </form>
+      {hasChildren && open && (
+        <ul role="group">
+          {node.children.map((c) => <Node key={c.id} node={c} depth={depth + 1} currentFolderId={currentFolderId} expanded={expanded} toggle={toggle} />)}
+        </ul>
       )}
+    </li>
+  )
+}
 
-      {isExpanded && folder.children?.map((childFolder: Folder) => (
-          <FolderNode
-            key={childFolder.id}
-            folder={childFolder}
-            fileManager={fileManager}
-            currentFolderId={currentFolderId}
-            onNavigate={onNavigate}
-            onCreateFolder={onCreateFolder}
-            onRenameFolder={onRenameFolder}
-            onDeleteFolder={onDeleteFolder}
-            depth={depth + 1}
-          />
-        ))
-      }
-    </div>
-  );
-};
+/** Compact, navigable folder hierarchy for the file manager side column. */
+export function FolderTree({ tree, currentFolderId, activePath }: FolderTreeProps) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
-export const FolderTree: React.FC<FolderTreeProps> = ({
-  fileManager,
-  currentFolderId,
-  onNavigate,
-  onCreateFolder,
-  onRenameFolder,
-  onDeleteFolder,
-}) => {
-  const rootFolders = fileManager.folderTree;
-  const isRootActive = currentFolderId === null;
+  useEffect(() => {
+    if (!activePath.length) return
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      activePath.forEach((n) => next.add(n.id))
+      return next
+    })
+  }, [activePath])
+
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  if (!tree.length) return <p className="px-2 py-1 text-xs text-subtle">No folders yet.</p>
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4 h-full overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Folders</h3>
-        <button
-          onClick={() => {
-            const name = prompt('Folder name:');
-            if (name?.trim()) onCreateFolder(null, name.trim());
-          }}
-          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
-          title="Create root folder"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-          </svg>
-        </button>
-      </div>
-
-      <button
-        onClick={() => onNavigate(null)}
-        className={`w-full flex items-center space-x-2 py-2 px-3 rounded transition-colors ${
-          isRootActive
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'text-foreground hover:bg-muted/50'
-        }`}
-      >
-        <span className="text-lg">🏠</span>
-        <span className="font-medium text-sm">Root</span>
-      </button>
-
-      <div className="mt-2 border-t border-border pt-2">
-        {rootFolders.map((folder) => (
-          <FolderNode
-            key={folder.id}
-            folder={folder}
-            fileManager={fileManager}
-            currentFolderId={currentFolderId}
-            onNavigate={onNavigate}
-            onCreateFolder={onCreateFolder}
-            onRenameFolder={onRenameFolder}
-            onDeleteFolder={onDeleteFolder}
-            depth={0}
-          />
-        ))}
-      </div>
-
-      {rootFolders.length === 0 && (
-        <div className="mt-4 text-center text-muted-foreground text-sm">
-          <p>No folders yet</p>
-          <p className="text-xs">Click + to create your first folder</p>
-        </div>
-      )}
-    </div>
-  );
-};
+    <ul role="tree" aria-label="Folders" className="space-y-px">
+      {tree.map((n) => <Node key={n.id} node={n} depth={0} currentFolderId={currentFolderId} expanded={expanded} toggle={toggle} />)}
+    </ul>
+  )
+}

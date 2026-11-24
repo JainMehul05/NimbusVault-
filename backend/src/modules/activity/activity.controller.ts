@@ -1,156 +1,68 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { ActivityAction, ResourceType } from '@prisma/client';
 import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
-import { activityLogService } from './activity.service';
-import { createRequestLogger } from '@common/logger';
+import { activityLogService, serializeActivityEntry, type ActivityPage } from './activity.service';
+import type { ActivityLogQuery, ResourceActivityQuery } from './activity.validation';
 
 interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    type: string;
-  };
-  logger: ReturnType<typeof createRequestLogger>;
+  user?: { userId: string; email: string; type: string };
 }
 
+const toBody = (result: ActivityPage, requesterId: string) => ({
+  entries: result.entries.map((e) => serializeActivityEntry(e, requesterId)),
+  pagination: { page: result.page, limit: result.limit, total: result.total, totalPages: result.totalPages },
+});
+
 export const activityController = {
+  /**
+   * GET /activity — the caller's own feed. Scope always comes from the access token. A
+   * `userId` query parameter (accepted by older clients) is rejected by validation unless it
+   * equals the caller, so it can never be used to read another user's history.
+   */
   getActivityLog: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const userId = req.user!.userId;
-    const requestId = req.requestId;
-    const log = createRequestLogger(requestId, userId);
-    req.logger = log;
+    const requesterId = req.user!.userId;
+    const query = req.query as unknown as ActivityLogQuery;
 
-    const query = req.query as any;
+    if (query.userId && query.userId !== requesterId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only view your own activity',
+        error: { code: 'FORBIDDEN' },
+        meta: { requestId: req.requestId, timestamp: new Date().toISOString() },
+      });
+    }
 
-    const result = await activityLogService.getActivityLog({
-      userId: query.userId || userId, // Users can only see their own activity unless admin
-      resourceType: query.resourceType,
+    const result = await activityLogService.getFeed(requesterId, {
+      resourceType: query.resourceType as ResourceType | undefined,
       resourceId: query.resourceId,
-      action: query.action,
+      action: query.action as ActivityAction | undefined,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
-      page: parseInt(query.page) || 1,
-      limit: parseInt(query.limit) || 20,
+      page: query.page,
+      limit: query.limit,
     });
 
-    log.info({ userId, total: result.total, page: result.page }, 'Activity log retrieved');
-
-    res.json(
-      successResponse(
-        {
-          entries: result.entries.map(e => ({
-            id: e.id.toString(),
-            userId: e.userId,
-            action: e.action,
-            resourceType: e.resourceType,
-            resourceId: e.resourceId,
-            ipAddress: e.ipAddress,
-            metadata: e.metadata,
-            createdAt: e.createdAt,
-            user: e.user,
-          })),
-          pagination: {
-            page: result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-          },
-        },
-        'Activity log retrieved successfully',
-        requestId
-      )
-    );
+    res.json(successResponse(toBody(result, requesterId), 'Activity log retrieved successfully', req.requestId));
   }),
 
   getResourceActivity: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const userId = req.user!.userId;
-    const requestId = req.requestId;
-    const log = createRequestLogger(requestId, userId);
-    req.logger = log;
+    const requesterId = req.user!.userId;
+    const { resourceType, resourceId } = req.params as { resourceType: 'FILE' | 'FOLDER'; resourceId: string };
+    const query = req.query as unknown as ResourceActivityQuery;
 
-    const { resourceType, resourceId } = req.params;
-    const query = req.query as any;
+    const result = await activityLogService.getResourceActivity(resourceType, resourceId, requesterId, {
+      page: query.page,
+      limit: query.limit,
+    });
 
-    const result = await activityLogService.getResourceActivity(
-      resourceType as 'FILE' | 'FOLDER',
-      resourceId,
-      userId,
-      {
-        page: parseInt(query.page) || 1,
-        limit: parseInt(query.limit) || 20,
-        requestId,
-      }
-    );
-
-    log.info({ userId, resourceType, resourceId, total: result.total }, 'Resource activity retrieved');
-
-    res.json(
-      successResponse(
-        {
-          entries: result.entries.map(e => ({
-            id: e.id.toString(),
-            userId: e.userId,
-            action: e.action,
-            resourceType: e.resourceType,
-            resourceId: e.resourceId,
-            ipAddress: e.ipAddress,
-            metadata: e.metadata,
-            createdAt: e.createdAt,
-            user: e.user,
-          })),
-          pagination: {
-            page: result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-          },
-        },
-        'Resource activity retrieved successfully',
-        requestId
-      )
-    );
+    res.json(successResponse(toBody(result, requesterId), 'Resource activity retrieved successfully', req.requestId));
   }),
 
   getMyActivity: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const userId = req.user!.userId;
-    const requestId = req.requestId;
-    const log = createRequestLogger(requestId, userId);
-    req.logger = log;
-
-    const query = req.query as any;
-
-    const result = await activityLogService.getUserActivity(userId, {
-      page: parseInt(query.page) || 1,
-      limit: parseInt(query.limit) || 20,
-      requestId,
-    });
-
-    log.info({ userId, total: result.total, page: result.page }, 'User activity retrieved');
-
-    res.json(
-      successResponse(
-        {
-          entries: result.entries.map(e => ({
-            id: e.id.toString(),
-            userId: e.userId,
-            action: e.action,
-            resourceType: e.resourceType,
-            resourceId: e.resourceId,
-            ipAddress: e.ipAddress,
-            metadata: e.metadata,
-            createdAt: e.createdAt,
-            user: e.user,
-          })),
-          pagination: {
-            page: result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-          },
-        },
-        'Activity log retrieved successfully',
-        requestId
-      )
-    );
+    const requesterId = req.user!.userId;
+    const query = req.query as unknown as ResourceActivityQuery;
+    const result = await activityLogService.getUserActivity(requesterId, { page: query.page, limit: query.limit });
+    res.json(successResponse(toBody(result, requesterId), 'Activity log retrieved successfully', req.requestId));
   }),
 };

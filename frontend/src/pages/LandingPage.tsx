@@ -1,48 +1,53 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  Activity,
   ArrowRight,
   ArrowUpRight,
-  Bot,
   Check,
   ChevronDown,
   CircleCheck,
+  Clock,
   Cloud,
   Code2,
   Database,
+  Download,
   FileArchive,
   FileText,
   Folder,
   FolderOpen,
   GitBranch,
+  KeyRound,
+  Link2,
   LockKeyhole,
   Menu,
   Network,
+  Plus,
   Search,
-  Send,
   Server,
   ShieldCheck,
   Sparkles,
   UploadCloud,
+  Users,
   X,
-  Zap,
-  Plus,
 } from 'lucide-react'
 import { cn } from '@lib/utils'
 
+// Every feature listed here is implemented (Phases 1–4). AI features require a server-side provider.
 const features = [
-  { icon: LockKeyhole, eyebrow: 'Available now', title: 'Secure by default', body: 'JWT authentication, short-lived access tokens and protected routes keep every workspace boundary intentional.', accent: 'cyan' },
-  { icon: FolderOpen, eyebrow: 'Available now', title: 'A calmer file system', body: 'Organize files into folders with clear metadata, fast browsing and a foundation built to scale.', accent: 'blue' },
-  { icon: GitBranch, eyebrow: 'Next up', title: 'Version history', body: 'Keep context intact as documents change. Restore, compare and collaborate without losing the thread.', accent: 'violet' },
-  { icon: Network, eyebrow: 'Next up', title: 'Controlled sharing', body: 'Share the right file with the right person, with access controls designed for teams.', accent: 'blue' },
-  { icon: Search, eyebrow: 'Roadmap', title: 'Semantic search', body: 'Find meaning across your content, not just filenames, with embeddings and vector retrieval.', accent: 'cyan' },
-  { icon: Bot, eyebrow: 'Roadmap', title: 'Grounded answers', body: 'Ask questions of your documents and get answers connected to the source material.', accent: 'violet' },
+  { icon: LockKeyhole, eyebrow: 'Accounts', title: 'Secure sign-in', body: 'Short-lived access tokens, rotating refresh tokens with reuse detection, and protected routes on every request.', accent: 'cyan' },
+  { icon: UploadCloud, eyebrow: 'Storage', title: 'Upload and download', body: 'Drag files in, track progress per file, and download anytime. Up to 100 MB per file with a clear storage meter.', accent: 'blue' },
+  { icon: FolderOpen, eyebrow: 'Organization', title: 'Folders that nest', body: 'Create, rename, move, and delete folders. Breadcrumbs, a folder tree, search, sorting, and type filters.', accent: 'violet' },
+  { icon: Users, eyebrow: 'Collaboration', title: 'Share with people', body: 'Invite registered users to files or whole folders as Viewers or Editors, and change or remove access anytime.', accent: 'blue' },
+  { icon: Link2, eyebrow: 'Share links', title: 'Links you control', body: 'Create view-only or download links with expiry dates, optional passwords, and download limits. Revoke in one click.', accent: 'cyan' },
+  { icon: Activity, eyebrow: 'Audit trail', title: 'Activity history', body: 'See uploads, downloads, renames, moves, deletions, sign-ins, and sharing changes in one chronological, filterable timeline.', accent: 'violet' },
+  { icon: Sparkles, eyebrow: 'Document AI', title: 'Search and ask your documents', body: 'PDF, Word, Markdown, and text files are indexed for meaning-based search, summaries, and answers that cite their sources — only across documents you can access. Available when your server has an AI provider enabled.', accent: 'blue' },
 ]
 
 const docs = [
-  { icon: FileText, name: 'Product architecture.pdf', meta: '2.4 MB · Edited today', color: 'text-cyan-300' },
-  { icon: FileArchive, name: 'Brand system assets.zip', meta: '18.7 MB · Edited yesterday', color: 'text-violet-300' },
-  { icon: FileText, name: 'Q3 planning notes.docx', meta: '840 KB · Edited Sep 18', color: 'text-blue-300' },
+  { icon: FileText, name: 'Product architecture.pdf', meta: '2.4 MB · Today', color: 'text-cyan-300' },
+  { icon: FileArchive, name: 'Brand system assets.zip', meta: '18.7 MB · Yesterday', color: 'text-violet-300' },
+  { icon: FileText, name: 'Q3 planning notes.docx', meta: '840 KB · Sep 18', color: 'text-blue-300' },
 ]
 
 function Logo() {
@@ -61,7 +66,7 @@ function Logo() {
 
 function VaultVisual() {
   return (
-    <div className="vault-stage" aria-label="Illustration of a glowing NimbusVault data core">
+    <div className="vault-stage" role="img" aria-label="Illustration of the NimbusVault secure storage core">
       <div className="orbit orbit-one" />
       <div className="orbit orbit-two" />
       <div className="orbit orbit-three" />
@@ -83,29 +88,29 @@ function VaultVisual() {
         <div className="core-corner corner-a" />
         <div className="core-corner corner-b" />
       </div>
-      <div className="data-tag tag-one"><span className="pulse-dot" /> 12.8 GB indexed</div>
-      <div className="data-tag tag-two"><Sparkles size={12} /> AI layer ready</div>
+      <div className="data-tag tag-one"><span className="pulse-dot" /> Owner · Editor · Viewer</div>
+      <div className="data-tag tag-two"><Clock size={12} /> Links that expire</div>
     </div>
   )
 }
 
+/** Illustrative product preview built from real product concepts (sample data). */
 function ProductPreview() {
   const [activeDoc, setActiveDoc] = useState(0)
   const [query, setQuery] = useState('')
-  const [aiQuery, setAiQuery] = useState('')
   const [uploading, setUploading] = useState(false)
   const filteredDocs = docs.filter((doc) => doc.name.toLowerCase().includes(query.toLowerCase()))
 
   return (
-    <div className="preview-shell" id="showcase">
+    <div className="preview-shell" id="showcase" aria-label="Product preview with sample data">
       <div className="preview-topbar">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" aria-hidden="true">
           <div className="window-dot bg-[#fb7185]" />
           <div className="window-dot bg-[#facc15]" />
           <div className="window-dot bg-[#4ade80]" />
         </div>
-        <div className="preview-path"><Folder size={12} /> Workspace / Product</div>
-        <div className="preview-avatar">MC</div>
+        <div className="preview-path"><Folder size={12} /> My Files / Product</div>
+        <div className="preview-avatar" aria-hidden="true">MC</div>
       </div>
       <div className="preview-body">
         <aside className="preview-sidebar">
@@ -113,15 +118,16 @@ function ProductPreview() {
             <div className="mini-mark"><Cloud size={12} /></div> NimbusVault
           </div>
           <button
+            type="button"
             className={cn('new-button', uploading && 'uploading')}
             onClick={() => { setUploading(true); window.setTimeout(() => setUploading(false), 1400) }}
           >
-            <UploadCloud size={13} /> {uploading ? 'Indexing file...' : 'Upload file'}
+            <UploadCloud size={13} /> {uploading ? 'Uploading…' : 'Upload file'}
           </button>
           <div className="sidebar-label">Workspace</div>
-          <div className="sidebar-item active"><FolderOpen size={14} /> All files <span>24</span></div>
-          <div className="sidebar-item"><Sparkles size={14} /> Starred</div>
-          <div className="sidebar-item"><Network size={14} /> Shared with me</div>
+          <div className="sidebar-item active"><FolderOpen size={14} /> My Files <span>24</span></div>
+          <div className="sidebar-item"><Users size={14} /> Shared with me</div>
+          <div className="sidebar-item"><Activity size={14} /> Activity</div>
           <div className="sidebar-label mt-5">Folders</div>
           <div className="sidebar-item"><Folder size={14} /> Product</div>
           <div className="sidebar-item"><Folder size={14} /> Marketing</div>
@@ -131,39 +137,34 @@ function ProductPreview() {
               <span>Storage</span><span>42%</span>
             </div>
             <div className="storage-bar"><span /></div>
-            <p>4.2 GB of 10 GB used</p>
+            <p>2.1 GB of 5 GB used</p>
           </div>
         </aside>
         <div className="preview-main">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="preview-kicker">PRODUCT WORKSPACE</p>
-              <h3 className="text-[21px] font-medium tracking-[-0.04em] text-white">All files</h3>
+              <p className="preview-kicker">MY FILES / PRODUCT</p>
+              <h3 className="text-[21px] font-medium tracking-[-0.04em] text-white">Product</h3>
             </div>
-            <button className="preview-icon-btn" aria-label="Search files"><Search size={15} /></button>
+            <span className="preview-icon-btn" aria-hidden="true"><Search size={15} /></span>
           </div>
           <label className="preview-search">
             <Search size={14} />
             <input
-              aria-label="Search files and folders"
+              aria-label="Try searching the sample files"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search files and folders..."
             />
-            <kbd>⌘ K</kbd>
           </label>
           <div className="file-table">
             <div className="file-table-head">
-              <span>Name</span><span>Last modified</span><span>Size</span>
+              <span>Name</span><span>Uploaded</span><span>Size</span>
             </div>
             {filteredDocs.map((doc) => {
               const i = docs.indexOf(doc)
               return (
-                <button
-                  className={cn('file-row', activeDoc === i && 'selected')}
-                  key={doc.name}
-                  onClick={() => setActiveDoc(i)}
-                >
+                <button type="button" className={cn('file-row', activeDoc === i && 'selected')} key={doc.name} onClick={() => setActiveDoc(i)} aria-pressed={activeDoc === i}>
                   <div className="flex min-w-0 items-center gap-3">
                     <doc.icon className={doc.color} size={17} />
                     <span className="truncate text-xs text-slate-200">{doc.name}</span>
@@ -173,33 +174,28 @@ function ProductPreview() {
                 </button>
               )
             })}
+            {filteredDocs.length === 0 && <p className="px-3 py-4 text-[11px] text-slate-500">No sample files match “{query}”.</p>}
           </div>
-          <div className="preview-status"><CircleCheck size={14} /> All files synced <span>·</span> Updated just now</div>
+          <div className="preview-status"><CircleCheck size={14} /> Upload complete <span>·</span> just now</div>
         </div>
-        <aside className="ai-panel">
-          <div className="ai-panel-head">
-            <div className="ai-spark"><Sparkles size={13} /></div>
+        <aside className="share-panel" aria-label="Sharing preview">
+          <div className="share-panel-head">
+            <div className="share-mark"><Users size={13} /></div>
             <div>
-              <p className="text-xs font-medium text-white">Nimbus AI</p>
-              <p className="text-[10px] text-slate-500">Document intelligence</p>
+              <p>Share “{docs[activeDoc].name}”</p>
+              <p>People with access</p>
             </div>
-            <span className="ai-live">BETA</span>
           </div>
-          <div className="ai-question">What&apos;s in my product architecture?</div>
-          <div className="ai-answer">
-            <div className="flex items-center gap-2 text-[10px] font-medium text-cyan-200"><Bot size={13} /> Grounded answer</div>
-            <p>It outlines the core services, data flow and security boundaries for the NimbusVault platform.</p>
-            <div className="source-chip"><FileText size={11} /> Product architecture.pdf <span>↗</span></div>
+          <div className="share-person"><span className="avatar">MC</span><span>Maya Chen (you)</span><span className="role-chip owner">Owner</span></div>
+          <div className="share-person"><span className="avatar b">AR</span><span>Arjun Rao</span><span className="role-chip editor">Editor</span></div>
+          <div className="share-person"><span className="avatar c">SK</span><span>Sofia Kim</span><span className="role-chip">Viewer</span></div>
+          <div className="share-label">Share link</div>
+          <div className="share-link-row"><Link2 size={12} /><code>nimbusvault.app/share/••••••</code></div>
+          <div className="share-link-meta">
+            <span><Clock size={10} /> Expires in 7 days</span>
+            <span><KeyRound size={10} /> Password</span>
+            <span><Download size={10} /> 3/10 downloads</span>
           </div>
-          <form className="ai-input" onSubmit={(event) => { event.preventDefault(); setAiQuery('Grounded answer ready — source context found.'); }}>
-            <input
-              aria-label="Ask Nimbus AI"
-              value={aiQuery}
-              onChange={(event) => setAiQuery(event.target.value)}
-              placeholder="Ask about your files..."
-            />
-            <button type="submit" aria-label="Send AI question"><Send size={13} /></button>
-          </form>
         </aside>
       </div>
     </div>
@@ -207,6 +203,21 @@ function ProductPreview() {
 }
 
 function ArrowUpRightIcon() { return <ArrowRight className="-rotate-45" size={12} /> }
+
+const securityItems: Array<[string, string]> = [
+  ['Short-lived access tokens', 'Sessions use 15-minute JWT access tokens, so a leaked token stops working quickly.'],
+  ['Refresh-token rotation with reuse detection', 'Each refresh issues a new token. Reusing an old one revokes the whole session family.'],
+  ['Role-based access on every request', 'Owner, Editor, and Viewer permissions are checked server-side for every file and folder action.'],
+  ['Hardened share links', 'Link tokens and passwords are stored hashed, links can expire or cap downloads, and public access is rate limited.'],
+  ['Security headers and validated input', 'Strict HTTP security headers, CORS rules, and schema validation at every API boundary.'],
+]
+
+const faqs: Array<[string, string]> = [
+  ['Who can see my files?', 'Only you, unless you share. You choose each person’s role. Viewers can view and download. Editors can also rename, move, and share. You can change or remove access at any time.'],
+  ['Can I share with someone who doesn’t have an account?', 'Yes, with a share link. Choose view-only or download access, set an expiry date, add a password, and cap the number of downloads. Revoke the link whenever you like.'],
+  ['How much can I store?', 'Each account includes 5 GB of storage, and individual files can be up to 100 MB. Your storage meter always shows what’s used and what’s left.'],
+  ['Can I see what happened to a file?', 'Yes. The Activity page records downloads, renames, moves, deletions, and sharing changes, with filters for event, item type, and date.'],
+]
 
 export default function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -237,37 +248,40 @@ export default function LandingPage() {
     pageRef.current?.style.setProperty('--pointer-y', `${y.toFixed(3)}`)
   }
 
+  const navItems = [
+    ['#features', 'Features'],
+    ['#collaboration', 'Collaboration'],
+    ['#security', 'Security'],
+    ['#faq', 'FAQ'],
+  ]
+
   return (
     <main ref={pageRef} onPointerMove={handlePointerMove} className={`min-h-screen overflow-hidden text-slate-200 ${lightMode ? 'light-mode' : ''}`}>
       <div className="site-noise" />
-      <nav className="site-nav">
+      <nav className="site-nav" aria-label="Main">
         <div className="container-custom nav-inner">
           <Link to="/" className="brand-link" aria-label="NimbusVault home"><Logo /></Link>
           <div className="nav-primary hidden items-center gap-8 md:flex">
-            <a href="#features" className="nav-link"><span>01</span>Features</a>
-            <a href="#security" className="nav-link"><span>02</span>Security</a>
-            <a href="#how-it-works" className="nav-link"><span>03</span>How it works</a>
-            <a href="#roadmap" className="nav-link"><span>04</span>Roadmap</a>
+            {navItems.map(([href, label], i) => (
+              <a key={href} href={href} className="nav-link"><span>0{i + 1}</span>{label}</a>
+            ))}
           </div>
           <div className="nav-actions hidden items-center gap-4 md:flex">
-            <button className="theme-toggle" onClick={() => setLightMode(!lightMode)} aria-label={lightMode ? 'Switch to dark theme' : 'Switch to light theme'}>
-              <span className="theme-toggle-orb">{lightMode ? '☼' : '◐'}</span>
+            <button type="button" className="theme-toggle" onClick={() => setLightMode(!lightMode)} aria-label={lightMode ? 'Switch to dark theme' : 'Switch to light theme'} aria-pressed={lightMode}>
+              <span className="theme-toggle-orb" aria-hidden="true">{lightMode ? '☼' : '◐'}</span>
               <span>{lightMode ? 'Light' : 'Dark'}</span>
             </button>
-            <Link to="/login" className="nav-login">Log in <ArrowUpRight size={12} /></Link>
+            <Link to="/login" className="nav-login">Sign in <ArrowUpRight size={12} /></Link>
             <Link to="/register" className="button button-small nav-cta">Get started <ArrowRight size={14} /></Link>
           </div>
-          <button className="mobile-menu md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'}>
+          <button type="button" className="mobile-menu md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} aria-controls="mobile-nav">
             {mobileOpen ? <X /> : <Menu />}
           </button>
         </div>
         {mobileOpen && (
-          <div className="mobile-nav md:hidden">
-            <a href="#features" onClick={() => setMobileOpen(false)}>Features</a>
-            <a href="#security" onClick={() => setMobileOpen(false)}>Security</a>
-            <a href="#how-it-works" onClick={() => setMobileOpen(false)}>How it works</a>
-            <a href="#roadmap" onClick={() => setMobileOpen(false)}>Roadmap</a>
-            <a href="/login">Log in</a>
+          <div className="mobile-nav md:hidden" id="mobile-nav">
+            {navItems.map(([href, label]) => <a key={href} href={href} onClick={() => setMobileOpen(false)}>{label}</a>)}
+            <Link to="/login">Sign in</Link>
             <Link to="/register" className="button button-small justify-center">Get started <ArrowRight size={14} /></Link>
           </div>
         )}
@@ -277,16 +291,16 @@ export default function LandingPage() {
         <div className="hero-grid" />
         <div className="container-custom relative grid items-center gap-14 pb-20 pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8 lg:pb-28 lg:pt-28">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> The intelligent file workspace</div>
-            <h1>Your files are only the <span>beginning.</span></h1>
-            <p className="hero-lede">NimbusVault is a secure home for your files today — and the intelligent document workspace your team can grow into tomorrow.</p>
+            <div className="eyebrow"><span className="eyebrow-dot" /> Secure cloud storage & sharing</div>
+            <h1>Your files. Your rules. <span>Secured.</span></h1>
+            <p className="hero-lede">NimbusVault keeps your files organized in folders, lets you share them with exactly the right people, and records what happens to them.</p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link to="/register" className="button">Create your workspace <ArrowRight size={16} /></Link>
-              <a href="#features" className="text-link">Explore the platform <ChevronDown size={15} /></a>
+              <Link to="/register" className="button">Create your free vault <ArrowRight size={16} /></Link>
+              <a href="#features" className="text-link">See what’s included <ChevronDown size={15} /></a>
             </div>
             <div className="hero-proof">
-              <div className="proof-avatars"><span>NV</span><span>AI</span><span>∞</span></div>
-              <p>Built on a foundation for <strong>secure, thoughtful software.</strong></p>
+              <div className="proof-avatars" aria-hidden="true"><span>5GB</span><span>3</span><span>∞</span></div>
+              <p><strong>5 GB storage,</strong> 3 access roles, and unlimited share links.</p>
             </div>
           </div>
           <div className="hero-art"><VaultVisual /></div>
@@ -294,9 +308,9 @@ export default function LandingPage() {
         <div className="container-custom"><ProductPreview /></div>
       </section>
 
-      <section className="stack-strip">
+      <section className="stack-strip" aria-label="Technology">
         <div className="container-custom">
-          <div className="strip-label">A foundation built with</div>
+          <div className="strip-label">Built with</div>
           <div className="stack-items">
             <span><Code2 size={16} /> React</span>
             <span><Code2 size={16} /> TypeScript</span>
@@ -312,10 +326,10 @@ export default function LandingPage() {
         <div className="container-custom">
           <div className="section-heading">
             <div>
-              <p className="section-kicker">A better starting point</p>
-              <h2>Storage that makes room for <em>understanding.</em></h2>
+              <p className="section-kicker">Everything you need</p>
+              <h2>Storage that stays <em>organized.</em></h2>
             </div>
-            <p className="section-intro">The essential tools to bring order to your files, with an architecture ready for the next layer of intelligence.</p>
+            <p className="section-intro">The essentials for storing, organizing, and sharing files, with security built into every layer.</p>
           </div>
           <div className="feature-grid">
             {features.map((feature) => (
@@ -324,21 +338,9 @@ export default function LandingPage() {
                 <div className="feature-label">{feature.eyebrow}</div>
                 <h3>{feature.title}</h3>
                 <p>{feature.body}</p>
-                <span className="card-arrow"><ArrowRight size={15} /></span>
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="showcase-section reveal-section" data-reveal>
-        <div className="container-custom">
-          <div className="showcase-copy">
-            <p className="section-kicker">A glimpse of what&apos;s ahead</p>
-            <h2>Your workspace, with a little more <em>signal.</em></h2>
-            <p>Search, browse and understand your content from one considered surface. The interface is illustrative today; the direction is very real.</p>
-          </div>
-          <div className="showcase-wrap"><ProductPreview /></div>
         </div>
       </section>
 
@@ -347,16 +349,50 @@ export default function LandingPage() {
           <div className="section-heading centered">
             <div>
               <p className="section-kicker">Simple by design</p>
-              <h2>From scattered to <em>clear.</em></h2>
+              <h2>From scattered to <em>shared.</em></h2>
             </div>
-            <p className="section-intro">A workflow that stays out of the way, so your ideas can move forward.</p>
+            <p className="section-intro">A workflow that stays out of the way.</p>
           </div>
           <div className="steps">
-            <div className="step"><span>01</span><div className="step-icon"><UploadCloud size={21} /></div><h3>Store and organize</h3><p>Bring your files into a secure, structured home with a folder system that feels familiar.</p></div>
+            <div className="step"><span>01</span><div className="step-icon"><UploadCloud size={21} /></div><h3>Upload and organize</h3><p>Drop files in and arrange them in nested folders. Search, sort, and filter to find anything fast.</p></div>
             <div className="step-line" />
-            <div className="step"><span>02</span><div className="step-icon"><Network size={21} /></div><h3>Share and collaborate</h3><p>Give teammates the context they need with thoughtful controls and clear ownership.</p></div>
+            <div className="step"><span>02</span><div className="step-icon"><Users size={21} /></div><h3>Share with intent</h3><p>Invite people as Viewers or Editors, or send a link with an expiry date, password, and download limit.</p></div>
             <div className="step-line" />
-            <div className="step"><span>03</span><div className="step-icon"><Sparkles size={21} /></div><h3>Search and understand</h3><p>Turn a library of documents into answers, insights and momentum when the AI layer arrives.</p></div>
+            <div className="step"><span>03</span><div className="step-icon"><Activity size={21} /></div><h3>Stay in the loop</h3><p>Review the activity timeline to see downloads, changes, and who has access.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="collab-section section-pad reveal-section" data-reveal id="collaboration">
+        <div className="container-custom">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Collaboration</p>
+              <h2>The right access for <em>every person.</em></h2>
+            </div>
+            <p className="section-intro">Share a single file or an entire folder. Access inherits to everything inside a shared folder.</p>
+          </div>
+          <div className="role-grid">
+            {([
+              { role: 'owner', tag: 'Owner', title: 'Full control', can: ['View and download', 'Rename, move, and delete', 'Share and manage access', 'Create and revoke share links'], cannot: [] },
+              { role: 'editor', tag: 'Editor', title: 'Work alongside you', can: ['View and download', 'Rename and move', 'Share with others', 'Create share links'], cannot: ['Delete or manage access'] },
+              { role: 'viewer', tag: 'Viewer', title: 'Read-only access', can: ['View and download'], cannot: ['Rename, move, or delete', 'Share with others'] },
+            ]).map((r) => (
+              <article key={r.role} className={cn('role-card', r.role)}>
+                <span className="role-tag">{r.tag}</span>
+                <h3>{r.title}</h3>
+                <ul>
+                  {r.can.map((c) => <li key={c}><Check size={14} aria-hidden="true" /> {c}</li>)}
+                  {r.cannot.map((c) => <li key={c} className="off"><X size={14} aria-hidden="true" /> <span><span className="sr-only">Cannot: </span>{c}</span></li>)}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <div className="link-controls" aria-label="Share link controls">
+            <div><Link2 size={18} aria-hidden="true" /><h4>View or download</h4><p>Decide whether recipients can download, or only see the file details.</p></div>
+            <div><Clock size={18} aria-hidden="true" /><h4>Expiry dates</h4><p>Links stop working after 1, 7, or 30 days, or at a time you choose.</p></div>
+            <div><KeyRound size={18} aria-hidden="true" /><h4>Passwords</h4><p>Require a password before anyone can open the link.</p></div>
+            <div><Download size={18} aria-hidden="true" /><h4>Download limits</h4><p>Cap downloads, track usage, and revoke a link in one click.</p></div>
           </div>
         </div>
       </section>
@@ -365,14 +401,15 @@ export default function LandingPage() {
         <div className="container-custom grid items-center gap-14 lg:grid-cols-[0.92fr_1.08fr]">
           <div>
             <p className="section-kicker">Trust is a feature</p>
-            <h2>A strong foundation is <em>non-negotiable.</em></h2>
-            <p className="body-copy">NimbusVault is built with security fundamentals in mind from the first request to the last document.</p>
-            <Link to="/register" className="text-link">Start with a secure workspace <ArrowRight size={15} /></Link>
+            <h2>Security that’s <em>built in.</em></h2>
+            <p className="body-copy">NimbusVault applies security fundamentals from the first request to the last download.</p>
+            <Link to="/register" className="text-link">Start with a secure vault <ArrowRight size={15} /></Link>
           </div>
           <div className="security-list">
             <div className="security-list-glow" />
-            {['JWT authentication with short-lived access tokens', 'Refresh-token rotation with reuse detection', 'Protected routes and validated input boundaries', 'Security headers and sensible platform defaults', 'Rate limiting at sensitive request boundaries'].map((item, index) => (
+            {securityItems.map(([item, detail], index) => (
               <button
+                type="button"
                 className={cn('security-item', activeSecurity === index ? 'expanded' : '')}
                 key={item}
                 onClick={() => setActiveSecurity(activeSecurity === index ? null : index)}
@@ -380,69 +417,10 @@ export default function LandingPage() {
               >
                 <div className="check-icon"><Check size={14} /></div>
                 <span>{item}</span>
-                <Plus size={14} className="security-plus" />
-                {activeSecurity === index && (
-                  <small>
-                    {index === 0 ? 'Sessions are scoped and intentionally short-lived.' :
-                    index === 1 ? 'Reuse detection helps protect refresh boundaries.' :
-                    'Every boundary is treated as a product surface.'}
-                  </small>
-                )}
+                <Plus size={14} className="security-plus" aria-hidden="true" />
+                {activeSecurity === index && <small>{detail}</small>}
               </button>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="ai-section reveal-section" data-reveal>
-        <div className="container-custom grid items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
-          <div className="ai-visual">
-            <div className="ai-visual-grid" />
-            <div className="ai-orb"><Sparkles size={31} /><span>AI</span></div>
-            <div className="ai-pill pill-left">Text extraction</div>
-            <div className="ai-pill pill-right">Embeddings</div>
-            <div className="ai-pill pill-bottom">Grounded Q&A</div>
-          </div>
-          <div>
-            <p className="section-kicker">The intelligent layer</p>
-            <h2>Not just where files live. <em>What they know.</em></h2>
-            <p className="body-copy">The roadmap leads from document text extraction to embeddings, semantic search and grounded Q&A — helping your knowledge work harder without losing its source.</p>
-            <div className="vision-list">
-              <span><Zap size={15} /> Retrieval with context</span>
-              <span><ShieldCheck size={15} /> Answers you can trace</span>
-              <span><Search size={15} /> Meaning over keywords</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-pad roadmap-section reveal-section" data-reveal id="roadmap">
-        <div className="container-custom">
-          <div className="section-heading">
-            <div>
-              <p className="section-kicker">The path forward</p>
-              <h2>Built in layers, <em>on purpose.</em></h2>
-            </div>
-            <p className="section-intro">A transparent roadmap from dependable foundation to a document workspace that can think alongside you.</p>
-          </div>
-          <div className="roadmap">
-            <div className="roadmap-progress" />
-            <div className="roadmap-item complete">
-              <div className="roadmap-marker"><Check size={14} /></div>
-              <div><span>Foundation · complete</span><h3>Secure authentication</h3><p>Protected access, session boundaries and a clean platform core.</p></div>
-            </div>
-            <div className="roadmap-item active">
-              <div className="roadmap-marker"><span /></div>
-              <div><span>Next · in progress</span><h3>Cloud storage and file management</h3><p>A reliable home for every file, folder and version.</p></div>
-            </div>
-            <div className="roadmap-item">
-              <div className="roadmap-marker" />
-              <div><span>Then · planned</span><h3>Collaboration and sharing</h3><p>Bring teams into the workspace with confidence and control.</p></div>
-            </div>
-            <div className="roadmap-item">
-              <div className="roadmap-marker" />
-              <div><span>Vision · planned</span><h3>AI search and RAG</h3><p>Make every document discoverable, understandable and useful.</p></div>
-            </div>
           </div>
         </div>
       </section>
@@ -450,14 +428,14 @@ export default function LandingPage() {
       <section className="trust-section reveal-section" data-reveal>
         <div className="container-custom">
           <div className="trust-intro">
-            <p className="section-kicker">Built for serious work</p>
-            <h2>Calm systems create <em>better momentum.</em></h2>
-            <p>From first upload to final answer, NimbusVault keeps your files legible, protected, and ready for the next useful action.</p>
+            <p className="section-kicker">Clear limits, no surprises</p>
+            <h2>Straightforward by <em>default.</em></h2>
+            <p>Know exactly what your account includes, and see your usage at a glance.</p>
           </div>
           <div className="trust-stats">
-            <div><strong>10 GB</strong><span>workspace capacity</span></div>
-            <div><strong>99.9%</strong><span>sync confidence</span></div>
-            <div><strong>24/7</strong><span>protected access</span></div>
+            <div><strong>5 GB</strong><span>storage per account</span></div>
+            <div><strong>100 MB</strong><span>max size per file</span></div>
+            <div><strong>3</strong><span>access roles</span></div>
           </div>
         </div>
       </section>
@@ -466,24 +444,19 @@ export default function LandingPage() {
         <div className="container-custom">
           <div className="section-heading">
             <div>
-              <p className="section-kicker">Clear by design</p>
+              <p className="section-kicker">Good to know</p>
               <h2>Questions before you <em>begin.</em></h2>
             </div>
-            <p className="section-intro">The useful details, without the enterprise fog.</p>
+            <p className="section-intro">The useful details, in plain language.</p>
           </div>
           <div className="faq-list">
-            {[
-              ['Is NimbusVault secure?', 'Yes. The platform is designed around protected routes, short-lived sessions, validated inputs, and clear workspace boundaries.'],
-              ['Can I organize files by folder?', 'Yes. The workspace preview reflects the core model: folders, file metadata, search, and a calm browsing surface.'],
-              ['Will AI read everything automatically?', 'No. The intelligent layer is designed to be grounded in your selected content and traceable back to its sources.'],
-              ['Can I start with a small team?', 'Yes. NimbusVault is designed to grow from a focused personal workspace into controlled team collaboration.'],
-            ].map(([question, answer], index) => (
+            {faqs.map(([question, answer], index) => (
               <div className={cn('faq-item', openFaq === index ? 'open' : '')} key={question}>
-                <button onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index}>
+                <button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index} aria-controls={`faq-${index}`}>
                   <span>{question}</span>
-                  <Plus size={17} />
+                  <Plus size={17} aria-hidden="true" />
                 </button>
-                {openFaq === index && <p>{answer}</p>}
+                {openFaq === index && <p id={`faq-${index}`}>{answer}</p>}
               </div>
             ))}
           </div>
@@ -496,11 +469,11 @@ export default function LandingPage() {
             <div className="cta-glow" />
             <div className="cta-orbit" />
             <p className="section-kicker">The vault is open</p>
-            <h2>Give your files a <em>future.</em></h2>
-            <p>Start building a calmer, more intelligent way to work with the things you create.</p>
+            <h2>Give your files a <em>secure home.</em></h2>
+            <p>Create an account in under a minute. Upload, organize, and share on your terms.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="button">Create your workspace <ArrowRight size={16} /></Link>
-              <a href="https://github.com/JainMehul05/NimbusVault-" target="_blank" rel="noreferrer" className="button button-ghost">Explore the codebase <GitBranch size={15} /></a>
+              <Link to="/register" className="button">Create your free vault <ArrowRight size={16} /></Link>
+              <Link to="/login" className="button button-ghost">Sign in <ShieldCheck size={15} /></Link>
             </div>
           </div>
         </div>
@@ -510,16 +483,17 @@ export default function LandingPage() {
         <div className="container-custom flex flex-col gap-8 py-10 md:flex-row md:items-center md:justify-between">
           <div>
             <Logo />
-            <p className="mt-3 text-xs text-slate-500">A secure home for what&apos;s next.</p>
+            <p className="mt-3 text-xs text-slate-400">Secure cloud storage and sharing.</p>
           </div>
-          <div className="footer-links">
+          <nav className="footer-links" aria-label="Footer">
             <a href="#features">Features</a>
+            <a href="#collaboration">Collaboration</a>
             <a href="#security">Security</a>
-            <a href="/login">Log in</a>
-            <a href="/register">Register</a>
-            <a href="https://github.com/JainMehul05/NimbusVault-" target="_blank" rel="noreferrer">GitHub <ArrowUpRightIcon /></a>
-          </div>
-          <p className="text-xs text-slate-600">© 2026 NimbusVault AI</p>
+            <Link to="/login">Sign in</Link>
+            <Link to="/register">Create account</Link>
+            <a href="https://github.com/JainMehul05/NimbusVault-" target="_blank" rel="noreferrer">GitHub <ArrowUpRightIcon /><span className="sr-only"> (opens in a new tab)</span></a>
+          </nav>
+          <p className="text-xs text-slate-400">© 2026 NimbusVault <GitBranch size={11} className="ml-1 inline" aria-hidden="true" /></p>
         </div>
       </footer>
     </main>

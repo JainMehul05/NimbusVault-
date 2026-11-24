@@ -3,7 +3,8 @@ import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
 import { createRequestLogger } from '@common/logger';
-import { authorizationService, hasPermission } from '@common/authorization';
+import { authorizationService, hasPermission, type Action } from '@common/authorization';
+import { activityLogService } from '@modules/activity/activity.service';
 
 export interface CreateShareInput {
   resourceType: ResourceType;
@@ -37,22 +38,32 @@ export class SharingService {
     });
   }
 
+  /**
+   * Checks the caller may perform `action` on the resource and returns the resource owner.
+   * `share` (owner/editor) allows granting access; `manage_permissions` (owner only) is required
+   * to change or revoke existing grants, so editors cannot remove the owner's collaborators.
+   */
   private async validateResourceSharePermission(
     resourceType: ResourceType,
     resourceId: string,
-    userId: string
-  ): Promise<void> {
+    userId: string,
+    action: Action = 'share'
+  ): Promise<{ ownerId: string; name: string }> {
     if (resourceType === 'FILE') {
       const access = await authorizationService.getFileAccess(userId, resourceId);
-      if (!hasPermission(access.effectiveLevel, 'share')) {
+      if (!hasPermission(access.effectiveLevel, action)) {
         throw AppError.forbidden('Insufficient permissions to manage sharing', ErrorCodes.FORBIDDEN);
       }
-    } else {
-      const access = await authorizationService.getFolderAccess(userId, resourceId);
-      if (!hasPermission(access.effectiveLevel, 'share')) {
-        throw AppError.forbidden('Insufficient permissions to manage sharing', ErrorCodes.FORBIDDEN);
-      }
+      return { ownerId: access.file!.ownerId, name: access.file!.filename };
     }
+    if (resourceType === 'FOLDER') {
+      const access = await authorizationService.getFolderAccess(userId, resourceId);
+      if (!hasPermission(access.effectiveLevel, action)) {
+        throw AppError.forbidden('Insufficient permissions to manage sharing', ErrorCodes.FORBIDDEN);
+      }
+      return { ownerId: access.folder!.ownerId, name: access.folder!.name };
+    }
+    throw AppError.badRequest('Unsupported resource type', ErrorCodes.VALIDATION_ERROR);
   }
 
   async createOrUpdateShare(input: CreateShareInput): Promise<ShareResult> {
@@ -69,8 +80,11 @@ export class SharingService {
       throw AppError.badRequest('Cannot share with yourself', ErrorCodes.VALIDATION_ERROR);
     }
 
-    // Validate resource ownership
-    await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy);
+    const resource = await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy);
+
+    if (grantee.id === resource.ownerId) {
+      throw AppError.badRequest('This person already owns the item', ErrorCodes.VALIDATION_ERROR);
+    }
 
     // Check if share already exists
     const existingPermission = await this.prismaClient.permission.findUnique({
@@ -84,6 +98,11 @@ export class SharingService {
     });
 
     let permission: Permission;
+
+    if (existingPermission && existingPermission.level !== input.level) {
+      // Changing an existing grant is a permission change: owner only.
+      await this.validateResourceSharePermission(input.resourceType, input.resourceId, input.grantedBy, 'manage_permissions');
+    }
 
     if (existingPermission) {
       // Update existing permission
@@ -118,16 +137,21 @@ export class SharingService {
       );
     }
 
-    // Log activity
-    await this.prismaClient.activityLog.create({
-      data: {
-        userId: input.grantedBy,
-        action: existingPermission ? 'share_revoke' : 'share_create', // We'll use share_create for both
+    if (!existingPermission || existingPermission.level !== input.level) {
+      await activityLogService.logActivity(input.grantedBy, existingPermission ? 'share_update' : 'share_create', {
         resourceType: input.resourceType,
         resourceId: input.resourceId,
-        metadata: { granteeId: grantee.id, level: input.level, updated: !!existingPermission },
-      },
-    });
+        targetOwnerId: resource.ownerId,
+        metadata: {
+          name: resource.name,
+          granteeId: grantee.id,
+          granteeName: grantee.name,
+          level: input.level,
+          ...(existingPermission ? { previousLevel: existingPermission.level } : {}),
+        },
+        requestId: input.requestId,
+      });
+    }
 
     return { permission, grantee };
   }
@@ -168,8 +192,7 @@ export class SharingService {
   ): Promise<Permission> {
     const log = requestId ? createRequestLogger(requestId) : undefined;
 
-    // Validate share permission
-    await this.validateResourceSharePermission(resourceType, resourceId, userId);
+    const resource = await this.validateResourceSharePermission(resourceType, resourceId, userId, 'manage_permissions');
 
     // Check if permission exists
     const existing = await this.prismaClient.permission.findUnique({
@@ -202,16 +225,15 @@ export class SharingService {
       'Share permission updated'
     );
 
-    // Log activity
-    await this.prismaClient.activityLog.create({
-      data: {
-        userId,
-        action: 'share_revoke', // Using existing action type
+    if (existing.level !== level) {
+      await activityLogService.logActivity(userId, 'share_update', {
         resourceType,
         resourceId,
-        metadata: { granteeId, level, previousLevel: existing.level },
-      },
-    });
+        targetOwnerId: resource.ownerId,
+        metadata: { name: resource.name, granteeId, level, previousLevel: existing.level },
+        requestId,
+      });
+    }
 
     return permission;
   }
@@ -225,8 +247,7 @@ export class SharingService {
   ): Promise<void> {
     const log = requestId ? createRequestLogger(requestId) : undefined;
 
-    // Validate share permission
-    await this.validateResourceSharePermission(resourceType, resourceId, userId);
+    const resource = await this.validateResourceSharePermission(resourceType, resourceId, userId, 'manage_permissions');
 
     const existing = await this.prismaClient.permission.findUnique({
       where: {
@@ -254,20 +275,17 @@ export class SharingService {
 
     log?.info({ resourceType, resourceId, granteeId }, 'Share permission revoked');
 
-    // Log activity
-    await this.prismaClient.activityLog.create({
-      data: {
-        userId,
-        action: 'share_revoke',
-        resourceType,
-        resourceId,
-        metadata: { granteeId, previousLevel: existing.level },
-      },
+    await activityLogService.logActivity(userId, 'share_revoke', {
+      resourceType,
+      resourceId,
+      targetOwnerId: resource.ownerId,
+      metadata: { name: resource.name, granteeId, previousLevel: existing.level },
+      requestId,
     });
   }
 
   async listResourcesSharedWithUser(userId: string): Promise<{
-    files: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; permission: PermissionLevel; owner: { id: string; name: string; email: string } }>;
+    files: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; aiStatus: string; permission: PermissionLevel; owner: { id: string; name: string; email: string } }>;
     folders: Array<{ id: string; name: string; permission: PermissionLevel; owner: { id: string; name: string; email: string } }>;
   }> {
     // Get direct file permissions
@@ -284,7 +302,7 @@ export class SharingService {
     const fileIds = filePermissions.map(p => p.resourceId);
     const files = await this.prismaClient.file.findMany({
       where: { id: { in: fileIds }, deletedAt: null },
-      select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true },
+      select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true, aiStatus: true },
     });
     const fileMap = new Map(files.map(f => [f.id, f]));
 
@@ -325,11 +343,11 @@ export class SharingService {
         folderPermissionMap.set(p.resourceId, p.level);
       });
 
-    let inheritedFiles: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; ownerId: string }> = [];
+    let inheritedFiles: Array<{ id: string; filename: string; sizeBytes: bigint; mimeType: string; category: string; folderId: string | null; ownerId: string; aiStatus: string }> = [];
     if (sharedFolderIds.length > 0) {
       inheritedFiles = await this.prismaClient.file.findMany({
         where: { folderId: { in: sharedFolderIds }, deletedAt: null },
-        select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true },
+        select: { id: true, filename: true, sizeBytes: true, mimeType: true, category: true, folderId: true, ownerId: true, aiStatus: true },
       });
 
       // Add owners of inherited files
@@ -352,6 +370,7 @@ export class SharingService {
           mimeType: file.mimeType,
           category: file.category,
           folderId: file.folderId,
+          aiStatus: file.aiStatus,
           permission: p.level,
           owner: fileOwnerMap.get(file.ownerId)!,
         };
@@ -365,6 +384,7 @@ export class SharingService {
       mimeType: f.mimeType,
       category: f.category,
       folderId: f.folderId,
+      aiStatus: f.aiStatus,
       // Inherit the permission level from the parent folder
       permission: f.folderId ? (folderPermissionMap.get(f.folderId) ?? ('VIEWER' as PermissionLevel)) : ('VIEWER' as PermissionLevel),
       owner: fileOwnerMap.get(f.ownerId)!,

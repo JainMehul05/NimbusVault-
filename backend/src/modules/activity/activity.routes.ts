@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '@modules/auth/auth.routes';
 import { validate } from '@common/validation';
 import { activityController } from './activity.controller';
-import { activityLogQuerySchema, resourceActivitySchema } from './activity.validation';
+import { activityLogQuerySchema, myActivitySchema, resourceActivitySchema } from './activity.validation';
 
 const router = Router();
 
@@ -19,6 +19,7 @@ router.get(
 // Get current user's activity
 router.get(
   '/me',
+  validate(myActivitySchema),
   activityController.getMyActivity
 );
 

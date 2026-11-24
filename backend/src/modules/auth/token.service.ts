@@ -52,11 +52,17 @@ export class TokenService {
     throw AppError.unauthorized('Invalid refresh token', 'INVALID_REFRESH_TOKEN');
   }
 
-  async revokeTokenFamily(tokenFamily: string): Promise<void> {
+  /** Revokes every token in the family. Returns the owning user id when any active token was revoked. */
+  async revokeTokenFamily(tokenFamily: string): Promise<string | null> {
+    const active = await this.prismaClient.refreshToken.findFirst({
+      where: { tokenFamily, revokedAt: null },
+      select: { userId: true },
+    });
     await this.prismaClient.refreshToken.updateMany({
-      where: { tokenFamily },
+      where: { tokenFamily, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    return active?.userId ?? null;
   }
 
   async revokeToken(tokenId: string): Promise<void> {

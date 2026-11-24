@@ -4,6 +4,12 @@ import { userService } from '@modules/users/user.service';
 import { tokenService } from './token.service';
 import { generateAccessToken } from './jwt.utils';
 import { config } from '@config/index';
+import { activityLogService } from '@modules/activity/activity.service';
+
+export interface RequestMeta {
+  ipAddress?: string;
+  requestId?: string;
+}
 
 export interface RegisterInput {
   name: string;
@@ -48,22 +54,40 @@ export class AuthService {
     };
   }
 
-  async login(input: LoginInput): Promise<{ user: { id: string; name: string; email: string }; tokens: AuthTokens }> {
+  async login(input: LoginInput, meta: RequestMeta = {}): Promise<{ user: { id: string; name: string; email: string }; tokens: AuthTokens }> {
     const user = await userService.findByEmail(input.email);
 
     if (!user) {
+      // No event: there is no account to attribute it to (and logging would enable enumeration).
       throw AppError.unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
     const isValid = await bcrypt.compare(input.password, user.passwordHash);
 
     if (!isValid) {
+      // Recorded against the targeted account so its owner can see failed attempts.
+      await activityLogService.logActivity(user.id, 'auth_failed_login', {
+        resourceType: 'USER',
+        resourceId: user.id,
+        targetOwnerId: user.id,
+        ipAddress: meta.ipAddress,
+        requestId: meta.requestId,
+      });
       throw AppError.unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
     const { token: refreshToken, tokenFamily, expiresAt } = await tokenService.createRefreshToken(user.id);
     const accessToken = generateAccessToken({ userId: user.id, email: user.email });
     const expiresIn = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+
+    await userService.touchLastLogin(user.id);
+    await activityLogService.logActivity(user.id, 'auth_login', {
+      resourceType: 'USER',
+      resourceId: user.id,
+      targetOwnerId: user.id,
+      ipAddress: meta.ipAddress,
+      requestId: meta.requestId,
+    });
 
     return {
       user: { id: user.id, name: user.name, email: user.email },
@@ -98,8 +122,17 @@ export class AuthService {
     };
   }
 
-  async logout(tokenFamily: string): Promise<void> {
-    await tokenService.revokeTokenFamily(tokenFamily);
+  async logout(tokenFamily: string, meta: RequestMeta = {}): Promise<void> {
+    const userId = await tokenService.revokeTokenFamily(tokenFamily);
+    if (userId) {
+      await activityLogService.logActivity(userId, 'auth_logout', {
+        resourceType: 'USER',
+        resourceId: userId,
+        targetOwnerId: userId,
+        ipAddress: meta.ipAddress,
+        requestId: meta.requestId,
+      });
+    }
   }
 
   async me(userId: string) {

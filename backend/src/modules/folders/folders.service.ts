@@ -3,6 +3,7 @@ import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
 import prisma from '@database/prisma';
 import { logger } from '@common/logger';
+import { authorizationService, type PermissionLevel } from '@common/authorization';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -260,18 +261,19 @@ export class FolderService {
     return buildTree(rootParentId);
   }
 
-  async rename(folderId: string, userId: string, newName: string): Promise<Folder> {
+  async rename(folderId: string, userId: string, newName: string): Promise<{ folder: Folder; oldName: string }> {
     const folder = await this.validateFolderOwnership(folderId, userId);
 
     await this.checkDuplicateName(userId, folder.parentFolderId, newName, folderId);
 
-    return this.prismaClient.folder.update({
+    const updated = await this.prismaClient.folder.update({
       where: { id: folderId },
       data: { name: newName },
     });
+    return { folder: updated, oldName: folder.name };
   }
 
-  async move(folderId: string, userId: string, newParentFolderId: string | null): Promise<Folder> {
+  async move(folderId: string, userId: string, newParentFolderId: string | null): Promise<{ folder: Folder; previousParentId: string | null }> {
     const folder = await this.validateFolderOwnership(folderId, userId);
 
     await this.checkCircularReference(folderId, newParentFolderId);
@@ -282,13 +284,13 @@ export class FolderService {
       newDepth = newParent.depth + 1;
     }
 
-    await this.checkDuplicateName(userId, newParentFolderId, folder.name);
+    await this.checkDuplicateName(userId, newParentFolderId, folder.name, folderId);
 
     // Calculate depth difference for descendants
     const depthDiff = newDepth - folder.depth;
 
     // Update folder and all descendants in a transaction
-    return this.prismaClient.$transaction(async (tx) => {
+    const moved = await this.prismaClient.$transaction(async (tx) => {
       // Update the folder itself
       const updatedFolder = await tx.folder.update({
         where: { id: folderId },
@@ -305,6 +307,7 @@ export class FolderService {
 
       return updatedFolder;
     });
+    return { folder: moved, previousParentId: folder.parentFolderId };
   }
 
   private async updateDescendantsDepth(tx: TransactionClient, folderId: string, depthDiff: number): Promise<void> {
@@ -322,65 +325,74 @@ export class FolderService {
     }
   }
 
-  async softDelete(folderId: string, userId: string, options?: { deleteDescendants?: boolean }): Promise<Folder> {
+  /**
+   * Soft-deletes a folder (owner only). With `deleteDescendants`, every subfolder and file is
+   * deleted in the same transaction and their storage is returned to the owner's quota.
+   * Returns the deleted folder plus the ids of files that were deleted.
+   */
+  async softDelete(
+    folderId: string,
+    userId: string,
+    options?: { deleteDescendants?: boolean }
+  ): Promise<{ folder: Folder; deletedFileIds: string[] }> {
     await this.validateFolderOwnership(folderId, userId);
     const { deleteDescendants = false } = options || {};
+    const now = new Date();
 
     if (deleteDescendants) {
-      // Soft delete all descendants (folders and files)
       return this.prismaClient.$transaction(async (tx) => {
-        // Soft delete all files in this folder and descendants
         const descendantFolderIds = await this.getAllDescendantIds(tx, folderId);
         const allFolderIds = [folderId, ...descendantFolderIds];
 
-        await tx.file.updateMany({
-          where: {
-            folderId: { in: allFolderIds },
-            deletedAt: null,
-          },
-          data: { deletedAt: new Date() },
+        const files = await tx.file.findMany({
+          where: { folderId: { in: allFolderIds }, deletedAt: null },
+          select: { id: true, sizeBytes: true },
         });
+        const freed = files.reduce((sum, f) => sum + f.sizeBytes, 0n);
 
-        // Soft delete all descendant folders
-        await tx.folder.updateMany({
-          where: { id: { in: descendantFolderIds } },
-          data: { deletedAt: new Date() },
-        });
+        if (files.length) {
+          await tx.file.updateMany({
+            where: { id: { in: files.map((f) => f.id) }, deletedAt: null },
+            data: { deletedAt: now },
+          });
+          await tx.user.update({ where: { id: userId }, data: { storageUsedBytes: { decrement: freed } } });
+        }
 
-        // Soft delete the folder itself
-        return tx.folder.update({
-          where: { id: folderId },
-          data: { deletedAt: new Date() },
-        });
-      });
-    } else {
-      // Check if folder has children or files
-      const childrenCount = await this.prismaClient.folder.count({
-        where: { parentFolderId: folderId, deletedAt: null },
-      });
+        if (descendantFolderIds.length) {
+          await tx.folder.updateMany({ where: { id: { in: descendantFolderIds }, deletedAt: null }, data: { deletedAt: now } });
+        }
 
-      const filesCount = await this.prismaClient.file.count({
-        where: { folderId, deletedAt: null },
-      });
-
-      if (childrenCount > 0 || filesCount > 0) {
-        throw AppError.conflict(
-          'Folder is not empty. Use deleteDescendants option to delete with all contents.',
-          ErrorCodes.NAME_CONFLICT,
-          { childrenCount, filesCount }
-        );
-      }
-
-      return this.prismaClient.folder.update({
-        where: { id: folderId },
-        data: { deletedAt: new Date() },
+        const folder = await tx.folder.update({ where: { id: folderId }, data: { deletedAt: now } });
+        return { folder, deletedFileIds: files.map((f) => f.id) };
       });
     }
+
+    const childrenCount = await this.prismaClient.folder.count({
+      where: { parentFolderId: folderId, deletedAt: null },
+    });
+
+    const filesCount = await this.prismaClient.file.count({
+      where: { folderId, deletedAt: null },
+    });
+
+    if (childrenCount > 0 || filesCount > 0) {
+      throw AppError.conflict(
+        'Folder is not empty. Use deleteDescendants option to delete with all contents.',
+        ErrorCodes.NAME_CONFLICT,
+        { childrenCount, filesCount }
+      );
+    }
+
+    const folder = await this.prismaClient.folder.update({
+      where: { id: folderId },
+      data: { deletedAt: now },
+    });
+    return { folder, deletedFileIds: [] };
   }
 
   private async getAllDescendantIds(tx: TransactionClient, folderId: string): Promise<string[]> {
     const children = await tx.folder.findMany({
-      where: { parentFolderId: folderId },
+      where: { parentFolderId: folderId, deletedAt: null },
       select: { id: true },
     });
 
@@ -424,33 +436,78 @@ export class FolderService {
     });
   }
 
-  async getFolderContents(folderId: string, userId: string): Promise<{ folders: Folder[]; files: any[] }> {
-    // For root folder (empty string), skip ownership validation
+  /**
+   * Contents of a folder the user can read (own or shared, including inherited access), or of
+   * the user's own root when `folderId` is null. Also returns the caller's effective role and
+   * the breadcrumb path, truncated at the highest ancestor the caller can access.
+   */
+  async getFolderContents(
+    folderId: string | null,
+    userId: string
+  ): Promise<{
+    folder: Folder | null;
+    permission: PermissionLevel;
+    path: Array<{ id: string; name: string }>;
+    folders: Folder[];
+    files: Array<{
+      id: string;
+      filename: string;
+      sizeBytes: bigint;
+      mimeType: string;
+      category: string;
+      folderId: string | null;
+      status: string;
+      aiStatus: string;
+      uploadedAt: Date;
+    }>;
+  }> {
+    let folder: Folder | null = null;
+    let permission: PermissionLevel = 'OWNER';
     if (folderId) {
-      await this.validateFolderOwnership(folderId, userId);
+      const access = await authorizationService.authorizeFolderAccess({ userId, isAuthenticated: true }, folderId, 'read');
+      folder = access.folder!;
+      permission = access.effectiveLevel;
     }
+
+    const fileSelect = {
+      id: true,
+      filename: true,
+      sizeBytes: true,
+      mimeType: true,
+      category: true,
+      folderId: true,
+      status: true,
+      aiStatus: true,
+      uploadedAt: true,
+    } as const;
 
     const [folders, files] = await Promise.all([
       this.prismaClient.folder.findMany({
-        where: { parentFolderId: folderId, deletedAt: null },
+        where: folder
+          ? { parentFolderId: folder.id, deletedAt: null }
+          : { ownerId: userId, parentFolderId: null, deletedAt: null },
         orderBy: { name: 'asc' },
       }),
       this.prismaClient.file.findMany({
-        where: { folderId, deletedAt: null },
+        where: folder
+          ? { folderId: folder.id, deletedAt: null }
+          : { ownerId: userId, folderId: null, deletedAt: null },
         orderBy: { uploadedAt: 'desc' },
-        select: {
-          id: true,
-          filename: true,
-          sizeBytes: true,
-          mimeType: true,
-          category: true,
-          status: true,
-          uploadedAt: true,
-        },
+        select: fileSelect,
       }),
     ]);
 
-    return { folders, files };
+    const path: Array<{ id: string; name: string }> = [];
+    let cursor: Folder | null = folder;
+    while (cursor && path.length < 64) {
+      path.unshift({ id: cursor.id, name: cursor.name });
+      if (!cursor.parentFolderId) break;
+      const parentLevel = await authorizationService.getEffectivePermissionLevel(userId, 'FOLDER', cursor.parentFolderId);
+      if (!parentLevel) break; // stop at the top of the shared subtree
+      cursor = await this.prismaClient.folder.findUnique({ where: { id: cursor.parentFolderId } });
+    }
+
+    return { folder, permission, path, folders, files };
   }
 }
 

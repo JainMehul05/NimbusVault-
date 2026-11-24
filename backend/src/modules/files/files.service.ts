@@ -74,18 +74,37 @@ export class FileService {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
     if (
-      mimeType.startsWith('application/') &&
-      (mimeType.includes('word') ||
-        mimeType.includes('excel') ||
-        mimeType.includes('powerpoint') ||
-        mimeType.includes('msword') ||
-        mimeType.includes('vnd.openxmlformats') ||
-        mimeType === 'text/plain' ||
-        mimeType === 'application/rtf')
+      mimeType === 'text/plain' ||
+      mimeType === 'text/markdown' ||
+      mimeType === 'application/rtf' ||
+      mimeType === 'application/msword' ||
+      mimeType.includes('vnd.ms-') ||
+      mimeType.includes('vnd.openxmlformats')
     ) {
       return 'document';
     }
     return 'other';
+  }
+
+  /**
+   * Browsers often send Markdown (and sometimes other files) as an empty or generic MIME type.
+   * Resolve a canonical type from the extension for those cases only.
+   */
+  normalizeMimeType(mimeType: string, filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop() ?? '';
+    const generic = !mimeType || mimeType === 'application/octet-stream' || mimeType === 'text/x-markdown';
+    if (ext === 'md' || ext === 'markdown') {
+      if (generic || mimeType === 'text/plain' || mimeType === 'text/markdown') return 'text/markdown';
+    }
+    if (generic) {
+      const byExt: Record<string, string> = {
+        pdf: 'application/pdf',
+        txt: 'text/plain',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      };
+      if (byExt[ext]) return byExt[ext];
+    }
+    return mimeType;
   }
 
   async validateFileType(mimeType: string, _filename: string): Promise<'pdf' | 'image' | 'video' | 'document' | 'other'> {
@@ -106,6 +125,7 @@ export class FileService {
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'text/plain',
+      'text/markdown',
       'application/rtf',
     ];
 
@@ -119,32 +139,27 @@ export class FileService {
   async reserveQuota(userId: string, sizeBytes: bigint, requestId?: string): Promise<void> {
     const log = requestId ? createRequestLogger(requestId) : logger;
 
-    // Use a transaction with select-for-update to prevent race conditions
-    await this.prismaClient.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
+    // Single conditional UPDATE: the check and the increment are atomic, so concurrent
+    // uploads cannot together exceed the quota.
+    const updated = await this.prismaClient.$executeRaw`
+      UPDATE "users" SET "storageUsedBytes" = "storageUsedBytes" + ${sizeBytes}
+      WHERE "id" = ${userId} AND "storageUsedBytes" + ${sizeBytes} <= "storageQuotaBytes"`;
+
+    if (updated === 0) {
+      const user = await this.prismaClient.user.findUnique({
         where: { id: userId },
         select: { storageQuotaBytes: true, storageUsedBytes: true },
       });
-
       if (!user) {
         throw AppError.notFound('User not found', ErrorCodes.NOT_OWNER);
       }
-
-      const newUsage = user.storageUsedBytes + sizeBytes;
-      if (newUsage > user.storageQuotaBytes) {
-        log.warn({ userId, requested: sizeBytes.toString(), quota: user.storageQuotaBytes.toString(), used: user.storageUsedBytes.toString() }, 'Quota exceeded');
-        throw AppError.forbidden('Storage quota exceeded', ErrorCodes.QUOTA_EXCEEDED, {
-          quota: user.storageQuotaBytes.toString(),
-          used: user.storageUsedBytes.toString(),
-          requested: sizeBytes.toString(),
-        });
-      }
-
-      await tx.user.update({
-        where: { id: userId },
-        data: { storageUsedBytes: newUsage },
+      log.warn({ userId, requested: sizeBytes.toString(), quota: user.storageQuotaBytes.toString(), used: user.storageUsedBytes.toString() }, 'Quota exceeded');
+      throw AppError.forbidden('Storage quota exceeded', ErrorCodes.QUOTA_EXCEEDED, {
+        quota: user.storageQuotaBytes.toString(),
+        used: user.storageUsedBytes.toString(),
+        requested: sizeBytes.toString(),
       });
-    });
+    }
   }
 
   async releaseQuota(userId: string, sizeBytes: bigint): Promise<void> {
@@ -267,6 +282,7 @@ export class FileService {
           category: true,
           folderId: true,
           status: true,
+          aiStatus: true,
           uploadedAt: true,
           deletedAt: true,
         },
@@ -283,13 +299,8 @@ export class FileService {
     };
   }
 
-  async rename(fileId: string, userId: string, newFilename: string): Promise<File> {
-    // Check for duplicate name in same folder - use proper authorization for rename action
-    const access = await authorizationService.authorizeFileAccess(
-      { userId, isAuthenticated: true },
-      fileId,
-      'rename'
-    );
+  async rename(fileId: string, userId: string, newFilename: string): Promise<{ file: File; oldFilename: string }> {
+    const access = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'rename');
     const file = access.file!;
 
     const existingFile = await this.prismaClient.file.findFirst({
@@ -311,39 +322,37 @@ export class FileService {
       data: { filename: newFilename },
     });
 
-    return updatedFile;
+    return { file: updatedFile, oldFilename: file.filename };
   }
 
-  async move(fileId: string, userId: string, newFolderId: string | null): Promise<File> {
-    const file = await this.findById(fileId, userId);
-    if (!file) {
-      throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
-    }
+  /**
+   * Moves a file. Requires `move` on the file. The destination must belong to the file's owner
+   * (files never change owner by moving), and a non-owner must also be able to write there.
+   */
+  async move(fileId: string, userId: string, newFolderId: string | null): Promise<{ file: File; previousFolderId: string | null }> {
+    const access = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'move');
+    const file = access.file!;
 
-    if (newFolderId !== null) {
-      // Validate folder exists and belongs to user
+    if (newFolderId === null) {
+      if (!access.isOwner) {
+        throw AppError.forbidden('Only the owner can move a file to the top level', ErrorCodes.FORBIDDEN);
+      }
+    } else {
       const folder = await this.prismaClient.folder.findFirst({
-        where: {
-          id: newFolderId,
-          ownerId: userId,
-          deletedAt: null,
-        },
+        where: { id: newFolderId, ownerId: file.ownerId, deletedAt: null },
       });
-
       if (!folder) {
         throw AppError.notFound('Destination folder not found', ErrorCodes.FOLDER_NOT_FOUND);
       }
+      if (!access.isOwner) {
+        await authorizationService.authorizeFolderAccess({ userId, isAuthenticated: true }, newFolderId, 'write');
+      }
+    }
 
-      // Check for duplicate name in destination folder
+    if (newFolderId !== file.folderId) {
       const existingFile = await this.prismaClient.file.findFirst({
-        where: {
-          ownerId: userId,
-          folderId: newFolderId,
-          filename: file.filename,
-          deletedAt: null,
-        },
+        where: { ownerId: file.ownerId, folderId: newFolderId, filename: file.filename, deletedAt: null, NOT: { id: fileId } },
       });
-
       if (existingFile) {
         throw AppError.conflict('A file with this name already exists in the destination folder', ErrorCodes.NAME_CONFLICT);
       }
@@ -354,21 +363,22 @@ export class FileService {
       data: { folderId: newFolderId },
     });
 
-    return updatedFile;
+    return { file: updatedFile, previousFolderId: file.folderId };
   }
 
+  /** Soft-deletes a file (owner only) and returns its storage to the owner's quota. */
   async softDelete(fileId: string, userId: string): Promise<File> {
-    const file = await this.findById(fileId, userId);
-    if (!file) {
-      throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
-    }
+    const access = await authorizationService.authorizeFileAccess({ userId, isAuthenticated: true }, fileId, 'delete');
+    const file = access.file!;
 
-    // Release quota
-    await this.releaseQuota(userId, file.sizeBytes);
-
-    const deletedFile = await this.prismaClient.file.update({
-      where: { id: fileId },
-      data: { deletedAt: new Date() },
+    const deletedFile = await this.prismaClient.$transaction(async (tx) => {
+      // Conditional update makes concurrent deletes idempotent: only one releases quota.
+      const { count } = await tx.file.updateMany({ where: { id: fileId, deletedAt: null }, data: { deletedAt: new Date() } });
+      if (count === 0) {
+        throw AppError.notFound('File not found', ErrorCodes.FILE_NOT_FOUND);
+      }
+      await tx.user.update({ where: { id: file.ownerId }, data: { storageUsedBytes: { decrement: file.sizeBytes } } });
+      return tx.file.findUniqueOrThrow({ where: { id: fileId } });
     });
 
     return deletedFile;

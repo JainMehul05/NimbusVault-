@@ -1,36 +1,52 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { forwardRef } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@lib/utils'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'outline' | 'ghost' | 'destructive' | 'link'
-  size?: 'default' | 'sm' | 'lg' | 'icon' | 'xs'
+  /** default = primary brand action. Use one primary action per view. */
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link'
+  size?: 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'xs'
+  loading?: boolean
 }
 
+const base =
+  'inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-semibold transition-colors duration-fast ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
+  'disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0'
+
 const buttonVariants = {
-  default: 'inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-all',
-  outline: 'inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-all',
-  ghost: 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-all',
-  destructive: 'inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-all',
-  link: 'inline-flex items-center justify-center gap-2 text-sm font-semibold underline-offset-4 hover:underline text-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  default: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary',
+  secondary: 'border border-border-strong bg-surface-raised text-foreground hover:bg-[#1f1f1f] hover:border-white/25',
+  outline: 'border border-border-strong bg-transparent text-foreground hover:bg-surface-raised',
+  ghost: 'text-muted-foreground hover:bg-surface-raised hover:text-foreground',
+  destructive: 'bg-danger text-destructive-foreground hover:bg-danger/90',
+  link: 'h-auto px-0 text-primary underline-offset-4 hover:underline',
 }
 
 const sizeVariants = {
-  default: 'h-10 px-4',
-  sm: 'h-9 px-3 text-xs',
-  lg: 'h-11 px-8',
+  default: 'h-9 px-4 text-sm',
+  sm: 'h-8 px-3 text-sm',
+  lg: 'h-11 px-6 text-base',
   xs: 'h-7 px-2 text-xs',
-  icon: 'h-10 w-10',
+  icon: 'h-9 w-9',
+  'icon-sm': 'h-8 w-8',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+  ({ className, variant = 'default', size = 'default', loading = false, disabled, children, type = 'button', ...props }, ref) => {
     return (
       <button
         ref={ref}
-        className={cn(buttonVariants[variant], sizeVariants[size], className)}
+        type={type}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        className={cn(base, buttonVariants[variant], variant !== 'link' && sizeVariants[size], className)}
         {...props}
-      />
+      >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+        {children}
+      </button>
     )
   }
 )

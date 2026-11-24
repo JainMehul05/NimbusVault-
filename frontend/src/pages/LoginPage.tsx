@@ -1,121 +1,96 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Terminal, Zap } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { useAuth } from '@context/AuthContext'
-import { Button } from '@components/ui/Button'
-import { Input } from '@components/ui/Input'
+import { getErrorMessage } from '@lib/format'
+import { AuthAlert, AuthField, AuthShell, EMAIL_RE, PasswordField } from '@components/auth/AuthShell'
+
+type Errors = { email?: string; password?: string }
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
+  const [errors, setErrors] = useState<Errors>({})
+  const [serverError, setServerError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const { login } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard'
+
+  useEffect(() => {
+    if (isAuthenticated && !busy) navigate(from, { replace: true })
+  }, [isAuthenticated, busy, from, navigate])
+
+  function validate(): Errors {
+    const next: Errors = {}
+    if (!email.trim()) next.email = 'Enter your email address.'
+    else if (!EMAIL_RE.test(email.trim())) next.email = 'Enter a valid email address, like name@company.com.'
+    if (!password) next.password = 'Enter your password.'
+    return next
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    const next = validate()
+    setErrors(next)
+    setServerError('')
+    if (next.email) return emailRef.current?.focus()
+    if (next.password) return passwordRef.current?.focus()
     setBusy(true)
-    setMessage('')
     try {
-      await login(email, password)
-      setMessage('Access granted. Redirecting...')
-      navigate('/dashboard')
-    } catch (error: any) {
+      await login(email.trim(), password)
+      setSuccess(true)
+      navigate(from, { replace: true })
+    } catch (error) {
       setBusy(false)
-      setMessage(error?.response?.data?.message || 'Invalid email or password.')
+      setServerError(getErrorMessage(error, 'Invalid email or password.'))
     }
   }
 
   return (
     <AuthShell
-      eyebrow="RETURNING OPERATOR"
-      title={<>Welcome back to the <span>vault.</span></>}
-      subtitle="Authenticate to access your protected workspace."
-      footer={<>New to NimbusVault? <Link to="/register">Create an account <ArrowRight size={13} /></Link></>}
+      eyebrow="Welcome back"
+      title={<>Sign in to your <span>vault.</span></>}
+      subtitle="Access your files, shared folders, and activity."
+      footer={<>New to NimbusVault? <Link to="/register">Create an account <ArrowRight size={13} aria-hidden="true" /></Link></>}
     >
-      <form onSubmit={submit} className="auth-form">
-        <label>
-          Email address
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            required
-            disabled={busy}
-          />
-        </label>
-        <label>
-          Access key
-          <div className="password-field">
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              required
-              disabled={busy}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide access key' : 'Show access key'}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-            >
-              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-        </label>
-        {message && <p className="auth-message">{message}</p>}
-        <Button className="auth-submit" disabled={busy} type="submit">
-          {busy ? 'Authenticating...' : 'Enter workspace'}
-          <ArrowRight size={15} />
-        </Button>
+      <form onSubmit={submit} className="auth-form" noValidate>
+        {serverError && <AuthAlert>{serverError}</AuthAlert>}
+        {success && <AuthAlert tone="success">Signed in. Opening your vault…</AuthAlert>}
+        <AuthField
+          ref={emailRef}
+          id="login-email"
+          label="Email address"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((x) => ({ ...x, email: undefined })) }}
+          placeholder="you@company.com"
+          error={errors.email}
+          disabled={busy}
+          autoFocus
+        />
+        <PasswordField
+          ref={passwordRef}
+          id="login-password"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((x) => ({ ...x, password: undefined })) }}
+          placeholder="Your password"
+          error={errors.password}
+          disabled={busy}
+        />
+        <button className="auth-submit" disabled={busy} type="submit">
+          {busy ? <><Loader2 size={16} className="animate-spin" aria-hidden="true" /> Signing in…</> : <>Sign in <ArrowRight size={15} aria-hidden="true" /></>}
+        </button>
       </form>
     </AuthShell>
-  )
-}
-
-function AuthShell({
-  eyebrow,
-  title,
-  subtitle,
-  children,
-  footer,
-}: {
-  eyebrow: string
-  title: React.ReactNode
-  subtitle: string
-  children: React.ReactNode
-  footer: React.ReactNode
-}) {
-  return (
-    <main className="auth-page">
-      <div className="auth-grid" />
-      <Link to="/" className="auth-logo">
-        <span className="auth-logo-mark"><Zap size={15} /></span>
-        <span>NIMBUS<span>VAULT</span></span>
-      </Link>
-      <Link to="/" className="auth-back">
-        <ArrowLeft size={14} /> Return home
-      </Link>
-      <section className="auth-card">
-        <div className="auth-card-glow" />
-        <div className="auth-topline">
-          <Terminal size={14} /> SECURE ACCESS <span>v1.0.0</span>
-        </div>
-        <div className="auth-heading">
-          <div className="section-kicker">{eyebrow}</div>
-          <h1>{title}</h1>
-          <p>{subtitle}</p>
-        </div>
-        {children}
-        <p className="auth-footer">{footer}</p>
-        <div className="auth-security"><LockKeyhole size={13} /> Encrypted session boundary</div>
-      </section>
-    </main>
   )
 }

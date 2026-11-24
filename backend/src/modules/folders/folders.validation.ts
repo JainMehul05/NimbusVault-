@@ -9,7 +9,7 @@ export const folderCreateSchema = z.object({
 
 export const folderIdParamSchema = z.object({
   params: z.object({
-    folderId: z.string().refine((val) => val === 'root' || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
+    folderId: z.string().refine((val) => val === 'root' || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val), {
       message: 'Invalid folder ID',
     }),
   }),

@@ -29,7 +29,7 @@ export const authController = {
 
   login: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const input = req.body as LoginInput;
-    const result = await authService.login(input);
+    const result = await authService.login(input, { ipAddress: req.ip, requestId: req.requestId });
 
     res.cookie('refreshToken', result.tokens.refreshToken, {
       httpOnly: true,
@@ -57,7 +57,7 @@ export const authController = {
 
   logout: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const input = req.body as LogoutInput;
-    await authService.logout(input.tokenFamily);
+    await authService.logout(input.tokenFamily, { ipAddress: req.ip, requestId: req.requestId });
 
     res.clearCookie('refreshToken', {
       httpOnly: true,

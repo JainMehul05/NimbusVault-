@@ -105,11 +105,21 @@ export const foldersApi = {
   remove: (folderId: string) => api.delete(`/folders/${folderId}?deleteDescendants=true`),
 };
 
-/** Opens a presigned download URL in a new tab. */
-export const openDownload = async (fileId: string) => {
-  const { downloadUrl } = await filesApi.downloadUrl(fileId);
-  window.open(downloadUrl, '_blank', 'noopener');
+/**
+ * Starts a download. The URL is always served as an attachment, so navigating a hidden link
+ * saves the file without leaving the page (and, unlike window.open, is never popup-blocked).
+ */
+export const startDownload = (url: string) => {
+  const link = document.createElement('a');
+  link.href = url;
+  link.rel = 'noopener noreferrer';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 };
+
+export const openDownload = async (fileId: string) => startDownload((await filesApi.downloadUrl(fileId)).downloadUrl);
 
 // ---- Folder tree helpers --------------------------------------------------
 

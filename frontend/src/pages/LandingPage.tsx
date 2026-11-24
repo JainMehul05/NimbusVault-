@@ -35,9 +35,9 @@ import { cn } from '@lib/utils'
 
 // Every feature listed here is implemented (Phases 1–4). AI features require a server-side provider.
 const features = [
-  { icon: LockKeyhole, eyebrow: 'Accounts', title: 'Secure sign-in', body: 'Short-lived access tokens, rotating refresh tokens with reuse detection, and protected routes on every request.', accent: 'cyan' },
+  { icon: LockKeyhole, eyebrow: 'Accounts', title: 'Secure sign-in', body: 'Sessions you can review and end per device, rotating tokens your browser scripts can never read, and permission checks on every request.', accent: 'cyan' },
   { icon: UploadCloud, eyebrow: 'Storage', title: 'Upload and download', body: 'Drag files in, track progress per file, and download anytime. Up to 100 MB per file with a clear storage meter.', accent: 'blue' },
-  { icon: FolderOpen, eyebrow: 'Organization', title: 'Folders that nest', body: 'Create, rename, move, and delete folders. Breadcrumbs, a folder tree, search, sorting, and type filters.', accent: 'violet' },
+  { icon: FolderOpen, eyebrow: 'Organization', title: 'Folders that nest', body: 'Create, rename, and move folders. Breadcrumbs, a folder tree, search, sorting, and a trash you can restore from.', accent: 'violet' },
   { icon: Users, eyebrow: 'Collaboration', title: 'Share with people', body: 'Invite registered users to files or whole folders as Viewers or Editors, and change or remove access anytime.', accent: 'blue' },
   { icon: Link2, eyebrow: 'Share links', title: 'Links you control', body: 'Create view-only or download links with expiry dates, optional passwords, and download limits. Revoke in one click.', accent: 'cyan' },
   { icon: Activity, eyebrow: 'Audit trail', title: 'Activity history', body: 'See uploads, downloads, renames, moves, deletions, sign-ins, and sharing changes in one chronological, filterable timeline.', accent: 'violet' },
@@ -213,7 +213,7 @@ const securityItems: Array<[string, string]> = [
 ]
 
 const faqs: Array<[string, string]> = [
-  ['Who can see my files?', 'Only you, unless you share. You choose each person’s role. Viewers can view and download. Editors can also rename, move, and share. You can change or remove access at any time.'],
+  ['Who can see my files?', 'Only you, unless you share. You choose each person’s role. Viewers can view and download. Editors can also upload, rename, move, and share. You can change or remove access at any time.'],
   ['Can I share with someone who doesn’t have an account?', 'Yes, with a share link. Choose view-only or download access, set an expiry date, add a password, and cap the number of downloads. Revoke the link whenever you like.'],
   ['How much can I store?', 'Each account includes 5 GB of storage, and individual files can be up to 100 MB. Your storage meter always shows what’s used and what’s left.'],
   ['Can I see what happened to a file?', 'Yes. The Activity page records downloads, renames, moves, deletions, and sharing changes, with filters for event, item type, and date.'],
@@ -375,7 +375,7 @@ export default function LandingPage() {
           <div className="role-grid">
             {([
               { role: 'owner', tag: 'Owner', title: 'Full control', can: ['View and download', 'Rename, move, and delete', 'Share and manage access', 'Create and revoke share links'], cannot: [] },
-              { role: 'editor', tag: 'Editor', title: 'Work alongside you', can: ['View and download', 'Rename and move', 'Share with others', 'Create share links'], cannot: ['Delete or manage access'] },
+              { role: 'editor', tag: 'Editor', title: 'Work alongside you', can: ['View and download', 'Upload, rename, and move', 'Share with others', 'Create share links'], cannot: ['Delete or manage access'] },
               { role: 'viewer', tag: 'Viewer', title: 'Read-only access', can: ['View and download'], cannot: ['Rename, move, or delete', 'Share with others'] },
             ]).map((r) => (
               <article key={r.role} className={cn('role-card', r.role)}>

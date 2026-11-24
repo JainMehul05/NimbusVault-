@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ChevronRight, Download, FolderX, Link2, MoreHorizontal, Sparkles } from 'lucide-react'
+import { ChevronRight, Download, FolderX, Link2, MoreHorizontal, Pencil, Sparkles, Upload } from 'lucide-react'
 import { AppShell } from '@components/layout/AppShell'
 import { Button } from '@components/ui/Button'
 import { EmptyState, ErrorState, RoleBadge, Skeleton } from '@components/ui/primitives'
@@ -10,7 +10,10 @@ import { FileTypeIcon, FolderIcon } from '@components/files/FileTypeIcon'
 import { ShareLinkDialog } from '@components/ShareLinkDialog'
 import { AiStatusBadge } from '@components/ai/AiStatusBadge'
 import { DocumentInsightsDialog, type InsightsTarget } from '@components/ai/DocumentInsightsDialog'
-import { foldersApi, openDownload, type FileRecord, type FolderContents } from '@services/files'
+import { NameDialog } from '@components/files/FileDialogs'
+import { UploadPanel } from '@components/files/UploadPanel'
+import type { UploadItem } from '@hooks/useFileManager'
+import { filesApi, foldersApi, MAX_UPLOAD_BYTES, openDownload, type FileRecord, type FolderContents } from '@services/files'
 import { AI_SUPPORTED_MIME } from '@services/ai'
 import { formatFileSize, formatRelative, getErrorMessage } from '@lib/format'
 
@@ -23,10 +26,13 @@ export function SharedFolderPage() {
   const [error, setError] = useState<string | null>(null)
   const [linkFile, setLinkFile] = useState<FileRecord | null>(null)
   const [insights, setInsights] = useState<InsightsTarget | null>(null)
+  const [renaming, setRenaming] = useState<FileRecord | null>(null)
+  const [uploads, setUploads] = useState<UploadItem[]>([])
+  const uploadInput = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     if (!folderId) return
-    setState('loading')
+    setState((s) => (s === 'ready' ? s : 'loading'))
     try {
       setData(await foldersApi.contents(folderId))
       setState('ready')
@@ -37,7 +43,35 @@ export function SharedFolderPage() {
     }
   }, [folderId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { setData(null); setState('loading'); load() }, [load])
+
+  const canEdit = data?.permission === 'EDITOR' || data?.permission === 'OWNER'
+
+  /** Files an Editor adds belong to the folder's owner and use the owner's storage. */
+  const upload = async (list: FileList) => {
+    if (!folderId) return
+    const picked = Array.from(list)
+    const items: UploadItem[] = picked.map((f, i) => ({
+      id: `${Date.now()}-${i}-${f.name}`,
+      name: f.name,
+      size: f.size,
+      progress: 0,
+      ...(f.size > MAX_UPLOAD_BYTES ? { status: 'error' as const, error: 'Larger than the 100 MB limit' } : { status: 'queued' as const }),
+    }))
+    setUploads((prev) => [...prev.filter((u) => u.status === 'uploading' || u.status === 'queued'), ...items])
+    for (const [i, item] of items.entries()) {
+      if (item.status === 'error') continue
+      const patch = (p: Partial<UploadItem>) => setUploads((prev) => prev.map((u) => (u.id === item.id ? { ...u, ...p } : u)))
+      patch({ status: 'uploading' })
+      try {
+        await filesApi.upload(picked[i], folderId, (progress) => patch({ progress }))
+        patch({ status: 'done', progress: 100 })
+      } catch (err) {
+        patch({ status: 'error', error: getErrorMessage(err, 'Upload failed') })
+      }
+    }
+    await load()
+  }
 
   const download = async (f: FileRecord) => {
     try { await openDownload(f.id) } catch (err) { toast.error('Download failed', getErrorMessage(err, 'Please try again.')) }
@@ -46,7 +80,10 @@ export function SharedFolderPage() {
   const menu = (f: FileRecord): MenuItem[] => [
     { label: 'Download', icon: Download, onSelect: () => download(f) },
     ...(AI_SUPPORTED_MIME.includes(f.mimeType) ? [{ label: 'Document insights', icon: Sparkles, onSelect: () => setInsights({ id: f.id, filename: f.filename }) }] : []),
-    ...(data?.permission === 'EDITOR' ? [{ label: 'Create share link', icon: Link2, onSelect: () => setLinkFile(f), separated: true }] : []),
+    ...(canEdit ? [
+      { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(f), separated: true },
+      { label: 'Create share link', icon: Link2, onSelect: () => setLinkFile(f) },
+    ] : []),
   ]
 
   const title = data?.folder?.name ?? 'Shared folder'
@@ -55,6 +92,20 @@ export function SharedFolderPage() {
     <AppShell
       title={title}
       description={data ? <span className="inline-flex items-center gap-2">Your role <RoleBadge role={data.permission} /></span> : undefined}
+      actions={canEdit ? (
+        <>
+          <Button onClick={() => uploadInput.current?.click()}><Upload className="h-4 w-4" /> Upload</Button>
+          <input
+            ref={uploadInput}
+            type="file"
+            multiple
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => { if (e.target.files?.length) upload(e.target.files); e.target.value = '' }}
+          />
+        </>
+      ) : undefined}
       headerExtra={
         <nav aria-label="Breadcrumb" className="-mt-2 mb-5">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
@@ -110,6 +161,19 @@ export function SharedFolderPage() {
           ))}
         </ul>
       )}
+      <UploadPanel uploads={uploads} onClear={() => setUploads((prev) => prev.filter((u) => u.status === 'uploading' || u.status === 'queued'))} />
+      <NameDialog
+        open={!!renaming}
+        mode="rename-file"
+        initialValue={renaming?.filename ?? ''}
+        onClose={() => setRenaming(null)}
+        onSubmit={async (name) => {
+          if (!renaming) return
+          await filesApi.rename(renaming.id, name)
+          toast.success('File renamed', name)
+          await load()
+        }}
+      />
       <ShareLinkDialog open={!!linkFile} file={linkFile} onClose={() => setLinkFile(null)} />
       <DocumentInsightsDialog target={insights} onClose={() => setInsights(null)} onStatusChange={load} />
     </AppShell>

@@ -50,6 +50,10 @@ export interface ShareLinkDownloadResponse {
   filename: string;
 }
 
+/** Headers are ASCII-only, so the password is percent-encoded and marked as such. */
+const passwordHeaders = (password?: string) =>
+  password ? { 'X-Share-Password': encodeURIComponent(password), 'X-Share-Password-Encoding': 'percent' } : undefined;
+
 export const shareLinkApi = {
   createShareLink: async (input: ShareLinkCreateInput): Promise<ApiResponse<ShareLinkCreateResponse>> => {
     const response = await api.post('/share-links/protected', input);
@@ -68,16 +72,12 @@ export const shareLinkApi = {
 
   // The password travels in a header, not the URL, so it never lands in logs or history.
   accessShareLink: async (token: string, password?: string): Promise<ApiResponse<ShareLinkAccessResponse>> => {
-    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}`, {
-      headers: password ? { 'X-Share-Password': password } : undefined,
-    });
+    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}`, { headers: passwordHeaders(password) });
     return response.data;
   },
 
   downloadShareLink: async (token: string, password?: string): Promise<ApiResponse<ShareLinkDownloadResponse>> => {
-    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}/download`, {
-      headers: password ? { 'X-Share-Password': password } : undefined,
-    });
+    const response = await api.get(`/share-links/public/${encodeURIComponent(token)}/download`, { headers: passwordHeaders(password) });
     return response.data;
   },
 };

@@ -17,6 +17,8 @@ const ACTION_OPTIONS: Array<{ value: ActivityAction | ''; label: string }> = [
   { value: 'file_rename', label: 'File renames' },
   { value: 'file_move', label: 'File moves' },
   { value: 'file_delete', label: 'File deletions' },
+  { value: 'file_restore', label: 'File restores' },
+  { value: 'file_purge', label: 'Permanent deletions' },
   { value: 'folder_create', label: 'Folders created' },
   { value: 'folder_rename', label: 'Folder renames' },
   { value: 'folder_move', label: 'Folder moves' },
@@ -29,6 +31,8 @@ const ACTION_OPTIONS: Array<{ value: ActivityAction | ''; label: string }> = [
   { value: 'share_access', label: 'Share link visits' },
   { value: 'auth_login', label: 'Sign-ins' },
   { value: 'auth_failed_login', label: 'Failed sign-ins' },
+  { value: 'auth_password_change', label: 'Password changes' },
+  { value: 'auth_session_revoke', label: 'Devices signed out' },
   { value: 'ai_query', label: 'AI questions' },
 ]
 

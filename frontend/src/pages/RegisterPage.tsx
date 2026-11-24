@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { useAuth } from '@context/AuthContext'
 import { getErrorMessage } from '@lib/format'
+import { passwordProblem } from '@lib/password'
 import { cn } from '@lib/utils'
 import { AuthAlert, AuthField, AuthShell, EMAIL_RE, PasswordField } from '@components/auth/AuthShell'
 
@@ -13,6 +14,7 @@ type Errors = { name?: string; email?: string; password?: string }
 export function passwordStrength(pwd: string) {
   const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pwd)).length
   if (pwd.length < 8) return { label: 'Use at least 8 characters', className: 'strength-weak' }
+  if (passwordProblem(pwd)) return { label: 'Add a number or symbol', className: 'strength-weak' }
   if (pwd.length >= 12 && variety >= 3) return { label: 'Strong password', className: 'strength-strong' }
   if (pwd.length >= 12 || variety >= 3) return { label: 'Good — add length or symbols to make it stronger', className: 'strength-good' }
   return { label: 'Fair — try 12+ characters with numbers or symbols', className: 'strength-good' }
@@ -42,8 +44,8 @@ export default function RegisterPage() {
     else if (name.trim().length > 100) next.name = 'Keep your name under 100 characters.'
     if (!email.trim()) next.email = 'Enter your email address.'
     else if (!EMAIL_RE.test(email.trim())) next.email = 'Enter a valid email address, like name@company.com.'
-    if (password.length < 8) next.password = 'Use at least 8 characters.'
-    else if (password.length > 128) next.password = 'Keep your password under 128 characters.'
+    const problem = passwordProblem(password)
+    if (problem) next.password = problem
     return next
   }
 

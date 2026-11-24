@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, ChevronsUpDown, FolderClosed, LayoutGrid, LogOut, Menu, Sparkles, Users, X } from 'lucide-react'
+import { Activity, ChevronsUpDown, FolderClosed, LayoutGrid, LogOut, Menu, Sparkles, Trash2, UserCog, Users, X } from 'lucide-react'
 import { useAuth } from '@context/AuthContext'
 import { filesApi, type StorageInfo } from '@services/files'
 import { formatFileSize } from '@lib/format'
@@ -11,9 +11,10 @@ import { DropdownMenu } from '@components/ui/DropdownMenu'
 const NAV = [
   { to: '/dashboard', label: 'Overview', icon: LayoutGrid, end: true },
   { to: '/files', label: 'My Files', icon: FolderClosed, end: false },
-  { to: '/shared-with-me', label: 'Shared with me', icon: Users, end: false },
+  { to: '/shared-with-me', label: 'Shared', icon: Users, end: false },
   { to: '/ask', label: 'Ask NimbusVault', icon: Sparkles, end: true },
   { to: '/activity', label: 'Activity', icon: Activity, end: true },
+  { to: '/trash', label: 'Trash', icon: Trash2, end: true },
 ]
 
 export function StorageMeter({ storage, className }: { storage: StorageInfo | null; className?: string }) {
@@ -86,7 +87,10 @@ function SidebarContent({ storage, onNavigate }: { storage: StorageInfo | null; 
         <DropdownMenu
           label="Account"
           align="start"
-          items={[{ label: 'Sign out', icon: LogOut, onSelect: async () => { await logout(); navigate('/login') } }]}
+          items={[
+            { label: 'Account & devices', icon: UserCog, onSelect: () => { onNavigate?.(); navigate('/account') } },
+            { label: 'Sign out', icon: LogOut, onSelect: async () => { await logout(); navigate('/login') } },
+          ]}
           trigger={(props) => (
             <button
               {...props}

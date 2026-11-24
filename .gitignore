@@ -26,3 +26,7 @@ database-dumps/
 !backend/prisma/migrations/**
 *.dump
 main.pdf
+test-results/
+playwright-report/
+cdk.out/
+*.tsbuildinfo

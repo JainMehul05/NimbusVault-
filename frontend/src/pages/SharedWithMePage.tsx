@@ -13,12 +13,13 @@ import { useToast } from '@components/ui/Toast'
 import { FileTypeIcon, FolderIcon } from '@components/files/FileTypeIcon'
 import { NameDialog } from '@components/files/FileDialogs'
 import { DropdownMenu } from '@components/ui/DropdownMenu'
+import { SharedByMe } from '@components/SharedByMe'
 import { ShareLinkDialog } from '@components/ShareLinkDialog'
 import { AiStatusBadge } from '@components/ai/AiStatusBadge'
 import { DocumentInsightsDialog, type InsightsTarget } from '@components/ai/DocumentInsightsDialog'
 import { AI_SUPPORTED_MIME } from '@services/ai'
 
-type Tab = 'files' | 'folders'
+type Tab = 'files' | 'folders' | 'mine'
 
 function Owner({ owner }: { owner?: { name: string; email: string } }) {
   if (!owner) return <span className="text-subtle">Unknown</span>
@@ -50,15 +51,9 @@ export function SharedWithMePage() {
   const load = useCallback(async () => {
     setState('loading')
     try {
-      const res = await sharingApi.getSharedWithMe(1, 100)
-      // A file can appear twice (direct share + inherited from a shared folder); keep the stronger role.
-      const byId = new Map<string, SharedWithMeFile>()
-      for (const f of res.data?.files ?? []) {
-        const prev = byId.get(f.id)
-        if (!prev || (prev.permission === 'VIEWER' && f.permission === 'EDITOR')) byId.set(f.id, f)
-      }
-      setFiles([...byId.values()].sort((a, b) => a.filename.localeCompare(b.filename)))
-      setFolders([...(res.data?.folders ?? [])].sort((a, b) => a.name.localeCompare(b.name)))
+      const all = await sharingApi.getAllSharedWithMe()
+      setFiles(all.files)
+      setFolders(all.folders)
       setState('ready')
     } catch (err) {
       setError(getErrorMessage(err, 'Couldn’t load items shared with you.'))
@@ -86,20 +81,16 @@ export function SharedWithMePage() {
     try { await openDownload(file.id) } catch (err) { toast.error('Download failed', getErrorMessage(err, 'Please try again.')) } finally { setDownloading(null) }
   }
 
-  const tabs: Array<{ id: Tab; label: string; count: number }> = [
+  const tabs: Array<{ id: Tab; label: string; count?: number }> = [
     { id: 'files', label: 'Files', count: files.length },
     { id: 'folders', label: 'Folders', count: folders.length },
+    { id: 'mine', label: 'Shared by you' },
   ]
-  const nothingShared = state === 'ready' && files.length === 0 && folders.length === 0
 
   return (
-    <AppShell title="Shared with me" description="Files and folders other people have given you access to.">
-      {state === 'error' ? (
+    <AppShell title="Shared" description={tab === 'mine' ? 'Files and folders you’ve given other people access to.' : 'Files and folders other people have given you access to.'}>
+      {state === 'error' && tab !== 'mine' ? (
         <div className="border border-border bg-surface"><ErrorState title="Couldn’t load shared items" message={error} onRetry={load} /></div>
-      ) : nothingShared ? (
-        <div className="border border-dashed border-border-strong bg-surface">
-          <EmptyState icon={Users} title="Nothing shared with you yet" description="When someone shares a file or folder with your email address, it shows up here with your role." />
-        </div>
       ) : (
         <>
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -119,15 +110,17 @@ export function SharedWithMePage() {
                   )}
                 >
                   {t.label}
-                  <span className={cn('rounded-sm px-1.5 text-2xs tabular-nums', tab === t.id ? 'bg-primary/15 text-primary' : 'bg-white/[0.06] text-muted-foreground')}>
-                    {state === 'loading' ? '…' : t.count}
-                  </span>
+                  {t.count !== undefined && (
+                    <span className={cn('rounded-sm px-1.5 text-2xs tabular-nums', tab === t.id ? 'bg-primary/15 text-primary' : 'bg-white/[0.06] text-muted-foreground')}>
+                      {state === 'loading' ? '…' : t.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
             <div className="relative md:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden="true" />
-              <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter by name or owner" aria-label="Filter shared items" className="pl-9 [&::-webkit-search-cancel-button]:hidden" />
+              <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tab === 'mine' ? 'Filter by name or person' : 'Filter by name or owner'} aria-label="Filter shared items" className="pl-9 [&::-webkit-search-cancel-button]:hidden" />
             </div>
           </div>
 
@@ -139,7 +132,9 @@ export function SharedWithMePage() {
           )}
 
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-            {state === 'loading' ? (
+            {tab === 'mine' ? (
+              <SharedByMe query={query} />
+            ) : state === 'loading' ? (
               <div className="border border-border bg-surface">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex h-16 items-center gap-3 border-b border-border px-4 last:border-0">
@@ -246,7 +241,7 @@ export function SharedWithMePage() {
               </ul>
             )}
           </div>
-          <p className="mt-4 text-xs text-subtle">Viewers can view and download. Editors can also rename files and create share links. Owners can change or remove your access at any time.</p>
+          <p className="mt-4 text-xs text-subtle">Viewers can view and download. Editors can also upload and rename files and create share links. Owners can change or remove your access at any time.</p>
         </>
       )}
       <NameDialog

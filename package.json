@@ -5,19 +5,20 @@
   "private": true,
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "e2e"
   ],
   "scripts": {
     "dev": "docker compose up",
     "dev:backend": "npm run start:dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=backend --workspace=frontend",
     "build:backend": "npm run build --workspace=backend",
     "build:frontend": "npm run build --workspace=frontend",
-    "test": "npm run test --workspaces",
+    "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "npm test --workspace=backend",
     "test:frontend": "npm run test:run --workspace=frontend",
-    "lint": "npm run lint --workspaces",
+    "lint": "npm run lint --workspace=backend --workspace=frontend",
     "lint:backend": "npm run lint --workspace=backend",
     "lint:frontend": "npm run lint --workspace=frontend",
     "db:generate": "npm run prisma:generate --workspace=backend",
@@ -27,7 +28,8 @@
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:logs": "docker compose logs -f",
+    "test:e2e": "npm run e2e --workspace=e2e"
   },
   "devDependencies": {
     "husky": "^9.0.11",

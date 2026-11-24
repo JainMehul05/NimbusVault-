@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AlertTriangle, Ban, Clock, Download, Eye, EyeOff, Link2Off, Loader2, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { startDownload } from '@services/files'
 import { shareLinkApi, type ShareLinkAccessResponse } from '@services/shareLinks'
 import { formatDateTime, formatFileSize, getFileTypeMeta } from '@lib/format'
 import { Logo } from '@components/ui/primitives'
@@ -64,7 +65,7 @@ export function PublicSharePage() {
     setDownloadError(null)
     try {
       const res = await shareLinkApi.downloadShareLink(token, password || undefined)
-      if (res.data?.downloadUrl) window.location.assign(res.data.downloadUrl)
+      if (res.data?.downloadUrl) startDownload(res.data.downloadUrl)
     } catch (err) {
       const next = unavailable(errorCode(err), (err as { response?: { status?: number } })?.response?.status)
       if (next.kind === 'unavailable') setDownloadError(`${next.title}. ${next.message}`)

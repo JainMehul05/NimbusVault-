@@ -116,6 +116,19 @@ export const sharingApi = {
     return response.data;
   },
 
+  /** Every page of items shared with the signed-in user. */
+  getAllSharedWithMe: async (): Promise<Pick<SharedWithMeResponse, 'files' | 'folders'>> => {
+    const files: SharedWithMeFile[] = [];
+    const folders: SharedWithMeFolder[] = [];
+    for (let page = 1; page <= 50; page++) {
+      const { data } = await sharingApi.getSharedWithMe(page, 100);
+      files.push(...(data?.files ?? []));
+      folders.push(...(data?.folders ?? []));
+      if (!data || page >= data.pagination.totalPages) break;
+    }
+    return { files, folders };
+  },
+
   getSharedByMe: async (): Promise<ApiResponse<SharedByMeResponse>> => {
     const response = await api.get('/sharing/me/shared-by-me');
     return response.data;

@@ -22,7 +22,11 @@ export type ActivityAction =
   | 'folder_rename'
   | 'folder_move'
   | 'ai_query'
-  | 'ai_reindex';
+  | 'ai_reindex'
+  | 'folder_restore'
+  | 'file_purge'
+  | 'folder_purge'
+  | 'auth_session_revoke';
 
 export type ResourceType = 'FILE' | 'FOLDER' | 'SHARE_LINK' | 'USER';
 

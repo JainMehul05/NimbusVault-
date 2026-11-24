@@ -27,7 +27,7 @@ export type Role = 'OWNER' | 'EDITOR' | 'VIEWER'
 export const ROLE_LABEL: Record<Role, string> = { OWNER: 'Owner', EDITOR: 'Editor', VIEWER: 'Viewer' }
 export const ROLE_DESCRIPTION: Record<Role, string> = {
   OWNER: 'Full control, including sharing and deletion',
-  EDITOR: 'Can view, download, rename, move, and share',
+  EDITOR: 'Can view, download, upload, rename, move, and share',
   VIEWER: 'Can view and download',
 }
 

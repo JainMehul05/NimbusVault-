@@ -77,8 +77,8 @@ export function DashboardPage() {
   useEffect(() => {
     loadRecent()
     loadActivity()
-    sharingApi.getSharedWithMe(1, 100)
-      .then((r) => setSharedCount((r.data?.files.length ?? 0) + (r.data?.folders.length ?? 0)))
+    sharingApi.getSharedWithMe(1, 1)
+      .then((r) => setSharedCount(r.data?.pagination.total ?? 0))
       .catch(() => setSharedCount(null))
   }, [loadRecent, loadActivity])
 

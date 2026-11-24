@@ -73,6 +73,20 @@ export function describeActivity(entry: ActivityLogEntry, resolve?: NameResolver
     }
     case 'file_delete':
       return { icon: Trash2, tone: 'text-danger bg-danger/10', category: 'File', text: <>Deleted {target}</> }
+    case 'folder_restore':
+      return { icon: RotateCcw, tone: 'text-success bg-success/10', category: 'Folder', text: <>Restored folder {target}</> }
+    case 'file_purge':
+      return {
+        icon: Trash2, tone: 'text-danger bg-danger/10', category: 'File',
+        text: m.emptiedTrash ? <>Emptied the trash</> : <>Permanently deleted {target}</>,
+      }
+    case 'folder_purge':
+      return { icon: FolderX, tone: 'text-danger bg-danger/10', category: 'Folder', text: <>Permanently deleted folder {target}</> }
+    case 'auth_session_revoke':
+      return {
+        icon: LogOut, tone: 'text-warning bg-warning/10', category: 'Account',
+        text: <>Signed out {typeof m.sessions === 'number' && m.sessions > 1 ? `${m.sessions} other devices` : 'another device'}</>,
+      }
     case 'file_restore':
       return { icon: RotateCcw, tone: 'text-success bg-success/10', category: 'File', text: <>Restored {target}</> }
     case 'folder_create':

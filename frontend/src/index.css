@@ -2598,3 +2598,12 @@ h2 em {
    override Tailwind hidden / md:hidden, leaving off-screen links keyboard-focusable. */
 @media (max-width: 767px) { .nav-primary, .nav-actions { display: none !important; } }
 @media (min-width: 768px) { .mobile-menu, .mobile-nav { display: none !important; } }
+
+/* ---- Landing: shared button and logo mark ---- */
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border: 1px solid #ff5100; border-radius: 0; color: #070707; background: #ff5100; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 5px 5px 0 rgba(255, 81, 0, 0.18); transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease; }
+.button:hover { color: #fff; background: #d94700; transform: translate(-2px, -2px); }
+.button-small { min-height: 40px; padding: 0 16px; font-size: 13px; }
+.button-ghost { color: #f4f4f2; background: transparent; border-color: rgba(255, 255, 255, 0.22); box-shadow: none; }
+.button-ghost:hover { color: #fff; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.4); }
+.logo-mark { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #ff5100; background: #120a06; transform: skew(-10deg); }
+.logo-nv { color: #ff5100; font-size: 13px; font-weight: 900; line-height: 1; transform: skew(10deg); }

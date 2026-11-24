@@ -143,10 +143,10 @@ export function FilesPage() {
       if (deleteState.kind === 'files') {
         await fm.deleteFiles(deleteState.files.map((f) => f.id))
         setSelected(new Set())
-        toast.success(deleteState.files.length === 1 ? 'File deleted' : `${deleteState.files.length} files deleted`)
+        toast.success(deleteState.files.length === 1 ? 'File moved to trash' : `${deleteState.files.length} files moved to trash`)
       } else {
         await fm.deleteFolder(deleteState.folder.id)
-        toast.success('Folder deleted', `“${deleteState.folder.name}” and its contents were removed.`)
+        toast.success('Folder moved to trash', `“${deleteState.folder.name}” and its contents can be restored from Trash.`)
       }
       setDeleteState(null)
     } catch (err) {
@@ -414,11 +414,11 @@ export function FilesPage() {
         confirmLabel="Delete"
         description={
           deleteState?.kind === 'folder' ? (
-            <>“<strong className="text-foreground">{deleteState.folder.name}</strong>” and <strong className="text-foreground">everything inside it</strong> — subfolders and files — will be deleted. People it was shared with will lose access.</>
+            <>“<strong className="text-foreground">{deleteState.folder.name}</strong>” and <strong className="text-foreground">everything inside it</strong> — subfolders and files — will move to trash. People it was shared with lose access until you restore it.</>
           ) : deleteState?.files.length === 1 ? (
-            <>“<strong className="text-foreground">{deleteState.files[0].filename}</strong>” will be deleted, and any share links for it will stop working.</>
+            <>“<strong className="text-foreground">{deleteState.files[0].filename}</strong>” will move to trash, and its share links will stop working until you restore it.</>
           ) : (
-            <>The {deleteState?.files.length} selected files will be deleted, and any share links for them will stop working.</>
+            <>The {deleteState?.files.length} selected files will move to trash, and their share links will stop working until you restore them.</>
           )
         }
         onCancel={() => setDeleteState(null)}

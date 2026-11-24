@@ -63,17 +63,23 @@ export function DropdownMenu({ items, trigger, align = 'end', label }: DropdownM
       if (menuRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return
       close(false)
     }
-    const onScroll = () => close(false)
+    // Follow the trigger when anything moves (content loading above it, for instance) and only
+    // close once the trigger itself has scrolled out of view.
+    const onScroll = () => {
+      const t = triggerRef.current?.getBoundingClientRect()
+      if (!t || t.bottom < 0 || t.top > window.innerHeight) close(false)
+      else place()
+    }
     document.addEventListener('mousedown', onDown)
     window.addEventListener('resize', onScroll)
     window.addEventListener('scroll', onScroll, true)
-    requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus())
+    requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus({ preventScroll: true }))
     return () => {
       document.removeEventListener('mousedown', onDown)
       window.removeEventListener('resize', onScroll)
       window.removeEventListener('scroll', onScroll, true)
     }
-  }, [open, close])
+  }, [open, close, place])
 
   const onMenuKeyDown = (e: React.KeyboardEvent) => {
     const nodes = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? [])

@@ -2,6 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Where the dev and preview servers forward /api (docker compose publishes the backend on 3002).
+const proxy = {
+  '/api': { target: process.env.API_PROXY_TARGET || 'http://localhost:3000', changeOrigin: true },
+};
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -21,11 +26,8 @@ export default defineConfig({
     port: 5173,
     host: true,
     strictPort: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
+    proxy,
   },
+  preview: { port: 4173, proxy },
+  build: { sourcemap: false, target: 'es2022' },
 });

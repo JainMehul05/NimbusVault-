@@ -17,8 +17,15 @@ describe('service contracts', () => {
     await shareLinkApi.downloadShareLink('tok_123', 's3cret');
     for (const call of vi.mocked(api.get).mock.calls) {
       expect(String(call[0])).not.toContain('s3cret');
-      expect(call[1]).toEqual({ headers: { 'X-Share-Password': 's3cret' } });
+      expect(call[1]).toEqual({ headers: { 'X-Share-Password': 's3cret', 'X-Share-Password-Encoding': 'percent' } });
     }
+  });
+
+  it('encodes non-ASCII share passwords so they survive HTTP headers', async () => {
+    await shareLinkApi.accessShareLink('tok_123', 'пароль');
+    const headers = vi.mocked(api.get).mock.calls[0][1]?.headers as Record<string, string>;
+    expect(headers['X-Share-Password']).toMatch(/^[\x20-\x7e]+$/);
+    expect(decodeURIComponent(headers['X-Share-Password'])).toBe('пароль');
   });
 
   it('never sends a userId filter for the activity feed', async () => {

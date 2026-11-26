@@ -76,3 +76,19 @@ it('uses current authorized filenames after a logical rename',async()=>{
   expect(call.mock.calls[0][1]).toMatchObject({filenames:{[fileId]:'renamed-policy.txt'}});
   expect(result.results[0].filename).toBe('renamed-policy.txt');
 });
+it('enforces nested folder scope and denies a private folder',async()=>{
+  const root=await prisma.folder.create({data:{name:'Scope root',ownerId:a.id,depth:0}});
+  const child=await prisma.folder.create({data:{name:'Scope child',ownerId:a.id,parentFolderId:root.id,depth:1}});
+  await prisma.file.update({where:{id:fileId},data:{folderId:child.id}});
+  call.mockResolvedValue({sources:[source()]});
+  expect((await localIntelligence.search(a.id,'Aurora',{limit:8,folderId:root.id})).results).toHaveLength(1);
+  expect(call.mock.calls[0][3]).toEqual([fileId]);
+  await expect(localIntelligence.search(b.id,'Aurora',{limit:8,folderId:root.id})).rejects.toMatchObject({statusCode:404});
+});
+it('applies document category filters before retrieval and groups file results',async()=>{
+  call.mockResolvedValue({sources:[]});
+  await localIntelligence.search(a.id,'Aurora',{limit:8,category:'image'});
+  expect(call.mock.calls[0][3]).toEqual([]);
+  call.mockResolvedValue({sources:[source(),{...source(),chunk_id:2}]});
+  expect((await localIntelligence.search(a.id,'Aurora',{limit:8})).resultCount).toBe(1);
+});

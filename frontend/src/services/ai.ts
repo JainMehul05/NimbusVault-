@@ -100,9 +100,9 @@ export const aiApi = {
     ),
   passage: (fileId: string, chunkIndex: number) => data<Passage>(api.get(`/ai/files/${fileId}/chunks/${chunkIndex}`)),
   summarize: (fileId: string) => data<AiDocument['summary']>(api.post(`/ai/files/${fileId}/summary`)),
-  search: (query: string, opts: { limit?: number; fileIds?: string[]; mode?: string } = {}) =>
-    data<{ results: SearchResult[]; model: string }>(api.post('/ai/search', { query, ...opts })),
-  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string } = {}) => data<AnswerResult>(api.post('/ai/ask', { question, ...opts })),
+  search: (query: string, opts: { limit?: number; fileIds?: string[]; mode?: string;folderId?:string;category?:string } = {}) =>
+    data<{ results: SearchResult[]; model: string;retrievalMs?:number;resultCount?:number }>(api.post('/ai/search', { query, ...opts })),
+  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string;folderId?:string } = {}) => data<AnswerResult>(api.post('/ai/ask', { question, ...opts })),
   cancel: (requestId: string) => api.post('/ai/cancel', { requestId }),
   conversations: () => data<Array<{ id: string; title: string }>>(api.get('/ai/conversations')),
   conversation: (id: string) => data<{exchanges:Array<{question:string;response:AnswerResult}>}>(api.get(`/ai/conversations/${id}`)),

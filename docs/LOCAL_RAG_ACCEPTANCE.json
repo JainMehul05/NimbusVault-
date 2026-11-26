@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-26T15:46:02.629Z",
+  "started_at": "2026-11-26T17:30:01.156Z",
   "checks": {
     "actual_multi_document_Qwen": true,
     "actual_followup": true,
@@ -13,7 +13,7 @@
   },
   "multi": {
     "status": "answered",
-    "answer": "MiniLM embeddings and Qwen answer generation run on the local laptop. [S2]\n\nThe Borealis synthetic access number is 914. [S1]",
+    "answer": "Local MiniLM/Qwen processing runs on the local laptop. [S2]\n\nThe Borealis synthetic access number is 914. [S1]",
     "citations": [
       {
         "chunkId": "2",
@@ -48,34 +48,25 @@
     "model": "qwen2.5:3b",
     "mode": "generated",
     "warning": null,
-    "conversationId": "6f36749a-549a-4d75-a420-220461096a58",
+    "conversationId": "785b6f2d-ed44-47e0-b2e2-4b9971291171",
     "timings": {
-      "retrieval_ms": 43.2,
-      "citation_alignment_repairs": 2,
-      "initial_generation": {
-        "total_duration": 5453400500,
-        "load_duration": 3559786100,
-        "prompt_eval_count": 634,
-        "prompt_eval_duration": 377641000,
-        "eval_count": 117,
-        "eval_duration": 1507922000
-      },
-      "correction_attempted": true,
+      "retrieval_ms": 7065.08,
+      "citation_alignment_repairs": 0,
       "generation": {
-        "total_duration": 1516315700,
-        "load_duration": 2729500,
-        "prompt_eval_count": 715,
-        "prompt_eval_duration": 58593000,
-        "eval_count": 113,
-        "eval_duration": 1446545000
+        "total_duration": 1767884000,
+        "load_duration": 9397800,
+        "prompt_eval_count": 1020,
+        "prompt_eval_duration": 98916000,
+        "eval_count": 108,
+        "eval_duration": 1634535000
       },
-      "total_ms": 7299.72
+      "total_ms": 9148.12
     },
     "retrievalBackend": "local"
   },
   "followup": {
     "status": "answered",
-    "answer": "The synthetic access number for Project Borealis is 914. [S1]",
+    "answer": "Project Borealis's synthetic access number is 914. [S1]\n\nProject Borealis uses violet balloons. [S1]",
     "citations": [
       {
         "chunkId": "2",
@@ -95,20 +86,29 @@
     "sourcesConsidered": 1,
     "model": "qwen2.5:3b",
     "mode": "generated",
-    "warning": null,
-    "conversationId": "6f36749a-549a-4d75-a420-220461096a58",
+    "warning": "Only statements that passed source verification are shown; some generated details were omitted.",
+    "conversationId": "785b6f2d-ed44-47e0-b2e2-4b9971291171",
     "timings": {
-      "retrieval_ms": 20.84,
+      "retrieval_ms": 28.15,
       "citation_alignment_repairs": 0,
-      "generation": {
-        "total_duration": 827181400,
-        "load_duration": 3728600,
-        "prompt_eval_count": 551,
-        "prompt_eval_duration": 30933000,
-        "eval_count": 63,
-        "eval_duration": 785852000
+      "initial_generation": {
+        "total_duration": 1406834100,
+        "load_duration": 6064500,
+        "prompt_eval_count": 861,
+        "prompt_eval_duration": 42073000,
+        "eval_count": 100,
+        "eval_duration": 1345456000
       },
-      "total_ms": 1072.32
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1002124300,
+        "load_duration": 7112400,
+        "prompt_eval_count": 1013,
+        "prompt_eval_duration": 79393000,
+        "eval_count": 62,
+        "eval_duration": 902862000
+      },
+      "total_ms": 2801.32
     },
     "retrievalBackend": "local"
   },
@@ -120,13 +120,13 @@
     "model": "Extractive fallback",
     "mode": "insufficient",
     "warning": null,
-    "conversationId": "c60089fb-54d9-4aed-b5f4-3ca7ceb45287",
+    "conversationId": "be9394f8-24c9-41e9-910c-5312f817a962",
     "timings": {
-      "retrieval_ms": 13.7,
-      "total_ms": 13.71
+      "retrieval_ms": 25.35,
+      "total_ms": 25.36
     },
     "retrievalBackend": "local"
   },
   "result": "passed",
-  "finished_at": "2026-11-26T15:46:13.577Z"
+  "finished_at": "2026-11-26T17:30:17.829Z"
 }

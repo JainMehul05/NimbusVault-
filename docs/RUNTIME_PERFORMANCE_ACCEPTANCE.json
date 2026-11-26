@@ -1,0 +1,48 @@
+{
+  "observed_at": "2026-11-26T17:31:09.500Z",
+  "indexed_fixture_persisted": true,
+  "original_conversation_persisted": true,
+  "account_persisted": true,
+  "aws_calls": 0,
+  "runs": [
+    {
+      "phase": "cold_model",
+      "total_ms": 8551,
+      "file_management_during_generation_ms": 32,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 67.03,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 8195517100,
+          "load_duration": 6162815000,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 534751999,
+          "eval_count": 106,
+          "eval_duration": 1469683000
+        },
+        "total_ms": 8488.09
+      }
+    },
+    {
+      "phase": "warm_model",
+      "total_ms": 1857,
+      "file_management_during_generation_ms": 26,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 18.4,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 1486479700,
+          "load_duration": 11589500,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 14319000,
+          "eval_count": 106,
+          "eval_duration": 1442436000
+        },
+        "total_ms": 1777.05
+      }
+    }
+  ],
+  "result": "passed"
+}

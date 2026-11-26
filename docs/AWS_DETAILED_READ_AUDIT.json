@@ -1,0 +1,186 @@
+{
+  "observed_at": "2026-11-26T17:17:55.307938+00:00",
+  "read_only": true,
+  "mutations": [],
+  "guard": {
+    "checked_at": "2026-11-26T17:17:55.307453+00:00",
+    "plan": "FREE",
+    "status": "ACTIVE",
+    "credits_usd": 139.998445,
+    "expires_at": "2027-05-24 10:27:24.967000+00:00",
+    "allowed": true,
+    "minimum_credit_reserve_usd": 1,
+    "cache_seconds": 60,
+    "paid_upgrade_permitted": false
+  },
+  "checks": {
+    "lambda": {
+      "runtime": "python3.13",
+      "handler": "index.handler",
+      "memory_mb": 256,
+      "timeout_seconds": 30,
+      "state": "Active",
+      "last_modified": "2026-11-24T16:54:50.000+0000",
+      "code_sha256": "8k+LGJkLzkMVQ/plZpZLYzK9MIdjZA4/qri2KpL1Tvg="
+    },
+    "eventbridge": {
+      "state": "DISABLED",
+      "event_pattern": {
+        "detail-type": [
+          "Object Created"
+        ],
+        "source": [
+          "aws.s3"
+        ],
+        "detail": {
+          "bucket": {
+            "name": [
+              "<existing-private-bucket>"
+            ]
+          },
+          "object": {
+            "key": [
+              {
+                "prefix": "cloudvault/files/"
+              }
+            ]
+          }
+        }
+      },
+      "targets": 1,
+      "target_is_existing_queue": true
+    },
+    "sqs_consumer": {
+      "state": "Disabled",
+      "batch_size": 1,
+      "partial_batch_failures": true,
+      "maximum_concurrency": 2
+    },
+    "sqs": {
+      "VisibilityTimeout": "180",
+      "MessageRetentionPeriod": "86400",
+      "ApproximateNumberOfMessages": "0",
+      "ApproximateNumberOfMessagesNotVisible": "0",
+      "maximum_receive_count": 3,
+      "policy_statement_count": 1
+    },
+    "dlq": {
+      "VisibilityTimeout": "30",
+      "MessageRetentionPeriod": "345600",
+      "ApproximateNumberOfMessages": "1",
+      "ApproximateNumberOfMessagesNotVisible": "0"
+    },
+    "stepfunctions": {
+      "status": "ACTIVE",
+      "type": "STANDARD",
+      "states": [
+        "ValidateObject",
+        "ExtractOrClassify",
+        "PersistManifest",
+        "AwaitLocalEmbedding",
+        "RecordFailure",
+        "Failed"
+      ],
+      "retry_task_count": 4,
+      "catch_task_count": 4,
+      "running_first_page": 0,
+      "running_truncated": false,
+      "succeeded_first_page": 4,
+      "succeeded_truncated": false,
+      "failed_first_page": 1,
+      "failed_truncated": false
+    },
+    "api_gateway": {
+      "routes": [
+        {
+          "route": "GET /jobs",
+          "authorization": "AWS_IAM"
+        },
+        {
+          "route": "GET /status",
+          "authorization": "AWS_IAM"
+        },
+        {
+          "route": "GET /files",
+          "authorization": "AWS_IAM"
+        }
+      ],
+      "throttles": [
+        {
+          "DetailedMetricsEnabled": false,
+          "ThrottlingBurstLimit": 2,
+          "ThrottlingRateLimit": 1.0
+        }
+      ]
+    },
+    "parameter_store": {
+      "standard_parameters_read": 3,
+      "missing": 0,
+      "values_match_active_configuration": true
+    },
+    "cloudformation": {
+      "resource_count": 20,
+      "resource_types": [
+        "AWS::ApiGatewayV2::Api",
+        "AWS::ApiGatewayV2::Integration",
+        "AWS::ApiGatewayV2::Route",
+        "AWS::ApiGatewayV2::Stage",
+        "AWS::Events::Rule",
+        "AWS::IAM::Role",
+        "AWS::Lambda::EventSourceMapping",
+        "AWS::Lambda::Function",
+        "AWS::Lambda::Permission",
+        "AWS::Logs::LogGroup",
+        "AWS::SQS::Queue",
+        "AWS::SQS::QueuePolicy",
+        "AWS::SSM::Parameter",
+        "AWS::StepFunctions::StateMachine"
+      ]
+    },
+    "iam": {
+      "roles": [
+        {
+          "trusted_services": [
+            "lambda.amazonaws.com"
+          ],
+          "inline_policy_count": 1,
+          "allow_all_actions": false,
+          "resource_scoped_statement_count": 6
+        },
+        {
+          "trusted_services": [
+            "states.amazonaws.com"
+          ],
+          "inline_policy_count": 1,
+          "allow_all_actions": false,
+          "resource_scoped_statement_count": 1
+        }
+      ]
+    },
+    "cloudwatch_metrics": {
+      "Errors": {
+        "datapoints": [
+          {
+            "Timestamp": "2026-11-26 19:48:00+05:30",
+            "Sum": 0.0,
+            "Unit": "Count"
+          }
+        ],
+        "window_hours": 3,
+        "missing_is_not_zero": true
+      },
+      "Duration": {
+        "datapoints": [
+          {
+            "Timestamp": "2026-11-26 19:48:00+05:30",
+            "Average": 83.2075,
+            "Unit": "Milliseconds"
+          }
+        ],
+        "window_hours": 3,
+        "missing_is_not_zero": true
+      }
+    }
+  },
+  "idle_restored": true
+}

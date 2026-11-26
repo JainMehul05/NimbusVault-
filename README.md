@@ -47,8 +47,11 @@ The one approved native AWS rehearsal is complete; EventBridge and its SQS consu
 ## Documentation
 
 - [Final handover](docs/FINAL_HANDOVER.md)
+- [Complete continuation release report](docs/CONTINUATION_RELEASE_REPORT.md)
 - [Architecture and source mapping](docs/ARCHITECTURE_FINAL.md)
 - [Verification and limitations](docs/VERIFICATION_FINAL.md)
+- [Measured semantic search](docs/SEMANTIC_SEARCH_BENCHMARK.md) and [real Qwen evaluation](docs/AI_QUALITY_EVALUATION.md)
+- [AWS acceptance matrix](docs/AWS_ACCEPTANCE_MATRIX.md)
 - [Security, migration and rollback](docs/SECURITY_AND_PRESERVATION.md)
 - [Existing AWS inventory](docs/AWS_RESOURCE_INVENTORY.md)
 - [Evaluation and viva](docs/EVALUATION_AND_VIVA.md)

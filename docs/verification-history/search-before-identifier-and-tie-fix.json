@@ -1,0 +1,2387 @@
+{
+  "started_at": "2026-11-26T17:22:33.605217+00:00",
+  "label": "final",
+  "corpus_sha256": "c9e201c4abd568099b0f42bb9129fc87c2a73e47eefac75846b007f92d97d8d6",
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "isolated_local_only": true,
+  "aws_calls": 0,
+  "cases": [
+    {
+      "id": "recovered",
+      "query": "MiniLM Qwen local laptop",
+      "expected": [
+        "processing"
+      ],
+      "category": "technical_abbreviation",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.2715
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 20.22,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "recovered",
+      "query": "MiniLM Qwen local laptop",
+      "expected": [
+        "processing"
+      ],
+      "category": "technical_abbreviation",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.2715
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.23,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s02",
+      "query": "Where are document embeddings and language model answers computed?",
+      "expected": [
+        "processing"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.5107
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.91,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s02",
+      "query": "Where are document embeddings and language model answers computed?",
+      "expected": [
+        "processing"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.5107
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 13.26,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s03",
+      "query": "How can a garden use less water?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5118
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 18.79,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s03",
+      "query": "How can a garden use less water?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5118
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.73,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s04",
+      "query": "What converts sunlight into usable power?",
+      "expected": [
+        "solar"
+      ],
+      "category": "synonym",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.5939
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 14.07,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s04",
+      "query": "What converts sunlight into usable power?",
+      "expected": [
+        "solar"
+      ],
+      "category": "synonym",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.5939
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.35,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s05",
+      "query": "What happens when an old refresh credential is reused?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.6226
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 20.04,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s05",
+      "query": "What happens when an old refresh credential is reused?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.6226
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.01,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s06",
+      "query": "How long do expense claims remain eligible after a trip?",
+      "expected": [
+        "expense"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.7597
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.79,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s06",
+      "query": "How long do expense claims remain eligible after a trip?",
+      "expected": [
+        "expense"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.7597
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.79,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s07",
+      "query": "What is the maximum time to recover the database?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.6308
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.98,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s07",
+      "query": "What is the maximum time to recover the database?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.6308
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.58,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s08",
+      "query": "How are failed ingestion events isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "semantic",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.4819
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.65,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s08",
+      "query": "How are failed ingestion events isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "paraphrase",
+      "split": "tuning",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.4819
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.25,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s09",
+      "query": "MiniLM embeddings",
+      "expected": [
+        "processing"
+      ],
+      "category": "exact",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.3678
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 18.3,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s09",
+      "query": "MiniLM embeddings",
+      "expected": [
+        "processing"
+      ],
+      "category": "exact",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "processing"
+      ],
+      "scores": [
+        0.3678
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 8.85,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s10",
+      "query": "What is the Borealis synthetic access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.6251
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.77,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s10",
+      "query": "What is the Borealis synthetic access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.6251
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.79,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s11",
+      "query": "When is the Borealis review?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "date",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "borealis",
+        "north"
+      ],
+      "scores": [
+        0.5382,
+        0.3787
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.57,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s11",
+      "query": "When is the Borealis review?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "date",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "borealis",
+        "north"
+      ],
+      "scores": [
+        0.5382,
+        0.3787
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.43,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s12",
+      "query": "What is the log retention period for Policy North?",
+      "expected": [
+        "north"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "north",
+        "south"
+      ],
+      "scores": [
+        0.733,
+        0.6493
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.81,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s12",
+      "query": "What is the log retention period for Policy North?",
+      "expected": [
+        "north"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "north",
+        "south"
+      ],
+      "scores": [
+        0.733,
+        0.6493
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.07,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s13",
+      "query": "What is the log retention period for Policy South?",
+      "expected": [
+        "south"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.7578,
+        0.639
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.51,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s13",
+      "query": "What is the log retention period for Policy South?",
+      "expected": [
+        "south"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.7578,
+        0.639
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.17,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s14",
+      "query": "Compare North and South audit log retention.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "conflicting",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.674,
+        0.6709
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.49,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s14",
+      "query": "Compare North and South audit log retention.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "conflicting",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.674,
+        0.6709
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 23.48,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s15",
+      "query": "How many reviewers does South require?",
+      "expected": [
+        "south"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "south"
+      ],
+      "scores": [
+        0.5986
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 30.01,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s15",
+      "query": "How many reviewers does South require?",
+      "expected": [
+        "south"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "south"
+      ],
+      "scores": [
+        0.5986
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 24.76,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s16",
+      "query": "Which review policy was approved in January?",
+      "expected": [
+        "north"
+      ],
+      "category": "date",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.4943,
+        0.4832
+      ],
+      "top1": false,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 0.5,
+      "correct_abstention": null,
+      "latency_ms": 24.12,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s16",
+      "query": "Which review policy was approved in January?",
+      "expected": [
+        "north"
+      ],
+      "category": "date",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.4943,
+        0.4832
+      ],
+      "top1": false,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 0.5,
+      "correct_abstention": null,
+      "latency_ms": 12.15,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s17",
+      "query": "How does rooftop precipitation get collected?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5606
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.26,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s17",
+      "query": "How does rooftop precipitation get collected?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5606
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 8.81,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s18",
+      "query": "What watering method avoids evaporation?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.514
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.76,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s18",
+      "query": "What watering method avoids evaporation?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.514
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.36,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s19",
+      "query": "How do households avoid losing water from taps?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5183
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.59,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s19",
+      "query": "How do households avoid losing water from taps?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "water"
+      ],
+      "scores": [
+        0.5183
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.18,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s20",
+      "query": "How much renewable electricity should Aurora produce each year?",
+      "expected": [
+        "solar"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.7333
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.51,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s20",
+      "query": "How much renewable electricity should Aurora produce each year?",
+      "expected": [
+        "solar"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.7333
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.22,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s21",
+      "query": "How can Aurora provide electricity at night?",
+      "expected": [
+        "solar"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.6853
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.68,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s21",
+      "query": "How can Aurora provide electricity at night?",
+      "expected": [
+        "solar"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "solar"
+      ],
+      "scores": [
+        0.6853
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.21,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s22",
+      "query": "What paperwork is needed for travel reimbursement?",
+      "expected": [
+        "expense"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.5923
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 14.25,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s22",
+      "query": "What paperwork is needed for travel reimbursement?",
+      "expected": [
+        "expense"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.5923
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.25,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s23",
+      "query": "What is the journey reimbursement cap?",
+      "expected": [
+        "expense"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.5837
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.94,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s23",
+      "query": "What is the journey reimbursement cap?",
+      "expected": [
+        "expense"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "expense"
+      ],
+      "scores": [
+        0.5837
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.27,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s24",
+      "query": "When does the weekly complete database snapshot run?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.6259
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 18.41,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s24",
+      "query": "When does the weekly complete database snapshot run?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.6259
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.38,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s25",
+      "query": "How long are recovery snapshots retained?",
+      "expected": [
+        "backup"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.7187
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 22.58,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s25",
+      "query": "How long are recovery snapshots retained?",
+      "expected": [
+        "backup"
+      ],
+      "category": "similar_document",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "backup"
+      ],
+      "scores": [
+        0.7187
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.08,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s26",
+      "query": "What does signing out do to a session?",
+      "expected": [
+        "security"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.4398
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 18.96,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s26",
+      "query": "What does signing out do to a session?",
+      "expected": [
+        "security"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.4398
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.48,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s27",
+      "query": "How are stored passwords protected?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.3308
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 19.15,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s27",
+      "query": "How are stored passwords protected?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "security"
+      ],
+      "scores": [
+        0.3308
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.88,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s28",
+      "query": "How many receives before a failed queue message is isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.5768
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 22.02,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s28",
+      "query": "How many receives before a failed queue message is isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "numeric",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.5768
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.51,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s29",
+      "query": "What is the ingestion message visibility timeout?",
+      "expected": [
+        "queue"
+      ],
+      "category": "technical",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.7944
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 21.33,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s29",
+      "query": "What is the ingestion message visibility timeout?",
+      "expected": [
+        "queue"
+      ],
+      "category": "technical",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "queue"
+      ],
+      "scores": [
+        0.7944
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.12,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s30",
+      "query": "How is the cloud status endpoint authenticated?",
+      "expected": [
+        "api"
+      ],
+      "category": "technical",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "api"
+      ],
+      "scores": [
+        0.5518
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.65,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s30",
+      "query": "How is the cloud status endpoint authenticated?",
+      "expected": [
+        "api"
+      ],
+      "category": "technical",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "api"
+      ],
+      "scores": [
+        0.5518
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.67,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s31",
+      "query": "NV-409",
+      "expected": [
+        "api"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": false,
+      "top3": false,
+      "recall_at_3": 0.0,
+      "reciprocal_rank": 0,
+      "correct_abstention": null,
+      "latency_ms": 14.8,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s31",
+      "query": "NV-409",
+      "expected": [
+        "api"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": false,
+      "top3": false,
+      "recall_at_3": 0.0,
+      "reciprocal_rank": 0,
+      "correct_abstention": null,
+      "latency_ms": 10.06,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s32",
+      "query": "What does HTTP 429 mean?",
+      "expected": [
+        "network"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.6139
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 13.68,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s32",
+      "query": "What does HTTP 429 mean?",
+      "expected": [
+        "network"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.6139
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.48,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s33",
+      "query": "Who owns the Cedar release?",
+      "expected": [
+        "release"
+      ],
+      "category": "name",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.6129
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 20.38,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s33",
+      "query": "Who owns the Cedar release?",
+      "expected": [
+        "release"
+      ],
+      "category": "name",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.6129
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.65,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s34",
+      "query": "When is version 2.4.1 due?",
+      "expected": [
+        "release"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.5453
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.2,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s34",
+      "query": "When is version 2.4.1 due?",
+      "expected": [
+        "release"
+      ],
+      "category": "identifier",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.5453
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.86,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s35",
+      "query": "What must happen before Cedar can be released?",
+      "expected": [
+        "release"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.6521
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 14.67,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s35",
+      "query": "What must happen before Cedar can be released?",
+      "expected": [
+        "release"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.6521
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.78,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s36",
+      "query": "Can a student renew a borrowed book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "library"
+      ],
+      "scores": [
+        0.729
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.92,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s36",
+      "query": "Can a student renew a borrowed book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "library"
+      ],
+      "scores": [
+        0.729
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 12.76,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s37",
+      "query": "What should I do if I lose a library book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "library"
+      ],
+      "scores": [
+        0.6852
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 14.79,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s37",
+      "query": "What should I do if I lose a library book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "library"
+      ],
+      "scores": [
+        0.6852
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.36,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s38",
+      "query": "What translates website names into network addresses?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.4237
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.54,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s38",
+      "query": "What translates website names into network addresses?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.4237
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.84,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s39",
+      "query": "How is information encrypted while travelling over the network?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.3299
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.25,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s39",
+      "query": "How is information encrypted while travelling over the network?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "network"
+      ],
+      "scores": [
+        0.3299
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 114.09,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s40",
+      "query": "What vegetarian lunch is served on Friday?",
+      "expected": [
+        "food"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "food"
+      ],
+      "scores": [
+        0.4672
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 14.27,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s40",
+      "query": "What vegetarian lunch is served on Friday?",
+      "expected": [
+        "food"
+      ],
+      "category": "paraphrase",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "food"
+      ],
+      "scores": [
+        0.4672
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.48,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s41",
+      "query": "When does breakfast finish?",
+      "expected": [
+        "food"
+      ],
+      "category": "time",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "food"
+      ],
+      "scores": [
+        0.3446
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 13.66,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s41",
+      "query": "When does breakfast finish?",
+      "expected": [
+        "food"
+      ],
+      "category": "time",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "food"
+      ],
+      "scores": [
+        0.3446
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.31,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s42",
+      "query": "Who should observatory staff call during evacuation?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "long"
+      ],
+      "scores": [
+        0.4319
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.1,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s42",
+      "query": "Who should observatory staff call during evacuation?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "long"
+      ],
+      "scores": [
+        0.4319
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 10.73,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s43",
+      "query": "Where should observatory staff assemble in an emergency?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "long"
+      ],
+      "scores": [
+        0.5503
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 17.5,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s43",
+      "query": "Where should observatory staff assemble in an emergency?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "long"
+      ],
+      "scores": [
+        0.5503
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 11.4,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s44",
+      "query": "Explain local AI processing and the Borealis access number.",
+      "expected": [
+        "processing",
+        "borealis"
+      ],
+      "category": "multi_document",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.5835
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 0.5,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 37.18,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s44",
+      "query": "Explain local AI processing and the Borealis access number.",
+      "expected": [
+        "processing",
+        "borealis"
+      ],
+      "category": "multi_document",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.5835
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 0.5,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 16.28,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s45",
+      "query": "What is the Antarctic rocket launch date?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 17.01,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s45",
+      "query": "What is the Antarctic rocket launch date?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 9.71,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s46",
+      "query": "What is the cure for dragon fever?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 16.83,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s46",
+      "query": "What is the cure for dragon fever?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 9.21,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s47",
+      "query": "What is the confidential Cedar budget?",
+      "expected": [],
+      "category": "unauthorized",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.475
+      ],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": false,
+      "latency_ms": 13.19,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s47",
+      "query": "What is the confidential Cedar budget?",
+      "expected": [],
+      "category": "unauthorized",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [
+        "release"
+      ],
+      "scores": [
+        0.475
+      ],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": false,
+      "latency_ms": 10.55,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s48",
+      "query": "What is the Borealis access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "selected_document",
+      "split": "held_out",
+      "scope": [
+        "borealis"
+      ],
+      "mode": "semantic",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.6113
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 13.44,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s48",
+      "query": "What is the Borealis access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "selected_document",
+      "split": "held_out",
+      "scope": [
+        "borealis"
+      ],
+      "mode": "hybrid",
+      "ranked_documents": [
+        "borealis"
+      ],
+      "scores": [
+        0.6113
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 9.35,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s49",
+      "query": "Compare North and South reviewer requirements.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "folder_scope",
+      "split": "held_out",
+      "scope": [
+        "north",
+        "south"
+      ],
+      "mode": "semantic",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.4833,
+        0.4642
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 15.14,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s49",
+      "query": "Compare North and South reviewer requirements.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "folder_scope",
+      "split": "held_out",
+      "scope": [
+        "north",
+        "south"
+      ],
+      "mode": "hybrid",
+      "ranked_documents": [
+        "south",
+        "north"
+      ],
+      "scores": [
+        0.4833,
+        0.4642
+      ],
+      "top1": true,
+      "top3": true,
+      "recall_at_3": 1.0,
+      "reciprocal_rank": 1.0,
+      "correct_abstention": null,
+      "latency_ms": 7.9,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s50",
+      "query": "How many moons does the fictional planet Zorblax have?",
+      "expected": [],
+      "category": "no_evidence",
+      "split": "held_out",
+      "mode": "semantic",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 18.01,
+      "unauthorized_leak": false
+    },
+    {
+      "id": "s50",
+      "query": "How many moons does the fictional planet Zorblax have?",
+      "expected": [],
+      "category": "no_evidence",
+      "split": "held_out",
+      "mode": "hybrid",
+      "ranked_documents": [],
+      "scores": [],
+      "top1": null,
+      "top3": null,
+      "recall_at_3": null,
+      "reciprocal_rank": 0,
+      "correct_abstention": true,
+      "latency_ms": 13.03,
+      "unauthorized_leak": false
+    }
+  ],
+  "summary": {
+    "semantic_tuning": {
+      "queries": 8,
+      "relevant_queries": 8,
+      "top1_accuracy": 1,
+      "top3_success": 1,
+      "recall_at_3": 1.0,
+      "mrr": 1.0,
+      "negative_queries": 0,
+      "correct_abstentions": 0,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 17.85,
+      "p95_latency_ms": 20.04
+    },
+    "semantic_held_out": {
+      "queries": 42,
+      "relevant_queries": 38,
+      "top1_accuracy": 0.9473684210526315,
+      "top3_success": 0.9736842105263158,
+      "recall_at_3": 0.9605263157894737,
+      "mrr": 0.9605263157894737,
+      "negative_queries": 4,
+      "correct_abstentions": 3,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 16.799999999999997,
+      "p95_latency_ms": 22.58
+    },
+    "semantic_all": {
+      "queries": 50,
+      "relevant_queries": 46,
+      "top1_accuracy": 0.9565217391304348,
+      "top3_success": 0.9782608695652174,
+      "recall_at_3": 0.967391304347826,
+      "mrr": 0.967391304347826,
+      "negative_queries": 4,
+      "correct_abstentions": 3,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 17.055,
+      "p95_latency_ms": 22.58
+    },
+    "hybrid_tuning": {
+      "queries": 8,
+      "relevant_queries": 8,
+      "top1_accuracy": 1,
+      "top3_success": 1,
+      "recall_at_3": 1.0,
+      "mrr": 1.0,
+      "negative_queries": 0,
+      "correct_abstentions": 0,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 11.684999999999999,
+      "p95_latency_ms": 12.25
+    },
+    "hybrid_held_out": {
+      "queries": 42,
+      "relevant_queries": 38,
+      "top1_accuracy": 0.9473684210526315,
+      "top3_success": 0.9736842105263158,
+      "recall_at_3": 0.9605263157894737,
+      "mrr": 0.9605263157894737,
+      "negative_queries": 4,
+      "correct_abstentions": 3,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 10.64,
+      "p95_latency_ms": 17.12
+    },
+    "hybrid_all": {
+      "queries": 50,
+      "relevant_queries": 46,
+      "top1_accuracy": 0.9565217391304348,
+      "top3_success": 0.9782608695652174,
+      "recall_at_3": 0.967391304347826,
+      "mrr": 0.967391304347826,
+      "negative_queries": 4,
+      "correct_abstentions": 3,
+      "unauthorized_leaks": 0,
+      "median_latency_ms": 11.0,
+      "p95_latency_ms": 17.12
+    }
+  },
+  "finished_at": "2026-11-26T17:22:46.541045+00:00"
+}

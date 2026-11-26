@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-11-26T16:00:19.519Z",
+  "observed_at": "2026-11-26T17:47:12.538Z",
   "checks": [
     {
       "width": 360,
@@ -18,6 +18,20 @@
       "dashboard_real_statistics": true,
       "document_scope_badge": true,
       "no_horizontal_overflow": true
+    },
+    {
+      "actual_nested_folder_scope": true,
+      "recovered_hybrid_query": true,
+      "type_filter": true,
+      "measured_server_latency_ms": 49
+    },
+    {
+      "selected_document_summary_action": true
+    },
+    {
+      "light_theme": true,
+      "dark_theme": true,
+      "mobile_navigation": true
     }
   ],
   "pageErrors": [],

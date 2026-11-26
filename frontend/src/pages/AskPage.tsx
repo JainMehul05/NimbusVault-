@@ -10,6 +10,7 @@ import { aiApi, errorCode, type AiCapabilities, type AnswerResult, type Citation
 import { getErrorMessage } from '@lib/format'
 import { cn } from '@lib/utils'
 import { useSearchParams } from 'react-router-dom'
+import { foldersApi, flattenTree, type FolderNode } from '@services/files'
 
 type Tab = 'ask' | 'search'
 
@@ -73,13 +74,17 @@ function SourceCard({ r, label, onOpen }: { r: SearchResult; label?: string; onO
 export function AskPage() {
   const [params]=useSearchParams()
   const selectedFileId=params.get('fileId')
+  const [folderId,setFolderId]=useState(params.get('folderId') ?? '')
+  const [category,setCategory]=useState('')
+  const [folders,setFolders]=useState<FolderNode[]>([])
+  const [scopeError,setScopeError]=useState<string | null>(null)
   const [caps, setCaps] = useState<AiCapabilities | null>(null)
   const [capsError, setCapsError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('ask')
   const [question, setQuestion] = useState('')
   const [turns, setTurns] = useState<Turn[]>([])
   const [query, setQuery] = useState('')
-  const [search, setSearch] = useState<{ state: 'idle' | 'loading' | 'done' | 'error'; results: SearchResult[]; error?: string; query?: string }>({ state: 'idle', results: [] })
+  const [search, setSearch] = useState<{ state: 'idle' | 'loading' | 'done' | 'error'; results: SearchResult[]; error?: string; query?: string;retrievalMs?:number }>({ state: 'idle', results: [] })
   const [insights, setInsights] = useState<InsightsTarget | null>(null)
   const seq = useRef(0)
   const request = useRef<string | null>(null)
@@ -87,7 +92,8 @@ export function AskPage() {
   const [history, setHistory] = useState<Array<{id:string;title:string}>>([])
   const [mode, setMode] = useState('hybrid')
   const [stopError,setStopError]=useState<string | null>(null)
-  useEffect(() => {setConversationId(undefined);setTurns([])},[selectedFileId])
+  useEffect(() => {setConversationId(undefined);setTurns([]);setSearch({state:'idle',results:[]})},[selectedFileId,folderId])
+  useEffect(() => {if(params.get('task')==='summary')setQuestion('Summarize the important takeaways from the selected document’s retrieved excerpts. Do not claim full-document coverage.')},[params])
   const continueConversation = async (id: string) => {
     setConversationId(id || undefined)
     if (!id) { setTurns([]); return }
@@ -118,7 +124,7 @@ export function AskPage() {
     try {
       const requestId = crypto.randomUUID()
       request.current = requestId
-      const result = await aiApi.ask(q, { conversationId, requestId, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}) })
+      const result = await aiApi.ask(q, { conversationId, requestId, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}),...(folderId?{folderId}:{}) })
       setConversationId(result.conversationId)
       setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'done', result } : t)))
     } catch (err) {
@@ -135,8 +141,8 @@ export function AskPage() {
     if (q.length < 2) return
     setSearch({ state: 'loading', results: [], query: q })
     try {
-      const { results } = await aiApi.search(q, { limit: 10, mode, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}) })
-      setSearch({ state: 'done', results, query: q })
+      const { results,retrievalMs } = await aiApi.search(q, { limit: 10, mode, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}),...(folderId?{folderId}:{}),...(category?{category}:{}) })
+      setSearch({ state: 'done', results, query: q,retrievalMs })
     } catch (err) {
       setSearch({ state: 'error', results: [], error: getErrorMessage(err, 'Search failed.'), query: q })
     }
@@ -167,6 +173,8 @@ export function AskPage() {
         <>
           <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <Badge tone="brand">Local retrieval</Badge><span>MiniLM · Qwen2.5 3B · no hosted AI</span>{selectedFileId && <Badge tone="brand">Selected document only</Badge>}
+            <select aria-label="Document folder scope" value={folderId} disabled={turns.some(t=>t.state==='loading')} onFocus={()=>{if(!folders.length)void foldersApi.tree().then(tree=>{setFolders(flattenTree(tree));setScopeError(null)}).catch(()=>setScopeError('Folder list unavailable; current scope is unchanged.'))}} onChange={e=>setFolderId(e.target.value)} className="max-w-full border border-border bg-surface p-2"><option value="">All accessible folders</option>{folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select>
+            {scopeError && <span role="status">{scopeError}</span>}
             <Button variant="secondary" onClick={() => { setConversationId(undefined); setTurns([]) }}>New conversation</Button>
             <Button variant="secondary" onClick={() => aiApi.conversations().then(setHistory).catch(() => setCapsError('Conversation history is unavailable.'))}>History</Button>
             {history.length > 0 && <select aria-label="Continue conversation" value={conversationId ?? ''} onChange={(e) => { void continueConversation(e.target.value) }} className="max-w-full border border-border bg-surface p-2"><option value="">New conversation</option>{history.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}</select>}
@@ -274,13 +282,15 @@ export function AskPage() {
             <section id="ai-panel-search" role="tabpanel" aria-labelledby="ai-tab-search">
               <form onSubmit={submitSearch} className="flex flex-col gap-2 sm:flex-row">
                 <select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)} className="border border-border bg-surface p-2 text-sm text-foreground"><option value="hybrid">Hybrid</option><option value="semantic">Semantic</option><option value="exact">Exact content</option><option value="filename">Filename</option></select>
+                <select aria-label="Document type filter" value={category} onChange={e=>setCategory(e.target.value)} className="border border-border bg-surface p-2 text-sm"><option value="">All types</option><option value="pdf">PDF documents</option><option value="document">Text / Office documents</option><option value="image">Images</option><option value="other">Other</option></select>
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden="true" />
                   <Input value={query} onChange={(e) => setQuery(e.target.value)} maxLength={500} placeholder="Describe what you’re looking for, in your own words" aria-label="Semantic search query" className="pl-9" />
                 </div>
                 <Button type="submit" disabled={query.trim().length < 2} loading={search.state === 'loading'}>Search</Button>
               </form>
-              <p className="mt-2 text-xs text-subtle">Finds passages by meaning, not just matching words, across documents you own or that are shared with you.</p>
+              <p className="mt-2 text-xs text-subtle">{mode==='hybrid'?'Hybrid combines meaning and keyword evidence.':mode==='semantic'?'Semantic ranks by meaning.':mode==='exact'?'Exact content finds a literal phrase.':'Filename searches current document names.'} Searches only indexed documents you can access.</p>
+              {search.state==='done' && <p role="status" className="mt-2 text-xs text-muted-foreground">{search.results.length} matching documents{search.retrievalMs!=null?` · ${search.retrievalMs} ms on the local server`:''}</p>}
 
               <div className="mt-5" aria-live="polite">
                 {search.state === 'loading' ? (

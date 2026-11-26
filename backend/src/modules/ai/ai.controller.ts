@@ -158,15 +158,15 @@ export const aiController = {
   }),
 
   search: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const { query, limit, fileIds, mode } = req.body as AiSearchInput;
-    const result = intelligenceEnabled() ? await localIntelligence.search(req.user!.userId,query,{limit,fileIds,mode}) : await ragService.search(req.user!.userId, query, { limit, fileIds });
+    const { query, limit, fileIds, mode, folderId, category } = req.body as AiSearchInput;
+    const result = intelligenceEnabled() ? await localIntelligence.search(req.user!.userId,query,{limit,fileIds,mode,folderId,category}) : await ragService.search(req.user!.userId, query, { limit, fileIds });
     res.json(successResponse(result, 'Search results', req.requestId));
   }),
 
   ask: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const userId = req.user!.userId;
-    const { question, fileIds, topK, conversationId, requestId } = req.body as AiAskInput;
-    const result = intelligenceEnabled() ? await localIntelligence.ask(userId,question,{fileIds,topK,conversationId,requestId}) : await ragService.ask(userId, question, { fileIds, topK });
+    const { question, fileIds, topK, conversationId, requestId, folderId } = req.body as AiAskInput;
+    const result = intelligenceEnabled() ? await localIntelligence.ask(userId,question,{fileIds,topK,conversationId,requestId,folderId}) : await ragService.ask(userId, question, { fileIds, topK });
     // The question text itself is not stored in the audit log.
     await activityLogService.logActivity(userId, 'ai_query', {
       resourceType: 'USER',

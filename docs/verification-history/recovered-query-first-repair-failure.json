@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-11-26T17:21:22.423900+00:00",
+  "query": "MiniLM Qwen local laptop",
+  "original_fixture_sha256": "5baf6e09227e3516c398a189c862e4fa3ca7f906542d9a7480d5b6eb610663f8",
+  "baseline_commit": "8d07eda",
+  "baseline_results": 0,
+  "repaired_results": 0,
+  "repaired_cosine": null,
+  "threshold_unchanged": 0.28,
+  "cause": "Whole-query cosine below original lexical rescue floor despite four exact anchors; narrow hybrid keyword rescue retains a cosine floor and scope.",
+  "aws_calls": 0,
+  "isolated_synthetic_fixture": true
+}

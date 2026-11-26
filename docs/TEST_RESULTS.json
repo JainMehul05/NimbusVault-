@@ -1,0 +1,58 @@
+{
+  "collected_at": "2026-11-26T17:47:12.141047+00:00",
+  "suites": {
+    "backend": {
+      "passed": 293,
+      "result": "passed",
+      "log": ".runtime/backend-release-tests.log",
+      "log_completed_at": "2026-11-26T17:28:54.588801+00:00"
+    },
+    "frontend": {
+      "passed": 55,
+      "result": "passed",
+      "log": ".runtime/frontend-release-tests.log",
+      "log_completed_at": "2026-11-26T17:45:25.540879+00:00"
+    },
+    "python": {
+      "passed": 68,
+      "result": "passed",
+      "log": ".runtime/python-release-tests.log",
+      "log_completed_at": "2026-11-26T17:34:46.951677+00:00"
+    },
+    "infrastructure": {
+      "passed": 22,
+      "result": "passed",
+      "log": ".runtime/infra-tests.log",
+      "log_completed_at": "2026-11-26T15:56:45.587252+00:00"
+    }
+  },
+  "benchmarks_counted_separately": true,
+  "total_passed": 438,
+  "build_types_lint": {
+    "production_build": {
+      "result": "passed",
+      "log": ".runtime/build.log"
+    },
+    "typescript": {
+      "result": "passed",
+      "log": ".runtime/typecheck.log"
+    },
+    "eslint": {
+      "result": "passed",
+      "log": ".runtime/lint.log"
+    },
+    "python_ruff": {
+      "result": "passed",
+      "log": ".runtime/python-lint.log"
+    },
+    "latest_frontend_build": {
+      "result": "passed",
+      "log": ".runtime/frontend-final-build.log"
+    },
+    "latest_frontend_lint": {
+      "result": "passed",
+      "log": ".runtime/frontend-final-lint.log"
+    }
+  },
+  "result": "passed"
+}

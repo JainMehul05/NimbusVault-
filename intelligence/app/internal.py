@@ -413,6 +413,21 @@ def storage_operation(p: StorageOperation):
 
 @app.get("/cloud/status")
 def cloud_status():
+    import httpx
+
+    local = {
+        "embedding_loaded": engine.model is not None,
+        "model": settings.llm_model,
+        "runtime_available": False,
+    }
+    try:
+        tags = httpx.get(settings.llm_url + "/api/tags", timeout=2, trust_env=False)
+        tags.raise_for_status()
+        local["runtime_available"] = any(
+            m.get("name") == settings.llm_model for m in tags.json().get("models", [])
+        )
+    except (httpx.HTTPError, ValueError):
+        pass
     try:
         from .config import ROOT
 
@@ -439,6 +454,7 @@ def cloud_status():
         "audit": snapshot,
         "native_rehearsal": proof,
         "live_probe": probe,
+        "local_intelligence": local,
         "guard": cost_guard.status()
         if os.environ.get("AWS_OPERATIONS_ENABLED") == "true"
         else {"allowed": False, "status": "paused"},

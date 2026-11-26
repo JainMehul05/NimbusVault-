@@ -187,7 +187,7 @@ export function DocumentInsightsDialog({ target, onClose, onStatusChange }: {
                   </p>
                 </div>
               ) : !caps.features.summaries ? (
-                <p className="text-sm text-muted-foreground">Standalone summaries are not enabled in this local integration. Ask NimbusVault can answer grounded questions with cited excerpts.</p>
+                  <p className="text-sm text-muted-foreground">Create a cited summary of retrieved excerpts in Ask NimbusVault. This does not claim full-document coverage. <Link className="text-primary hover:underline" to={`/ask?fileId=${fileId}&task=summary`} onClick={onClose}>Summarize excerpts</Link></p>
               ) : doc.summary.status === 'failed' ? (
                 <p className="text-sm text-[#ff7b70]">The summary couldn’t be generated: {doc.summary.error}</p>
               ) : (

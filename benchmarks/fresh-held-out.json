@@ -1,0 +1,12 @@
+[
+ {"id":"h01","query":"Which guidance prevents wasted household water by fixing leaks?","expected":["water"],"category":"paraphrase","split":"fresh_held_out"},
+ {"id":"h02","query":"How is electricity available once the sun has gone down?","expected":["solar"],"category":"synonym","split":"fresh_held_out"},
+ {"id":"h03","query":"What stops repeated use of old session refresh credentials?","expected":["security"],"category":"paraphrase","split":"fresh_held_out"},
+ {"id":"h04","query":"At what UTC hour do Sunday full backups begin?","expected":["backup"],"category":"time","split":"fresh_held_out"},
+ {"id":"h05","query":"How long may a student keep a borrowed library book?","expected":["library"],"category":"paraphrase","split":"fresh_held_out"},
+ {"id":"h06","query":"Which service maps website names to numeric network addresses?","expected":["network"],"category":"synonym","split":"fresh_held_out"},
+ {"id":"h07","query":"Who is responsible for releasing Cedar version 2.4.1?","expected":["release"],"category":"identifier","split":"fresh_held_out"},
+ {"id":"h08","query":"How long is log data held under North compared with South?","expected":["north","south"],"category":"comparison","split":"fresh_held_out"},
+ {"id":"h09","query":"What is the blood type of a real dragon?","expected":[],"category":"unrelated","split":"fresh_held_out"},
+ {"id":"h10","query":"Which starship launches from Mars tomorrow?","expected":[],"category":"unrelated","split":"fresh_held_out"}
+]

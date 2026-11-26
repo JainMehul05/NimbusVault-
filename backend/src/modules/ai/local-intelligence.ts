@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import type { FileCategory } from '@prisma/client';
 import prisma from '@database/prisma';
 import { authorizationService } from '@common/authorization';
 import { intelligence } from '@common/intelligence';
@@ -18,9 +19,15 @@ export async function requestStop(userId:string,requestId:string) {
 interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number }
 interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown> }
 
-export async function allowedScope(userId: string, selected?: string[]) {
+export async function allowedScope(userId: string, selected?: string[], filters?:{folderId?:string;category?:FileCategory}) {
   const ids = await authorizationService.listAccessibleFileIds(userId, selected);
-  const files = await prisma.file.findMany({where:{id:{in:ids},status:'READY',aiStatus:'INDEXED',deletedAt:null}});
+  let folderIds:string[]|undefined;
+  if(filters?.folderId){
+    await authorizationService.authorizeFolderAccess({userId,isAuthenticated:true},filters.folderId,'read');
+    const descendants=await prisma.$queryRaw<Array<{id:string}>>`WITH RECURSIVE sub(id) AS (SELECT id FROM folders WHERE id=${filters.folderId} AND "deletedAt" IS NULL UNION SELECT f.id FROM folders f JOIN sub ON f."parentFolderId"=sub.id WHERE f."deletedAt" IS NULL) SELECT id FROM sub`;
+    folderIds=descendants.map(f=>f.id);
+  }
+  const files = await prisma.file.findMany({where:{id:{in:ids},status:'READY',aiStatus:'INDEXED',deletedAt:null,...(folderIds?{folderId:{in:folderIds}}:{}),...(filters?.category?{category:filters.category}: {})}});
   return files.map(f=>f.id);
 }
 async function mapSources(userId:string,sources:EvidenceSource[]):Promise<SearchResult[]> {
@@ -55,14 +62,17 @@ export async function localHistory(userId:string,id:string) {
   return {exchanges:await Promise.all(history.exchanges.map(async e=>({question:e.question,response:await mapAnswer(userId,e.response)})))};
 }
 export const localIntelligence = {
-  async search(userId:string,query:string,options:{limit:number;fileIds?:string[];mode?:string}) {
-    const scope=await allowedScope(userId,options.fileIds);
+  async search(userId:string,query:string,options:{limit:number;fileIds?:string[];mode?:string;folderId?:string;category?:FileCategory}) {
+    const started=performance.now();
+    const scope=await allowedScope(userId,options.fileIds,options);
     const names=options.mode==='filename' ? await prisma.file.findMany({where:{id:{in:scope}},select:{id:true,filename:true}}) : [];
     const result=await intelligence<{sources:EvidenceSource[]}>('/api/ai/search',{query,...options,...(options.mode==='filename'?{filenames:Object.fromEntries(names.map(f=>[f.id,f.filename]))}:{})},userId,scope);
-    return {results:await mapSources(userId,result.sources),model:'sentence-transformers/all-MiniLM-L6-v2',retrievalBackend:'local',awsCalls:0};
+    const mapped=await mapSources(userId,result.sources);
+    const results=mapped.filter((row,index)=>mapped.findIndex(other=>other.fileId===row.fileId)===index);
+    return {results,model:'sentence-transformers/all-MiniLM-L6-v2',retrievalBackend:'local',awsCalls:0,retrievalMs:Math.round(performance.now()-started),resultCount:results.length};
   },
-  async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string}):Promise<AnswerResult> {
-    const scope=await allowedScope(userId,options.fileIds);
+  async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string;folderId?:string}):Promise<AnswerResult> {
+    const scope=await allowedScope(userId,options.fileIds,options);
     const requestId=options.requestId||randomUUID();
     const pending=pendingStops.get(`${userId}:${requestId}`);
     pendingStops.delete(`${userId}:${requestId}`);

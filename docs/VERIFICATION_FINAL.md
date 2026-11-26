@@ -6,13 +6,15 @@ All observations below are from this laptop on 26 November 2026. Local runtime l
 
 | Suite | Final result | Boundary |
 |---|---|---|
-| Backend | 290 passed, 12 suites, 85.379 s | Separate PostgreSQL test database and LocalStack; mocked provider failures |
-| Frontend | 55 passed, 13 files, 14.44 s | Component/unit tests |
-| Python | 60 passed, 32.72 s | Temp databases, real cached MiniLM; real local Qwen grounding and conflicting-policy tests; no AWS |
+| Backend | 293 passed, 12 suites, 86.496 s | Separate PostgreSQL test database and LocalStack; mocked provider failures |
+| Frontend | 55 passed, 13 files, 12.94 s | Component/unit tests |
+| Python | 68 passed, 26.55 s | Temp databases, real cached MiniLM; real local Qwen grounding and conflicting-policy tests; no AWS |
 | Infrastructure | 22 passed, 1 file, 17.81 s | Static tests only, no deploy |
 | Original donor Python suite | 46 passed | Earlier preservation baseline |
 
 Backend/frontend production builds, TypeScript source/test checks, ESLint and changed Python Ruff checks passed. Production npm dependency audit reported zero advisories at the observed time. These results do not imply all future dependency versions are safe.
+
+The four suites total **438 passed tests**. The current continuation adds real [60-query search evaluation](SEMANTIC_SEARCH_BENCHMARK.md), [24-question Qwen evaluation](AI_QUALITY_EVALUATION.md), [AWS service acceptance matrix](AWS_ACCEPTANCE_MATRIX.md), deployed-source comparison, actual cold/warm timing and restart persistence. These benchmark and browser cases are separate evidence, not inflated into the automated test total.
 
 ## Actual final-application flows
 
@@ -37,6 +39,8 @@ Native API/IAM, SSM, logs, metrics and optional fixed-vector demonstration have 
 - First cold Qwen run timed out. Warmup and visible extractive fallback are retained; warm and real subsequent runs passed. A build/restart overlap during verification caused a transient missing compiled module; build and restart must be sequential.
 
 Rejected model answers are retained in `verification-history`. They are evidence of the repair process, not successful generated answers. The final two-document pass preserves the same challenging question and two-source assertion. Fallbacks are never relabeled as generated.
+
+Continuation repairs also cover current filenames after rename, exact technical identifiers, RRF date ties, ordinary claim inflections, changed security triggers, unsupported purpose additions and omitted explicit topics. Restarting disposable LocalStack removed its test bucket and caused an honest failed full-suite run. `scripts/test-backend-local.ps1` now recreates only that localhost test bucket and verifies the isolated test database; the complete293-test rerun passed without weakening assertions.
 
 ## Practical limits
 

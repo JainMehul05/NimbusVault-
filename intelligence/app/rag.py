@@ -55,6 +55,23 @@ def normalize_quote(text):
     return " ".join(text.casefold().split())
 
 
+def support_terms(text):
+    """Treat ordinary plural/adverb inflections as the same lexical anchor.
+
+    This does not change exact quotations, numeric checks or semantic thresholds.
+    """
+    normalized = set()
+    for word in terms(text):
+        if len(word) > 5 and word.endswith("ly"):
+            word = word[:-2]
+        if len(word) > 5 and word.endswith("ies"):
+            word = word[:-3] + "y"
+        elif len(word) > 4 and word.endswith("s") and not word.endswith("ss"):
+            word = word[:-1]
+        normalized.add(word)
+    return normalized
+
+
 def align_citations(answer, sources):
     """Repair a known source label only when its exact quote identifies one source.
 
@@ -91,10 +108,9 @@ def merge_verified_claims(primary, previous):
                 continue
             numbers = set(re.findall(r"\d+(?:\.\d+)?", claim["text"]))
             other_numbers = set(re.findall(r"\d+(?:\.\d+)?", existing["text"]))
-            quote = normalize_quote(" ".join(claim["quotes"]))
-            other_quote = normalize_quote(" ".join(existing["quotes"]))
             if normalize_quote(claim["text"]) == normalize_quote(existing["text"]) or (
-                numbers == other_numbers and (quote in other_quote or other_quote in quote)
+                numbers == other_numbers
+                and set(terms(claim["text"])) == set(terms(existing["text"]))
             ):
                 duplicate = True
                 break
@@ -121,6 +137,30 @@ def validate_claims(answer, sources):
             re.search(purpose, quote, re.I) for quote in claim.quotes
         ):
             valid = False
+        trigger = re.search(
+            r"\b(\w+ing)\b.{0,80}\b(?:revokes?|deletes?|creates?|starts?|stops?|triggers?)\b",
+            claim.text,
+            re.I,
+        )
+        if trigger and not any(
+            re.search(r"\b" + re.escape(trigger.group(1)) + r"\b", quote, re.I)
+            for quote in claim.quotes
+        ):
+            valid = False
+        inferred_purpose = re.search(
+            r"\bto\s+(prevent|protect|secure|ensure|enhance|reduce|avoid|improve|safeguard)\w*|\b(ensur|safeguard)ing\b",
+            claim.text,
+            re.I,
+        )
+        if inferred_purpose:
+            root_word = (
+                (inferred_purpose.group(1) or inferred_purpose.group(2)).casefold().rstrip("e")
+            )
+            if not any(
+                re.search(r"\b" + re.escape(root_word) + r"\w*", quote, re.I)
+                for quote in claim.quotes
+            ):
+                valid = False
         if re.search(r"\brespectively\b", claim.text, re.I) and not any(
             re.search(r"\brespectively\b", quote, re.I) for quote in claim.quotes
         ):
@@ -139,8 +179,8 @@ def validate_claims(answer, sources):
             # Require most content words to be anchored in the exact quotation.
             # This is deliberately conservative; a rejected paraphrase gets one
             # correction opportunity, then the explicit extractive fallback.
-            content = set(terms(claim.text))
-            anchored = content & set(terms(quote))
+            content = support_terms(claim.text)
+            anchored = content & support_terms(quote)
             if content and len(anchored) / len(content) < 0.6:
                 valid = False
                 break
@@ -161,6 +201,42 @@ def validate_claims(answer, sources):
                 }
             )
     return accepted
+
+
+def missing_requested_coverage(question, sources, claims):
+    """Detect omitted explicit topics, not a requirement to cite arbitrary files."""
+    parts = [
+        part
+        for part in re.split(r"\s+(?:and|versus|vs\.?)\s+|;\s*", question, flags=re.I)
+        if len(terms(part)) >= 2
+    ][:3]
+    labels = set()
+    if len(parts) > 1:
+        for part in parts:
+            matches = [(len(set(terms(part)) & set(terms(s["passage"]))), s) for s in sources]
+            if matches:
+                overlap, source = max(matches, key=lambda pair: pair[0])
+                if overlap >= 2:
+                    labels.add(source["citation"])
+    used = {label for claim in claims for label in claim["citations"]}
+    distinct = {s["file_id"] for s in sources if s["citation"] in labels}
+    if len(distinct) > 1 and not labels.issubset(used):
+        return True
+    if len(sources) == 1 and re.search(
+        r"\b(?:summari[sz]e|summary|takeaways)\b|\bimportant\b.*\bcontrols\b", question, re.I
+    ):
+        sentences = list(dict.fromkeys(re.split(r"(?<=[.!?])\s+", sources[0]["passage"])))
+        if len(sentences) <= 5 and len(sources[0]["passage"]) <= 1500:
+            quotes = [normalize_quote(q) for claim in claims for q in claim["quotes"]]
+            return any(
+                not any(
+                    quote in normalize_quote(sentence) or normalize_quote(sentence) in quote
+                    for quote in quotes
+                )
+                for sentence in sentences
+                if len(sentence.strip()) >= 20
+            )
+    return False
 
 
 @router.get("/status")
@@ -270,8 +346,14 @@ async def ask(payload: Ask, request: Request):
                         result["timings"]["citation_alignment_repairs"] = repairs
                         claims = await run_in_threadpool(validate_claims, generated, sources)
                         initial_claims = claims
-                        if not generated.insufficient and (
-                            not claims or len(claims) != len(generated.claims)
+                        missing_coverage = missing_requested_coverage(question, sources, claims)
+                        if (generated.insufficient and generated.claims) or (
+                            not generated.insufficient
+                            and (
+                                not claims
+                                or len(claims) != len(generated.claims)
+                                or missing_coverage
+                            )
                         ):
                             result["timings"]["initial_generation"] = timing
                             result["timings"]["correction_attempted"] = True
@@ -279,6 +361,8 @@ async def ask(payload: Ask, request: Request):
                                 retrieval_query
                                 + "\nCitation correction: Produce fewer strictly supported claims. Each claim must cite exactly one supplied source and copy one short exact relevant quote. Do not add numbers absent from that quotation. Answer the original question; abstain if evidence is insufficient."
                                 + " Use the same subject and technical words as the quoted source sentence. Return one supported claim for each requested topic when evidence answers it. Match source labels to exact quotations."
+                                + " Set insufficient=false when returning supported claims; use insufficient=true only with an empty claims array. Quotes can start midway through a sentence but cannot omit or insert words inside them."
+                                + " Cover EVERY explicitly requested topic using its relevant source. For a short excerpt summary cover each distinct stated control; avoid repeating one control instead of covering another. Copy complete supported sentences when useful."
                             )
                             task = asyncio.create_task(
                                 asyncio.wait_for(llm.generate(correction, sources), timeout=30)
@@ -312,6 +396,10 @@ async def ask(payload: Ask, request: Request):
                             if len(claims) != len(generated.claims):
                                 result["warning"] = (
                                     "Only statements that passed source verification are shown; some generated details were omitted."
+                                )
+                            if missing_requested_coverage(question, sources, claims):
+                                result["warning"] = (
+                                    "Supported partial answer: some requested topics or excerpt details were not covered. Check the cited passages."
                                 )
                         else:
                             result["warning"] = (

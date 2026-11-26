@@ -352,3 +352,130 @@ def test_filename_search_uses_current_trusted_names_within_scope(private):
         json={"query": "old-name", "mode": "filename", "filenames": {own: "renamed-policy.txt"}},
     )
     assert response.json()["sources"] == []
+
+
+def test_original_short_model_keyword_query_is_recovered(private):
+    from pathlib import Path
+
+    client, h = private
+    text = (Path(__file__).resolve().parents[2] / "samples/cloud-stage-canary.txt").read_text()
+    key = add(client, h, text, "approved-canary.txt")
+    response = client.post(
+        "/api/ai/search",
+        headers={**h, "x-file-scope": json.dumps([key])},
+        json={"query": "MiniLM Qwen local laptop", "mode": "hybrid"},
+    )
+    assert response.status_code == 200
+    assert {row["file_id"] for row in response.json()["sources"]} == {key}
+
+
+def test_distinct_claims_from_same_quote_are_not_discarded():
+    from app.rag import merge_verified_claims
+
+    quote = "Evacuate to the western assembly point and contact coordinator Laila Chen."
+    one = {"text": "The assembly point is western.", "citations": [1], "quotes": [quote]}
+    two = {"text": "The coordinator is Laila Chen.", "citations": [1], "quotes": [quote]}
+    assert merge_verified_claims([one], [two, one]) == [one, two]
+
+
+def test_changed_security_trigger_is_rejected():
+    from app.rag import validate_claims
+    from app.llm import GroundedAnswer
+
+    quote = "Reusing an old refresh token revokes its token family."
+    answer = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Revoking an old refresh token revokes its token family.",
+                    "sources": [1],
+                    "quotes": [quote],
+                }
+            ],
+        }
+    )
+    assert validate_claims(answer, [{"citation": 1, "passage": quote}]) == []
+
+
+def test_source_validation_handles_plural_and_adverb_inflections(private):
+    from app.rag import validate_claims
+    from app.llm import GroundedAnswer
+
+    quote = "Its annual renewable energy target is 73 megawatt hours."
+    answer = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Project Aurora targets 73 megawatt hours of renewable energy annually.",
+                    "sources": [1],
+                    "quotes": [quote],
+                }
+            ],
+        }
+    )
+    assert len(validate_claims(answer, [{"citation": 1, "passage": quote}])) == 1
+    answer.claims[0].text = "Project Aurora targets 99 megawatt hours of renewable energy annually."
+    assert validate_claims(answer, [{"citation": 1, "passage": quote}]) == []
+
+
+def test_unstated_security_purpose_is_rejected(private):
+    from app.rag import validate_claims
+    from app.llm import GroundedAnswer
+
+    quote = "Logout immediately revokes the active session."
+    answer = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Logout immediately revokes the active session to secure user accounts.",
+                    "sources": [1],
+                    "quotes": [quote],
+                }
+            ],
+        }
+    )
+    assert validate_claims(answer, [{"citation": 1, "passage": quote}]) == []
+
+
+def test_explicit_complementary_topics_require_coverage():
+    from app.rag import missing_requested_coverage
+
+    sources = [
+        {
+            "citation": 1,
+            "file_id": "one",
+            "passage": "MiniLM embeddings and Qwen generation run on the local laptop.",
+        },
+        {
+            "citation": 2,
+            "file_id": "two",
+            "passage": "The Borealis synthetic access number is 914.",
+        },
+    ]
+    one = {"text": "MiniLM runs locally.", "citations": [1], "quotes": [sources[0]["passage"]]}
+    two = {
+        "text": "The Borealis access number is 914.",
+        "citations": [2],
+        "quotes": [sources[1]["passage"]],
+    }
+    question = "Explain local MiniLM/Qwen processing and the Borealis synthetic access number."
+    assert missing_requested_coverage(question, sources, [one])
+    assert not missing_requested_coverage(question, sources, [one, two])
+
+
+def test_exact_technical_identifier_can_rescue_hybrid_but_not_escape_scope(private):
+    client, h = private
+    own = add(client, h, "The error code NV-409 indicates a revision conflict.", "errors.txt")
+    add(client, h, "The error code NV-999 is private.", "private-errors.txt")
+    scoped = {**h, "x-file-scope": json.dumps([own])}
+    found = client.post(
+        "/api/ai/search", headers=scoped, json={"query": "NV-409", "mode": "hybrid"}
+    )
+    assert {s["file_id"] for s in found.json()["sources"]} == {own}
+    denied = client.post(
+        "/api/ai/search", headers=scoped, json={"query": "NV-999", "mode": "exact"}
+    )
+    assert denied.json()["sources"] == []

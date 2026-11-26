@@ -1,0 +1,544 @@
+{
+  "description": "Synthetic local-only fixtures; labels defined before tuning. Folder scope represented by server-resolved authorized file ID subset.",
+  "documents": {
+    "processing": {
+      "filename": "local-processing.txt",
+      "text": "Original documents are stored privately in Amazon S3. MiniLM embeddings and Qwen answer generation run on the local laptop. Local semantic retrieval does not need an AWS vector query.",
+      "authorized": true
+    },
+    "borealis": {
+      "filename": "borealis-access.txt",
+      "text": "Project Borealis uses violet balloons. Its synthetic access number is 914. The Borealis review is scheduled for 18 March 2027.",
+      "authorized": true
+    },
+    "north": {
+      "filename": "north-retention.txt",
+      "text": "Policy North retains audit logs for 30 days. North requires two reviewers before publishing a release. The North retention policy was approved on 5 January 2026.",
+      "authorized": true
+    },
+    "south": {
+      "filename": "south-retention.txt",
+      "text": "Policy South retains audit logs for 90 days. South requires three reviewers before publishing a release. The South retention policy was approved on 9 February 2026.",
+      "authorized": true
+    },
+    "water": {
+      "filename": "water-conservation.txt",
+      "text": "Rainwater harvesting collects rain from rooftops in storage tanks. Drip irrigation delivers water directly to plant roots and reduces evaporation. Repairing leaking taps prevents household water waste.",
+      "authorized": true
+    },
+    "solar": {
+      "filename": "aurora-energy.txt",
+      "text": "Project Aurora uses photovoltaic panels to turn sunlight into electricity. Its annual renewable energy target is 73 megawatt hours. Battery storage supplies power after sunset.",
+      "authorized": true
+    },
+    "expense": {
+      "filename": "travel-expenses.txt",
+      "text": "Employees must submit travel expense claims within 14 days of returning. Each claim must include itemized receipts. The reimbursement limit is 450 credits per journey.",
+      "authorized": true
+    },
+    "backup": {
+      "filename": "backup-procedure.txt",
+      "text": "A full database backup runs every Sunday at 02:00 UTC. Incremental backups run nightly. Recovery snapshots are retained for 21 days. The recovery time objective is four hours.",
+      "authorized": true
+    },
+    "security": {
+      "filename": "session-security.txt",
+      "text": "Refresh tokens rotate after use. Reusing an old refresh token revokes its token family. Logout immediately revokes the active session. Passwords are stored as salted hashes.",
+      "authorized": true
+    },
+    "queue": {
+      "filename": "queue-recovery.txt",
+      "text": "The ingestion queue visibility timeout is 180 seconds. Failed messages move to the dead-letter queue after three receives. Operators inspect failed messages before any approved replay. Never purge unknown messages.",
+      "authorized": true
+    },
+    "api": {
+      "filename": "api-reference.txt",
+      "text": "The status endpoint is GET /status and requires AWS_IAM authentication with SigV4 signing. Unsigned status requests return HTTP 403. The client error code NV-409 indicates a revision conflict.",
+      "authorized": true
+    },
+    "release": {
+      "filename": "release-checklist.txt",
+      "text": "Release Cedar version 2.4.1 has a deadline of 12 April 2027. The release owner is Mira Patel. The final checklist requires passing tests, a verified backup and approval by two reviewers.",
+      "authorized": true
+    },
+    "library": {
+      "filename": "library-rules.txt",
+      "text": "Library books may be borrowed for 28 days. Students may renew each book once if nobody has reserved it. Lost books must be reported to the circulation desk.",
+      "authorized": true
+    },
+    "network": {
+      "filename": "network-guide.txt",
+      "text": "DNS translates domain names into IP addresses. TLS encrypts data in transit. An HTTP 429 response means the client exceeded the request rate limit.",
+      "authorized": true
+    },
+    "food": {
+      "filename": "cafe-menu.txt",
+      "text": "The campus cafe serves lentil soup on Tuesdays and vegetable pasta on Fridays. Breakfast is available from 08:00 until 10:30. A reusable cup earns a 10 percent discount.",
+      "authorized": true
+    },
+    "long": {
+      "filename": "observatory-handbook.txt",
+      "text": "Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. \nFinal emergency procedure: evacuate to the western assembly point and contact coordinator Laila Chen on extension 682.",
+      "authorized": true
+    },
+    "hidden": {
+      "filename": "private-cedar-budget.txt",
+      "text": "The confidential Cedar budget is 81270 credits. This document belongs to an unrelated account and must not enter authorized retrieval.",
+      "authorized": false
+    }
+  },
+  "search": [
+    {
+      "id": "recovered",
+      "query": "MiniLM Qwen local laptop",
+      "expected": [
+        "processing"
+      ],
+      "category": "technical_abbreviation",
+      "split": "tuning"
+    },
+    {
+      "id": "s02",
+      "query": "Where are document embeddings and language model answers computed?",
+      "expected": [
+        "processing"
+      ],
+      "category": "paraphrase",
+      "split": "tuning"
+    },
+    {
+      "id": "s03",
+      "query": "How can a garden use less water?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "tuning"
+    },
+    {
+      "id": "s04",
+      "query": "What converts sunlight into usable power?",
+      "expected": [
+        "solar"
+      ],
+      "category": "synonym",
+      "split": "tuning"
+    },
+    {
+      "id": "s05",
+      "query": "What happens when an old refresh credential is reused?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "tuning"
+    },
+    {
+      "id": "s06",
+      "query": "How long do expense claims remain eligible after a trip?",
+      "expected": [
+        "expense"
+      ],
+      "category": "paraphrase",
+      "split": "tuning"
+    },
+    {
+      "id": "s07",
+      "query": "What is the maximum time to recover the database?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "tuning"
+    },
+    {
+      "id": "s08",
+      "query": "How are failed ingestion events isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "paraphrase",
+      "split": "tuning"
+    },
+    {
+      "id": "s09",
+      "query": "MiniLM embeddings",
+      "expected": [
+        "processing"
+      ],
+      "category": "exact",
+      "split": "held_out"
+    },
+    {
+      "id": "s10",
+      "query": "What is the Borealis synthetic access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "numeric",
+      "split": "held_out"
+    },
+    {
+      "id": "s11",
+      "query": "When is the Borealis review?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "date",
+      "split": "held_out"
+    },
+    {
+      "id": "s12",
+      "query": "What is the log retention period for Policy North?",
+      "expected": [
+        "north"
+      ],
+      "category": "similar_document",
+      "split": "held_out"
+    },
+    {
+      "id": "s13",
+      "query": "What is the log retention period for Policy South?",
+      "expected": [
+        "south"
+      ],
+      "category": "similar_document",
+      "split": "held_out"
+    },
+    {
+      "id": "s14",
+      "query": "Compare North and South audit log retention.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "conflicting",
+      "split": "held_out"
+    },
+    {
+      "id": "s15",
+      "query": "How many reviewers does South require?",
+      "expected": [
+        "south"
+      ],
+      "category": "numeric",
+      "split": "held_out"
+    },
+    {
+      "id": "s16",
+      "query": "Which review policy was approved in January?",
+      "expected": [
+        "north"
+      ],
+      "category": "date",
+      "split": "held_out"
+    },
+    {
+      "id": "s17",
+      "query": "How does rooftop precipitation get collected?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s18",
+      "query": "What watering method avoids evaporation?",
+      "expected": [
+        "water"
+      ],
+      "category": "synonym",
+      "split": "held_out"
+    },
+    {
+      "id": "s19",
+      "query": "How do households avoid losing water from taps?",
+      "expected": [
+        "water"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s20",
+      "query": "How much renewable electricity should Aurora produce each year?",
+      "expected": [
+        "solar"
+      ],
+      "category": "numeric",
+      "split": "held_out"
+    },
+    {
+      "id": "s21",
+      "query": "How can Aurora provide electricity at night?",
+      "expected": [
+        "solar"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s22",
+      "query": "What paperwork is needed for travel reimbursement?",
+      "expected": [
+        "expense"
+      ],
+      "category": "synonym",
+      "split": "held_out"
+    },
+    {
+      "id": "s23",
+      "query": "What is the journey reimbursement cap?",
+      "expected": [
+        "expense"
+      ],
+      "category": "numeric",
+      "split": "held_out"
+    },
+    {
+      "id": "s24",
+      "query": "When does the weekly complete database snapshot run?",
+      "expected": [
+        "backup"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s25",
+      "query": "How long are recovery snapshots retained?",
+      "expected": [
+        "backup"
+      ],
+      "category": "similar_document",
+      "split": "held_out"
+    },
+    {
+      "id": "s26",
+      "query": "What does signing out do to a session?",
+      "expected": [
+        "security"
+      ],
+      "category": "synonym",
+      "split": "held_out"
+    },
+    {
+      "id": "s27",
+      "query": "How are stored passwords protected?",
+      "expected": [
+        "security"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s28",
+      "query": "How many receives before a failed queue message is isolated?",
+      "expected": [
+        "queue"
+      ],
+      "category": "numeric",
+      "split": "held_out"
+    },
+    {
+      "id": "s29",
+      "query": "What is the ingestion message visibility timeout?",
+      "expected": [
+        "queue"
+      ],
+      "category": "technical",
+      "split": "held_out"
+    },
+    {
+      "id": "s30",
+      "query": "How is the cloud status endpoint authenticated?",
+      "expected": [
+        "api"
+      ],
+      "category": "technical",
+      "split": "held_out"
+    },
+    {
+      "id": "s31",
+      "query": "NV-409",
+      "expected": [
+        "api"
+      ],
+      "category": "identifier",
+      "split": "held_out"
+    },
+    {
+      "id": "s32",
+      "query": "What does HTTP 429 mean?",
+      "expected": [
+        "network"
+      ],
+      "category": "identifier",
+      "split": "held_out"
+    },
+    {
+      "id": "s33",
+      "query": "Who owns the Cedar release?",
+      "expected": [
+        "release"
+      ],
+      "category": "name",
+      "split": "held_out"
+    },
+    {
+      "id": "s34",
+      "query": "When is version 2.4.1 due?",
+      "expected": [
+        "release"
+      ],
+      "category": "identifier",
+      "split": "held_out"
+    },
+    {
+      "id": "s35",
+      "query": "What must happen before Cedar can be released?",
+      "expected": [
+        "release"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s36",
+      "query": "Can a student renew a borrowed book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s37",
+      "query": "What should I do if I lose a library book?",
+      "expected": [
+        "library"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s38",
+      "query": "What translates website names into network addresses?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out"
+    },
+    {
+      "id": "s39",
+      "query": "How is information encrypted while travelling over the network?",
+      "expected": [
+        "network"
+      ],
+      "category": "synonym",
+      "split": "held_out"
+    },
+    {
+      "id": "s40",
+      "query": "What vegetarian lunch is served on Friday?",
+      "expected": [
+        "food"
+      ],
+      "category": "paraphrase",
+      "split": "held_out"
+    },
+    {
+      "id": "s41",
+      "query": "When does breakfast finish?",
+      "expected": [
+        "food"
+      ],
+      "category": "time",
+      "split": "held_out"
+    },
+    {
+      "id": "s42",
+      "query": "Who should observatory staff call during evacuation?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out"
+    },
+    {
+      "id": "s43",
+      "query": "Where should observatory staff assemble in an emergency?",
+      "expected": [
+        "long"
+      ],
+      "category": "long_document_end",
+      "split": "held_out"
+    },
+    {
+      "id": "s44",
+      "query": "Explain local AI processing and the Borealis access number.",
+      "expected": [
+        "processing",
+        "borealis"
+      ],
+      "category": "multi_document",
+      "split": "held_out"
+    },
+    {
+      "id": "s45",
+      "query": "What is the Antarctic rocket launch date?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out"
+    },
+    {
+      "id": "s46",
+      "query": "What is the cure for dragon fever?",
+      "expected": [],
+      "category": "unrelated",
+      "split": "held_out"
+    },
+    {
+      "id": "s47",
+      "query": "What is the confidential Cedar budget?",
+      "expected": [],
+      "category": "unauthorized",
+      "split": "held_out"
+    },
+    {
+      "id": "s48",
+      "query": "What is the Borealis access number?",
+      "expected": [
+        "borealis"
+      ],
+      "category": "selected_document",
+      "split": "held_out",
+      "scope": [
+        "borealis"
+      ]
+    },
+    {
+      "id": "s49",
+      "query": "Compare North and South reviewer requirements.",
+      "expected": [
+        "north",
+        "south"
+      ],
+      "category": "folder_scope",
+      "split": "held_out",
+      "scope": [
+        "north",
+        "south"
+      ]
+    },
+    {
+      "id": "s50",
+      "query": "How many moons does the fictional planet Zorblax have?",
+      "expected": [],
+      "category": "no_evidence",
+      "split": "held_out"
+    }
+  ]
+}

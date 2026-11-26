@@ -1,0 +1,21 @@
+{
+  "observed_at": "2026-11-26T17:41:14.490705+00:00",
+  "npm_production_advisories": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "python_packages": 75,
+  "python_known_advisories": 0,
+  "python_skipped": [
+    {
+      "name": "torch",
+      "reason": "Dependency not found on PyPI and could not be audited: torch (2.15.0+cpu)"
+    }
+  ],
+  "python_compatibility": "75 installed packages compatible",
+  "limitation": "Advisory matching is not a security certification. CPU-specific torch build not found on PyPI and not covered by that scan."
+}

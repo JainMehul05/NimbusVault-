@@ -4,6 +4,8 @@ Location: `C:\Users\hp\Downloads\nimbus vault final`. Local branch: `codex/nimbu
 
 ## Daily operation
 
+The expanded final results and full requested handover checklist are in [the continuation release report](CONTINUATION_RELEASE_REPORT.md). Current totals:438 automated tests; 60-query local search evaluation; 24-question real Qwen evaluation. See the reports for actual limits, especially partial excerpt summaries and advisory-scan coverage.
+
 1. Start Docker Desktop. In this folder run `npm start`.
 2. Run `npm run warmup` for an upcoming demonstration. Open http://127.0.0.1:3100.
 3. Register/sign in with your own NimbusVault account. Existing donor documents have no assigned owner and do not appear automatically.
@@ -13,6 +15,8 @@ Location: `C:\Users\hp\Downloads\nimbus vault final`. Local branch: `codex/nimbu
 Ports are loopback only: main application 3100, private intelligence 8101, PostgreSQL 55432, Ollama 11434. The database container is `nimbusvault-final-db`. Startup refuses occupied application ports and does not kill unrelated processes. The PID journal includes process start times. The main URL is printed only after both API and authenticated Python health checks pass.
 
 ## Configuration and recovery
+
+Infrastructure diagnostics require a designated administrator. Evaluation used an isolated synthetic administrator; its credentials remain only in private `.runtime/rehearsal-users.json`, not this guide or source. New personal accounts are not automatically promoted or assigned legacy documents. Administrator access still does not grant document ownership.
 
 `.env`, `backend/.env`, `intelligence/.env`, `.runtime`, `data`, database volumes and `.private-backup` are private, ignored runtime state. Do not attach them to an issue, commit them or copy them into a public archive. Model locations live in `.runtime/local-ai.json` and `EMBEDDING_CACHE_DIR`; the current setup reuses existing donor model caches read-only. Application code and databases are independent.
 
@@ -40,3 +44,9 @@ Code rollback uses local Git checkpoints on `codex/nimbusvault-integration`. Dat
 - Warm existing models, test a non-sensitive local fixture, check citations and unavailable-model fallback. Do not automatically replay cloud rehearsals.
 
 Troubleshooting: inspect local `.runtime/*-error.log` without publishing secrets or user content. A slow first answer may be model load; warmup is explicit. If a query is unsupported or model claims fail validation, use the clearly labeled fallback and inspect citations. More detail is in [verification](VERIFICATION_FINAL.md).
+
+## Safe test commands
+
+Never run inherited database/file suites against the runtime database. On this configured laptop use `scripts/test-backend-local.ps1`: it checks the isolated database URL and LocalStack image/loopback endpoint, recreates only the disposable localhost bucket if needed, applies safe test migrations and runs the full backend suite. The test container must already be the identified `nimbusvault-final-test-s3` LocalStack instance on127.0.0.1:4567. This runner never targets AWS.
+
+For Python, change to `intelligence` and run `.venv/Scripts/python.exe -m pytest tests -q -p no:cacheprovider`. Component tests: `npm run test:frontend`. Static infrastructure: `npm test --workspace=infra`. Do not run deploy commands. Benchmarks and current evidence are documented in their separate reports; do not automatically replay cloud rehearsal/probe scripts during routine tests.

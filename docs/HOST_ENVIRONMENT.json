@@ -1,0 +1,16 @@
+{
+  "cpu": "13th Gen Intel(R) Core(TM) i5-13420H",
+  "disk_free_gib": [
+    {
+      "free": 30.57,
+      "drive": "C"
+    },
+    {
+      "free": 240.28,
+      "drive": "D"
+    }
+  ],
+  "observed_at": "2026-11-26T17:33:58.0454308Z",
+  "ram_total_gib": 15.65,
+  "ram_free_gib": 1.28
+}

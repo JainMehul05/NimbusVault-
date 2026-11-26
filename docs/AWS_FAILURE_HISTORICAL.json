@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-11-24T16:37:55.012769+00:00",
+  "deployed_lambda_partial_failure_verified": true,
+  "original_objects_changed": false,
+  "event_mapping_paused": true,
+  "dlq_redrive": "live_verified",
+  "synthetic_receive_counts": [
+    1,
+    2,
+    3
+  ],
+  "dlq_test_message_retained": true,
+  "redrive_test_driver": "bounded local SQS receives; deployed Lambda rejection was tested separately",
+  "workflow_catch_and_terminal_failure": "live_verified",
+  "deployed_duplicate_event_idempotency": "live_verified",
+  "duplicate_created_new_execution": false
+}

@@ -114,6 +114,9 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
     dense = sorted(zip(indices, scores), key=lambda p: float(p[1]), reverse=True)[:40]
     lexical = []
     tokens = list(dict.fromkeys(terms(question)))[:24]
+    identifier_anchors = re.findall(
+        r"\b(?=[\w.-]*[a-z])(?=[\w.-]*\d)[a-z0-9]+(?:[-_.][a-z0-9]+)+\b", question.casefold()
+    )
     if tokens and mode != "semantic":
         expression = " OR ".join('"' + t.replace('"', '""') + '"' for t in tokens)
         scoped_files = sorted({r["file_id"] for r in rows})
@@ -142,9 +145,30 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
     for rank, (i, score) in enumerate(dense, 1):
         row = rows[i]
         overlap = len(set(tokens) & set(terms(row["text"])))
+        # Compact keyword queries often embed poorly despite several exact rare
+        # anchors (for example model names). Full lexical coverage is its own
+        # hybrid evidence signal; do not make exact anchors depend on a dense
+        # threshold. Dense-only mode stays unchanged.
+        anchored_keywords = (
+            mode == "hybrid"
+            and 3 <= len(tokens) <= 8
+            and overlap >= 3
+            and overlap == len(tokens)
+            and row["id"] in lexical_rank
+        )
         # Lexical matches alone must not manufacture strong evidence from common words.
+        exact_identifier = (
+            mode == "hybrid"
+            and bool(identifier_anchors)
+            and all(
+                re.search(r"(?<!\w)" + re.escape(identifier) + r"(?!\w)", row["text"].casefold())
+                for identifier in identifier_anchors
+            )
+        )
         if (
             i not in intent_eligible
+            and not anchored_keywords
+            and not exact_identifier
             and float(score) < relative_floor
             and not (overlap >= 2 and float(score) >= max(0.18, relative_floor - 0.05))
         ):
@@ -153,7 +177,26 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
             1 / (60 + lexical_rank[row["id"]]) if row["id"] in lexical_rank else 0
         )
         ranking.append({**row, "similarity": float(score), "rrf": rrf, "lexical_terms": overlap})
-    ranking.sort(key=lambda r: r["rrf"], reverse=True)
+    ranking.sort(key=lambda r: (r["rrf"], r["lexical_terms"], r["similarity"]), reverse=True)
+    excerpt_summary = (
+        mode == "hybrid"
+        and file_ids is not None
+        and len(file_ids) == 1
+        and bool(
+            re.search(
+                r"\b(?:summari[sz]e|summary|takeaways)\b|\bimportant\b.*\b(?:controls|points)\b",
+                question,
+                re.I,
+            )
+        )
+    )
+    if excerpt_summary and not ranking:
+        # A selected document summary is a bounded excerpt task, not a similarity
+        # question. All candidates still belong to the single authorized file.
+        ranking = [
+            {**row, "similarity": float(all_scores[i]), "rrf": 0.0, "lexical_terms": 0}
+            for i, row in enumerate(rows)
+        ]
     selected = []
     per_file = {}
     seen = set()
@@ -198,5 +241,6 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
         "candidate_chunks": len(indices),
         "selected_chunks": len(sources),
         "context_characters": budget,
+        "summary_scope": "retrieved_excerpts" if excerpt_summary else None,
         "retrieval_backend": provider,
     }

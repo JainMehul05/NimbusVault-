@@ -1,9 +1,11 @@
 """Loopback-only inference. No model tools, credentials, remote APIs or cloud mutations."""
 
 import json
+import re
 import httpx
 from pydantic import BaseModel, Field
 from .config import settings
+from .retrieval import terms
 
 
 class Claim(BaseModel):
@@ -43,6 +45,19 @@ Adjacent facts do not establish a causal, purpose, ownership or implementation r
 Do not connect two sentences using 'for', 'to', or 'because' unless the evidence states that relationship.
 Prefer copying a complete supported sentence over adding an inferred connection."""
 SYSTEM += "\nState the value or mechanism actually requested for each topic. An unrelated fact about the same subject does not answer that question."
+SYSTEM += """\nFor a factual question, include the requested value and its unit, named subject or date.
+For a question with two requested attributes, cover both if explicitly supplied. A long quotation
+can support separate claims about different facts. For summaries cover the principal stated controls
+or steps within the supplied excerpts; do not claim full-document coverage. Copy the source's wording
+for technical mechanisms and units. If the requested attribute (such as a budget) is absent, abstain
+even when the same project name occurs. Never substitute a different attribute or number."""
+SYSTEM += """\nExample of missing evidence: a passage gives a product release deadline and its owner,
+but the user asks its price. Correct output is {"insufficient":true,"claims":[]}.
+Do not answer with the release deadline or owner. They do not answer the price question.
+Preserve triggering actions exactly: reusing a token and revoking a token are different events.
+For an excerpt summary, include up to five distinct important controls if the evidence states them.
+For an explanation, include the explicitly stated outcome as well as its mechanism."""
+SYSTEM += "\nQuotes may start midway through a sentence but cannot omit or insert words inside them. Set insufficient=false when providing supported claims; insufficient=true requires an empty claims array. Omit filler such as 'ensuring security' unless stated in the quote."
 
 
 async def status():
@@ -71,13 +86,41 @@ async def status():
 
 
 async def generate(question, sources):
+    actual_question = question.split("\nCitation correction:")[0]
+    topics = []
+    parts = re.split(r"\s+(?:and|versus|vs\.?)\s+|;\s*", actual_question, flags=re.I)
+    if len(parts) > 1:
+        for part in parts[:3]:
+            if len(terms(part)) < 2:
+                continue
+            ranked = sorted(
+                sources,
+                key=lambda source: len(set(terms(part)) & set(terms(source["passage"]))),
+                reverse=True,
+            )
+            if ranked and len(set(terms(part)) & set(terms(ranked[0]["passage"]))) >= 2:
+                topics.append(
+                    {"requested_topic": part.strip(), "candidate_source": ranked[0]["citation"]}
+                )
+    summary_points = []
+    if len(sources) == 1 and re.search(
+        r"\b(?:summari[sz]e|summary|takeaways)\b|\bimportant\b.*\bcontrols\b", actual_question, re.I
+    ):
+        sentences = list(dict.fromkeys(re.split(r"(?<=[.!?])\s+", sources[0]["passage"])))
+        if len(sentences) <= 5 and len(sources[0]["passage"]) <= 1500:
+            summary_points = sentences
     context = json.dumps(
         [
             {
                 "id": s["citation"],
                 "filename": s["filename"],
                 "section": s["section"],
-                "passage": s["passage"],
+                "passage": " ".join(dict.fromkeys(re.split(r"(?<=[.!?])\s+", s["passage"]))),
+                "relevant_sentences": sorted(
+                    dict.fromkeys(re.split(r"(?<=[.!?])\s+", s["passage"])),
+                    key=lambda sentence: len(set(terms(question)) & set(terms(sentence))),
+                    reverse=True,
+                )[:3],
             }
             for s in sources
         ],
@@ -90,7 +133,13 @@ async def generate(question, sources):
             {
                 "role": "user",
                 "content": json.dumps(
-                    {"question": question, "evidence": json.loads(context)}, ensure_ascii=False
+                    {
+                        "question": question,
+                        "requested_topics": topics,
+                        "short_excerpt_points": summary_points,
+                        "evidence": json.loads(context),
+                    },
+                    ensure_ascii=False,
                 ),
             },
         ],

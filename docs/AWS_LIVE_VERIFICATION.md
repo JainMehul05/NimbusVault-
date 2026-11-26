@@ -1,5 +1,7 @@
 # Actual final-application AWS verification
 
+Continuation evidence: the current read-only audit and [full acceptance matrix](AWS_ACCEPTANCE_MATRIX.md) supersede any implication that the initial14:51 configuration observations are continuously current. `AWS_DETAILED_READ_AUDIT.json` verified idle state and configuration at17:17UTC; `DEPLOYED_SOURCE_AUDIT.json` verified exact deployed Lambda bytes at17:21UTC. No additional cloud writes were performed. `AWS_FAILURE_HISTORICAL.json` preserves the genuine24November driver/rejection distinction.
+
 All times below are UTC on 26 November 2026. Evidence is from the final NimbusVault application or its guarded audit scripts, not merely copied donor reports. Exact resource identifiers remain in the private journal; the synthetic file UUID is a sanitized correlation reference.
 
 | Service | State / purpose | Actual operation and timestamp | Result / limitation |

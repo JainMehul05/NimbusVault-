@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-11-26T17:22:31.257706+00:00",
+  "query": "MiniLM Qwen local laptop",
+  "original_fixture_sha256": "5baf6e09227e3516c398a189c862e4fa3ca7f906542d9a7480d5b6eb610663f8",
+  "baseline_commit": "8d07eda",
+  "baseline_results": 0,
+  "repaired_results": 1,
+  "repaired_cosine": 0.17729973793029785,
+  "threshold_unchanged": 0.28,
+  "cause": "Whole-query cosine below original lexical rescue floor despite four exact anchors. Hybrid now accepts full scoped BM25 term coverage independently of dense similarity; dense-only threshold unchanged.",
+  "aws_calls": 0,
+  "isolated_synthetic_fixture": true
+}

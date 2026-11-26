@@ -1,0 +1,32 @@
+{
+  "observed_at": "2026-11-26T17:46:10.319Z",
+  "checks": [
+    {
+      "path": "/api/v1/ai/cloud",
+      "status": 403,
+      "expected": 403
+    },
+    {
+      "path": "/api/v1/files/ab7748dd-9c71-44bb-96d7-867d1c5c4e48/download",
+      "status": 404,
+      "expected": 404
+    },
+    {
+      "path": "/api/v1/ai/files/ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+      "status": 404,
+      "expected": 404
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "path": "/health",
+      "status": 401,
+      "expected": 401
+    }
+  ],
+  "result": "passed",
+  "cloud_mutations": 0
+}

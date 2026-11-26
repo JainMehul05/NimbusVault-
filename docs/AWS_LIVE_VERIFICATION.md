@@ -1,5 +1,7 @@
 # Actual final-application AWS verification
 
+> Independent audit update (27 November 2026): Independent read-only audit:FREE/ACTIVE,USD139.998443 at2026-11-26T18:02:54Z; deployed code/configuration retained; EventBridgeDISABLED/mappingDisabled; queue0, historicalDLQ1 preserved, no running workflows. No new cloud mutation or rehearsal. [Current service matrix](AWS_ACCEPTANCE_MATRIX.md) and [audit report](INDEPENDENT_AUDIT_REPORT.md#aws-service-by-service-evidence) separate prior native operations from current read-only evidence.
+
 Continuation evidence: the current read-only audit and [full acceptance matrix](AWS_ACCEPTANCE_MATRIX.md) supersede any implication that the initial14:51 configuration observations are continuously current. `AWS_DETAILED_READ_AUDIT.json` verified idle state and configuration at17:17UTC; `DEPLOYED_SOURCE_AUDIT.json` verified exact deployed Lambda bytes at17:21UTC. No additional cloud writes were performed. `AWS_FAILURE_HISTORICAL.json` preserves the genuine24November driver/rejection distinction.
 
 All times below are UTC on 26 November 2026. Evidence is from the final NimbusVault application or its guarded audit scripts, not merely copied donor reports. Exact resource identifiers remain in the private journal; the synthetic file UUID is a sanitized correlation reference.

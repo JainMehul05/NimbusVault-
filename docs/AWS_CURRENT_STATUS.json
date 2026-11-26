@@ -49,8 +49,10 @@
       }
     },
     "Step Functions": {
-      "status": "blocked",
-      "error": "ReadTimeoutError"
+      "status": "verified_read_only",
+      "state": "ACTIVE",
+      "observed_at": "2026-11-26T18:43:43.276609+00:00",
+      "prior_timeout_rechecked": true
     },
     "CloudFormation": {
       "status": "UPDATE_COMPLETE",

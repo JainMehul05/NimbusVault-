@@ -181,7 +181,7 @@ export function AskPage() {
             {scopeError && <span role="status">{scopeError}</span>}
             <Button variant="secondary" disabled={turns.some(t=>t.state==='loading')} onClick={() => { setConversationId(undefined); setTurns([]) }}>New conversation</Button>
             <Button variant="secondary" disabled={turns.some(t=>t.state==='loading')} onClick={() => aiApi.conversations().then(setHistory).catch(() => setCapsError('Conversation history is unavailable.'))}>History</Button>
-            {history.length > 0 && <select aria-label="Continue conversation" value={conversationId ?? ''} onChange={(e) => { void continueConversation(e.target.value) }} className="max-w-full border border-border bg-surface p-2"><option value="">New conversation</option>{history.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}</select>}
+            {history.length > 0 && <select aria-label="Continue conversation" disabled={turns.some(t=>t.state==='loading')} value={conversationId ?? ''} onChange={(e) => { void continueConversation(e.target.value) }} className="max-w-full border border-border bg-surface p-2"><option value="">New conversation</option>{history.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}</select>}
           </div>
           <div role="tablist" aria-label="AI tools" className="mb-5 flex border-b border-border">
             {tabs.map((t) => (

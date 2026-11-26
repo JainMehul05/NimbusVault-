@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-11-26T17:47:12.538Z",
+  "observed_at": "2026-11-26T18:41:40.169Z",
   "checks": [
     {
       "width": 360,
@@ -20,10 +20,14 @@
       "no_horizontal_overflow": true
     },
     {
+      "actual_BM25_keyword_badge": true,
+      "actual_exact_match_badge": true
+    },
+    {
       "actual_nested_folder_scope": true,
       "recovered_hybrid_query": true,
       "type_filter": true,
-      "measured_server_latency_ms": 49
+      "measured_server_latency_ms": 27
     },
     {
       "selected_document_summary_action": true

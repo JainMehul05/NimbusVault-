@@ -1,0 +1,142 @@
+{
+  "observed_at": "2026-11-26T18:29:42.882Z",
+  "indexed_fixture_persisted": true,
+  "original_conversation_persisted": true,
+  "account_persisted": true,
+  "aws_calls": 0,
+  "runs": [
+    {
+      "pair": 1,
+      "phase": "cold_model",
+      "total_ms": 6479,
+      "file_management_during_generation_ms": 38,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 39.41,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 6233591300,
+          "load_duration": 4458246100,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 406202000,
+          "eval_count": 106,
+          "eval_duration": 1349212000
+        },
+        "total_ms": 6428.53
+      }
+    },
+    {
+      "pair": 1,
+      "phase": "warm_model",
+      "total_ms": 1544,
+      "file_management_during_generation_ms": 40,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 6.24,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 1353998700,
+          "load_duration": 7456700,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 12994000,
+          "eval_count": 106,
+          "eval_duration": 1324914000
+        },
+        "total_ms": 1485.42
+      }
+    },
+    {
+      "pair": 2,
+      "phase": "cold_model",
+      "total_ms": 7019,
+      "file_management_during_generation_ms": 23,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 9.05,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 6733243200,
+          "load_duration": 4967906500,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 410991000,
+          "eval_count": 106,
+          "eval_duration": 1338061000
+        },
+        "total_ms": 6972.97
+      }
+    },
+    {
+      "pair": 2,
+      "phase": "warm_model",
+      "total_ms": 1513,
+      "file_management_during_generation_ms": 23,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 6.65,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 1351067100,
+          "load_duration": 4853200,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 12832000,
+          "eval_count": 106,
+          "eval_duration": 1323698000
+        },
+        "total_ms": 1474.95
+      }
+    },
+    {
+      "pair": 3,
+      "phase": "cold_model",
+      "total_ms": 6856,
+      "file_management_during_generation_ms": 21,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 8.45,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 6729863400,
+          "load_duration": 4972679900,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 406596000,
+          "eval_count": 106,
+          "eval_duration": 1329473000
+        },
+        "total_ms": 6800.06
+      }
+    },
+    {
+      "pair": 3,
+      "phase": "warm_model",
+      "total_ms": 1544,
+      "file_management_during_generation_ms": 23,
+      "mode": "generated",
+      "timings": {
+        "retrieval_ms": 6.16,
+        "citation_alignment_repairs": 0,
+        "generation": {
+          "total_duration": 1351848400,
+          "load_duration": 4410900,
+          "prompt_eval_count": 917,
+          "prompt_eval_duration": 13214000,
+          "eval_count": 106,
+          "eval_duration": 1323856000
+        },
+        "total_ms": 1494.94
+      }
+    }
+  ],
+  "result": "passed",
+  "summary": {
+    "cold_model": {
+      "runs": 3,
+      "median_ms": 6856,
+      "slowest_ms": 7019
+    },
+    "warm_model": {
+      "runs": 3,
+      "median_ms": 1544,
+      "slowest_ms": 1544
+    }
+  }
+}

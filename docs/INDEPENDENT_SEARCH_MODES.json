@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-11-26T18:26:29.659515+00:00",
+  "observed_at": "2026-11-26T18:36:40.766536+00:00",
   "isolated_new_synthetic_documents": true,
   "aws_calls": 0,
   "cases": [
@@ -8,7 +8,7 @@
       "query": "audit-runbook",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 7.3,
+      "latency_ms": 12.42,
       "passed": true
     },
     {
@@ -16,7 +16,7 @@
       "query": "private-runbook",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 7.9,
+      "latency_ms": 10.28,
       "passed": true
     },
     {
@@ -24,7 +24,7 @@
       "query": "absent-file",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 6.58,
+      "latency_ms": 11.85,
       "passed": true
     },
     {
@@ -32,7 +32,7 @@
       "query": "verified backup",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 6.23,
+      "latency_ms": 16.64,
       "passed": true
     },
     {
@@ -40,7 +40,7 @@
       "query": "45 minutes",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 6.72,
+      "latency_ms": 9.6,
       "passed": true
     },
     {
@@ -48,7 +48,7 @@
       "query": "TX-999",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 7.47,
+      "latency_ms": 10.05,
       "passed": true
     },
     {
@@ -56,7 +56,7 @@
       "query": "imaginary spacecraft",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 8.8,
+      "latency_ms": 9.89,
       "passed": true
     },
     {
@@ -64,7 +64,7 @@
       "query": "TX-713",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 9.28,
+      "latency_ms": 12.08,
       "passed": true
     },
     {
@@ -72,7 +72,7 @@
       "query": "repair window",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 8.93,
+      "latency_ms": 10.37,
       "passed": true
     },
     {
@@ -80,7 +80,7 @@
       "query": "TX-999",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 8.31,
+      "latency_ms": 13.75,
       "passed": true
     },
     {
@@ -88,7 +88,7 @@
       "query": "spacecraft",
       "expected_match": false,
       "actual_matches": 0,
-      "latency_ms": 6.4,
+      "latency_ms": 12.75,
       "passed": true
     },
     {
@@ -96,7 +96,7 @@
       "query": "How long may a repair take?",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 20.46,
+      "latency_ms": 36.29,
       "passed": true
     },
     {
@@ -104,7 +104,7 @@
       "query": "What must be checked before recovery?",
       "expected_match": true,
       "actual_matches": 1,
-      "latency_ms": 25.12,
+      "latency_ms": 31.59,
       "passed": true
     }
   ],

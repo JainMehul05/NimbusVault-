@@ -256,6 +256,11 @@ def history(conversation_id: str, request: Request):
     return rag.conversation_detail(conversation_id)
 
 
+@app.get("/api/ai/status")
+async def ai_status():
+    return await rag.ai_status()
+
+
 @app.post("/api/ai/search")
 async def search(request: Request):
     payload = await request.json()

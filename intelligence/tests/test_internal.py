@@ -57,6 +57,22 @@ def test_internal_requires_service_auth(private):
     client, _ = private
     assert client.get("/health").status_code == 401
     assert client.post("/api/ai/search", json={"query": "secret"}).status_code == 401
+    assert client.get("/api/ai/status").status_code == 401
+
+
+def test_private_busy_status_requires_actor_and_reports_lock(private, monkeypatch):
+    from app import rag
+
+    client, headers = private
+
+    async def status():
+        return {"available": True}
+
+    monkeypatch.setattr(rag.llm, "status", status)
+    assert client.get("/api/ai/status", headers={**headers, "x-actor-id": "invalid"}).status_code == 400
+    response = client.get("/api/ai/status", headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {"available": True, "busy": False}
 
 
 def test_forged_actor_rejected(private):

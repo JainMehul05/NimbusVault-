@@ -1,5 +1,7 @@
 # NimbusVault continuation release report
 
+> Independent audit update (27 November 2026): The independent audit supersedes the historical metrics below: **449 automated tests; 84-query search evaluation; original24/24 plus new16/16 strict Qwen acceptance; browser54+7**. Read [the independent audit report](INDEPENDENT_AUDIT_REPORT.md) for the current handover, fixes, AWS evidence, financial safeguards and limitations.
+
 Date: 26 November 2026. This report covers the existing local integration and the expanded continuation acceptance. No GitHub push or hosting deployment was performed.
 
 ## Location and commands

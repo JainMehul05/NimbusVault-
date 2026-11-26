@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-26T18:06:47.379185+00:00",
+  "started_at": "2026-11-26T18:38:18.801013+00:00",
   "label": "independent-lexical",
   "corpus_sha256": "c9e201c4abd568099b0f42bb9129fc87c2a73e47eefac75846b007f92d97d8d6",
   "model": "sentence-transformers/all-MiniLM-L6-v2",
@@ -19,14 +19,14 @@
         "processing"
       ],
       "scores": [
-        0.2715
+        -16.8602
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 25.92,
+      "latency_ms": 7.63,
       "unauthorized_leak": false
     },
     {
@@ -42,14 +42,14 @@
         "processing"
       ],
       "scores": [
-        0.5107
+        -3.9898
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 33.59,
+      "latency_ms": 4.89,
       "unauthorized_leak": false
     },
     {
@@ -66,15 +66,15 @@
         "security"
       ],
       "scores": [
-        0.5118,
-        0.0338
+        -4.9282,
+        -4.0651
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 32.55,
+      "latency_ms": 6.25,
       "unauthorized_leak": false
     },
     {
@@ -91,15 +91,15 @@
         "network"
       ],
       "scores": [
-        0.5939,
-        0.0113
+        -11.4899,
+        -3.3294
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.95,
+      "latency_ms": 5.17,
       "unauthorized_leak": false
     },
     {
@@ -115,14 +115,14 @@
         "security"
       ],
       "scores": [
-        0.6226
+        -9.0121
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.38,
+      "latency_ms": 4.7,
       "unauthorized_leak": false
     },
     {
@@ -141,17 +141,17 @@
         "queue"
       ],
       "scores": [
-        0.7597,
-        0.0624,
-        0.1206,
-        0.1263
+        -8.1816,
+        -2.772,
+        -2.7546,
+        -2.6706
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.53,
+      "latency_ms": 7.97,
       "unauthorized_leak": false
     },
     {
@@ -167,14 +167,14 @@
         "backup"
       ],
       "scores": [
-        0.6308
+        -7.9796
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 25.96,
+      "latency_ms": 6.77,
       "unauthorized_leak": false
     },
     {
@@ -190,14 +190,14 @@
         "queue"
       ],
       "scores": [
-        0.4819
+        -8.7953
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 24.87,
+      "latency_ms": 6.79,
       "unauthorized_leak": false
     },
     {
@@ -213,14 +213,14 @@
         "processing"
       ],
       "scores": [
-        0.3678
+        -7.9796
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.49,
+      "latency_ms": 6.19,
       "unauthorized_leak": false
     },
     {
@@ -236,14 +236,14 @@
         "borealis"
       ],
       "scores": [
-        0.6251
+        -17.7367
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 24.18,
+      "latency_ms": 5.83,
       "unauthorized_leak": false
     },
     {
@@ -259,14 +259,14 @@
         "borealis"
       ],
       "scores": [
-        0.5382
+        -9.2878
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.68,
+      "latency_ms": 5.51,
       "unauthorized_leak": false
     },
     {
@@ -283,15 +283,15 @@
         "south"
       ],
       "scores": [
-        0.733,
-        0.6493
+        -12.6209,
+        -7.2883
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 28.43,
+      "latency_ms": 5.37,
       "unauthorized_leak": false
     },
     {
@@ -308,15 +308,15 @@
         "north"
       ],
       "scores": [
-        0.7578,
-        0.639
+        -12.6209,
+        -7.2883
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.7,
+      "latency_ms": 6.58,
       "unauthorized_leak": false
     },
     {
@@ -334,15 +334,15 @@
         "south"
       ],
       "scores": [
-        0.6709,
-        0.674
+        -11.9077,
+        -11.9077
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.33,
+      "latency_ms": 6.54,
       "unauthorized_leak": false
     },
     {
@@ -360,16 +360,16 @@
         "release"
       ],
       "scores": [
-        0.5986,
-        0.4181,
-        0.2192
+        -8.0872,
+        -2.7546,
+        -2.6384
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.07,
+      "latency_ms": 9.4,
       "unauthorized_leak": false
     },
     {
@@ -388,17 +388,17 @@
         "queue"
       ],
       "scores": [
-        0.4832,
-        0.4943,
-        0.1332,
-        0.1709
+        -10.8204,
+        -6.7553,
+        -4.2245,
+        -2.6706
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.07,
+      "latency_ms": 12.34,
       "unauthorized_leak": false
     },
     {
@@ -414,14 +414,14 @@
         "api"
       ],
       "scores": [
-        -0.064
+        -3.9653
       ],
       "top1": false,
       "top3": false,
       "recall_at_3": 0.0,
       "reciprocal_rank": 0,
       "correct_abstention": null,
-      "latency_ms": 20.25,
+      "latency_ms": 13.53,
       "unauthorized_leak": false
     },
     {
@@ -437,14 +437,14 @@
         "water"
       ],
       "scores": [
-        0.514
+        -4.0397
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 24.01,
+      "latency_ms": 12.41,
       "unauthorized_leak": false
     },
     {
@@ -460,14 +460,14 @@
         "water"
       ],
       "scores": [
-        0.5183
+        -8.9678
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.6,
+      "latency_ms": 11.04,
       "unauthorized_leak": false
     },
     {
@@ -485,16 +485,16 @@
         "library"
       ],
       "scores": [
-        0.7333,
-        0.0929,
-        0.0297
+        -12.2724,
+        -3.3083,
+        -3.2467
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 26.07,
+      "latency_ms": 12.1,
       "unauthorized_leak": false
     },
     {
@@ -511,15 +511,15 @@
         "backup"
       ],
       "scores": [
-        0.6853,
-        0.0646
+        -8.1816,
+        -3.9898
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.42,
+      "latency_ms": 10.01,
       "unauthorized_leak": false
     },
     {
@@ -535,14 +535,14 @@
         "expense"
       ],
       "scores": [
-        0.5923
+        -8.1816
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.1,
+      "latency_ms": 8.77,
       "unauthorized_leak": false
     },
     {
@@ -558,14 +558,14 @@
         "expense"
       ],
       "scores": [
-        0.5837
+        -8.1816
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 25.57,
+      "latency_ms": 7.3,
       "unauthorized_leak": false
     },
     {
@@ -582,15 +582,15 @@
         "processing"
       ],
       "scores": [
-        0.6259,
-        0.1738
+        -7.2164,
+        -3.2266
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.77,
+      "latency_ms": 5.91,
       "unauthorized_leak": false
     },
     {
@@ -606,14 +606,14 @@
         "backup"
       ],
       "scores": [
-        0.7187
+        -12.8704
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 29.38,
+      "latency_ms": 5.0,
       "unauthorized_leak": false
     },
     {
@@ -630,15 +630,15 @@
         "api"
       ],
       "scores": [
-        0.4398,
-        0.1103
+        -4.0651,
+        -3.9653
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.94,
+      "latency_ms": 5.15,
       "unauthorized_leak": false
     },
     {
@@ -655,15 +655,15 @@
         "processing"
       ],
       "scores": [
-        0.3308,
-        0.1309
+        -7.3526,
+        -3.2266
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.6,
+      "latency_ms": 7.0,
       "unauthorized_leak": false
     },
     {
@@ -681,16 +681,16 @@
         "south"
       ],
       "scores": [
-        0.5768,
-        0.2101,
-        0.2005
+        -16.32,
+        -2.7546,
+        -2.7546
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.71,
+      "latency_ms": 5.63,
       "unauthorized_leak": false
     },
     {
@@ -706,14 +706,14 @@
         "queue"
       ],
       "scores": [
-        0.7944
+        -11.8234
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 25.37,
+      "latency_ms": 5.43,
       "unauthorized_leak": false
     },
     {
@@ -729,14 +729,14 @@
         "api"
       ],
       "scores": [
-        0.5518
+        -9.24
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.02,
+      "latency_ms": 5.67,
       "unauthorized_leak": false
     },
     {
@@ -752,14 +752,14 @@
         "api"
       ],
       "scores": [
-        0.2653
+        -3.9653
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 18.99,
+      "latency_ms": 5.56,
       "unauthorized_leak": false
     },
     {
@@ -776,15 +776,15 @@
         "api"
       ],
       "scores": [
-        0.6139,
-        0.3338
+        -7.4462,
+        -3.2068
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 26.74,
+      "latency_ms": 6.11,
       "unauthorized_leak": false
     },
     {
@@ -802,16 +802,16 @@
         "south"
       ],
       "scores": [
-        0.6129,
-        0.1795,
-        0.148
+        -6.4136,
+        -2.7546,
+        -2.7546
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 28.93,
+      "latency_ms": 5.83,
       "unauthorized_leak": false
     },
     {
@@ -827,14 +827,14 @@
         "release"
       ],
       "scores": [
-        0.5453
+        -3.8936
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 19.55,
+      "latency_ms": 5.8,
       "unauthorized_leak": false
     },
     {
@@ -855,19 +855,19 @@
         "queue"
       ],
       "scores": [
-        0.2097,
-        -0.0766,
-        0.6521,
-        0.2018,
-        0.1792,
-        0.18
+        -7.6298,
+        -3.3651,
+        -3.1489,
+        -2.7546,
+        -2.7546,
+        -2.6706
       ],
       "top1": false,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 0.3333333333333333,
       "correct_abstention": null,
-      "latency_ms": 25.13,
+      "latency_ms": 6.08,
       "unauthorized_leak": false
     },
     {
@@ -883,14 +883,14 @@
         "library"
       ],
       "scores": [
-        0.729
+        -12.0437
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 26.54,
+      "latency_ms": 9.5,
       "unauthorized_leak": false
     },
     {
@@ -906,14 +906,14 @@
         "library"
       ],
       "scores": [
-        0.6852
+        -12.0437
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.09,
+      "latency_ms": 6.94,
       "unauthorized_leak": false
     },
     {
@@ -930,15 +930,15 @@
         "solar"
       ],
       "scores": [
-        0.4237,
-        -0.0037
+        -15.6799,
+        -3.3083
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 26.03,
+      "latency_ms": 8.83,
       "unauthorized_leak": false
     },
     {
@@ -957,7 +957,7 @@
       "recall_at_3": 0.0,
       "reciprocal_rank": 0,
       "correct_abstention": null,
-      "latency_ms": 23.63,
+      "latency_ms": 10.52,
       "unauthorized_leak": false
     },
     {
@@ -976,7 +976,7 @@
       "recall_at_3": 0.0,
       "reciprocal_rank": 0,
       "correct_abstention": null,
-      "latency_ms": 22.88,
+      "latency_ms": 12.24,
       "unauthorized_leak": false
     },
     {
@@ -992,14 +992,14 @@
         "food"
       ],
       "scores": [
-        0.3446
+        -3.9653
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.53,
+      "latency_ms": 15.84,
       "unauthorized_leak": false
     },
     {
@@ -1015,15 +1015,15 @@
         "long"
       ],
       "scores": [
-        0.2537,
-        0.2599
+        -0.7138,
+        -0.7138
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 32.35,
+      "latency_ms": 12.46,
       "unauthorized_leak": false
     },
     {
@@ -1039,15 +1039,15 @@
         "long"
       ],
       "scores": [
-        0.5503,
-        0.3776
+        -4.0559,
+        -0.7138
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.83,
+      "latency_ms": 12.1,
       "unauthorized_leak": false
     },
     {
@@ -1065,15 +1065,15 @@
         "processing"
       ],
       "scores": [
-        0.5835,
-        0.1817
+        -13.5123,
+        -4.8909
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 51.18,
+      "latency_ms": 9.97,
       "unauthorized_leak": false
     },
     {
@@ -1090,7 +1090,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 18.57,
+      "latency_ms": 7.52,
       "unauthorized_leak": false
     },
     {
@@ -1107,7 +1107,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 22.28,
+      "latency_ms": 6.57,
       "unauthorized_leak": false
     },
     {
@@ -1121,14 +1121,14 @@
         "release"
       ],
       "scores": [
-        0.475
+        -3.1489
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 23.65,
+      "latency_ms": 6.68,
       "unauthorized_leak": false
     },
     {
@@ -1147,14 +1147,14 @@
         "borealis"
       ],
       "scores": [
-        0.6113
+        -13.5123
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.25,
+      "latency_ms": 6.4,
       "unauthorized_leak": false
     },
     {
@@ -1176,15 +1176,15 @@
         "south"
       ],
       "scores": [
-        0.4642,
-        0.4833
+        -5.3327,
+        -5.3327
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.47,
+      "latency_ms": 5.68,
       "unauthorized_leak": false
     },
     {
@@ -1201,7 +1201,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 23.65,
+      "latency_ms": 4.86,
       "unauthorized_leak": false
     },
     {
@@ -1217,14 +1217,14 @@
         "water"
       ],
       "scores": [
-        0.4732
+        -13.0075
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.59,
+      "latency_ms": 6.06,
       "unauthorized_leak": false
     },
     {
@@ -1243,17 +1243,17 @@
         "release"
       ],
       "scores": [
-        0.1254,
-        0.5811,
-        0.0724,
-        0.0168
+        -7.2612,
+        -4.0908,
+        -3.9653,
+        -3.1489
       ],
       "top1": false,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 0.5,
       "correct_abstention": null,
-      "latency_ms": 27.95,
+      "latency_ms": 5.24,
       "unauthorized_leak": false
     },
     {
@@ -1269,14 +1269,14 @@
         "security"
       ],
       "scores": [
-        0.68
+        -17.1422
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.23,
+      "latency_ms": 5.43,
       "unauthorized_leak": false
     },
     {
@@ -1292,14 +1292,14 @@
         "backup"
       ],
       "scores": [
-        0.6104
+        -19.9489
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 24.96,
+      "latency_ms": 5.39,
       "unauthorized_leak": false
     },
     {
@@ -1315,14 +1315,14 @@
         "library"
       ],
       "scores": [
-        0.8563
+        -16.9531
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.66,
+      "latency_ms": 5.07,
       "unauthorized_leak": false
     },
     {
@@ -1338,14 +1338,14 @@
         "network"
       ],
       "scores": [
-        0.3372
+        -8.2337
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.14,
+      "latency_ms": 7.8,
       "unauthorized_leak": false
     },
     {
@@ -1361,14 +1361,14 @@
         "release"
       ],
       "scores": [
-        0.8012
+        -7.0425
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 26.14,
+      "latency_ms": 6.2,
       "unauthorized_leak": false
     },
     {
@@ -1387,16 +1387,16 @@
         "network"
       ],
       "scores": [
-        0.5381,
-        0.5226,
-        0.1158
+        -5.3327,
+        -5.3327,
+        -4.1169
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.67,
+      "latency_ms": 6.86,
       "unauthorized_leak": false
     },
     {
@@ -1413,7 +1413,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 22.3,
+      "latency_ms": 5.08,
       "unauthorized_leak": false
     },
     {
@@ -1430,7 +1430,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 21.34,
+      "latency_ms": 7.91,
       "unauthorized_leak": false
     },
     {
@@ -1446,14 +1446,14 @@
         "water"
       ],
       "scores": [
-        0.4537
+        -13.0075
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 25.57,
+      "latency_ms": 5.36,
       "unauthorized_leak": false
     },
     {
@@ -1469,14 +1469,14 @@
         "solar"
       ],
       "scores": [
-        0.6298
+        -8.1816
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.08,
+      "latency_ms": 5.83,
       "unauthorized_leak": false
     },
     {
@@ -1496,18 +1496,18 @@
         "queue"
       ],
       "scores": [
-        0.5128,
-        -0.0119,
-        -0.0162,
-        0.2341,
-        0.1489
+        -7.4559,
+        -2.772,
+        -2.7546,
+        -2.7204,
+        -2.6706
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 22.43,
+      "latency_ms": 5.85,
       "unauthorized_leak": false
     },
     {
@@ -1523,14 +1523,14 @@
         "backup"
       ],
       "scores": [
-        0.6325
+        -4.8909
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.25,
+      "latency_ms": 7.8,
       "unauthorized_leak": false
     },
     {
@@ -1547,15 +1547,15 @@
         "library"
       ],
       "scores": [
-        0.6657,
-        0.2053
+        -9.0121,
+        -4.0146
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 23.98,
+      "latency_ms": 6.58,
       "unauthorized_leak": false
     },
     {
@@ -1571,14 +1571,14 @@
         "queue"
       ],
       "scores": [
-        0.5031
+        -9.2015
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.15,
+      "latency_ms": 7.3,
       "unauthorized_leak": false
     },
     {
@@ -1594,14 +1594,14 @@
         "api"
       ],
       "scores": [
-        0.4812
+        -13.2053
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.66,
+      "latency_ms": 6.14,
       "unauthorized_leak": false
     },
     {
@@ -1617,14 +1617,14 @@
         "api"
       ],
       "scores": [
-        0.3167
+        -11.8959
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.26,
+      "latency_ms": 6.11,
       "unauthorized_leak": false
     },
     {
@@ -1640,14 +1640,14 @@
         "release"
       ],
       "scores": [
-        0.7371
+        -7.0425
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 21.75,
+      "latency_ms": 5.89,
       "unauthorized_leak": false
     },
     {
@@ -1666,14 +1666,14 @@
         "south"
       ],
       "scores": [
-        0.775
+        -8.6202
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.31,
+      "latency_ms": 7.1,
       "unauthorized_leak": false
     },
     {
@@ -1695,15 +1695,15 @@
         "south"
       ],
       "scores": [
-        0.3596,
-        0.4749
+        -8.0872,
+        -8.0872
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 40.99,
+      "latency_ms": 11.4,
       "unauthorized_leak": false
     },
     {
@@ -1719,14 +1719,14 @@
         "library"
       ],
       "scores": [
-        0.7859
+        -8.0291
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 52.0,
+      "latency_ms": 9.62,
       "unauthorized_leak": false
     },
     {
@@ -1743,14 +1743,14 @@
         "release"
       ],
       "scores": [
-        0.5539
+        -6.4136
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 18.51,
+      "latency_ms": 7.48,
       "unauthorized_leak": false
     },
     {
@@ -1767,14 +1767,14 @@
         "borealis"
       ],
       "scores": [
-        0.484
+        -8.4797
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 18.28,
+      "latency_ms": 6.3,
       "unauthorized_leak": false
     },
     {
@@ -1791,14 +1791,14 @@
         "solar"
       ],
       "scores": [
-        0.5205
+        -7.3991
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 24.3,
+      "latency_ms": 5.31,
       "unauthorized_leak": false
     },
     {
@@ -1815,14 +1815,14 @@
         "north"
       ],
       "scores": [
-        0.2126
+        -9.3334
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 22.38,
+      "latency_ms": 6.54,
       "unauthorized_leak": false
     },
     {
@@ -1836,14 +1836,14 @@
         "release"
       ],
       "scores": [
-        0.4121
+        -3.1489
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 21.6,
+      "latency_ms": 7.37,
       "unauthorized_leak": false
     },
     {
@@ -1860,7 +1860,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 26.84,
+      "latency_ms": 6.0,
       "unauthorized_leak": false
     },
     {
@@ -1877,14 +1877,14 @@
         "expense"
       ],
       "scores": [
-        0.4323
+        -8.1816
       ],
       "top1": null,
       "top3": null,
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": false,
-      "latency_ms": 21.8,
+      "latency_ms": 6.09,
       "unauthorized_leak": false
     },
     {
@@ -1902,15 +1902,15 @@
         "borealis"
       ],
       "scores": [
-        0.3487,
-        0.5517
+        -12.8704,
+        -9.2878
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 50.73,
+      "latency_ms": 5.78,
       "unauthorized_leak": false
     },
     {
@@ -1926,14 +1926,14 @@
         "food"
       ],
       "scores": [
-        0.2525
+        -11.8959
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 20.63,
+      "latency_ms": 5.41,
       "unauthorized_leak": false
     },
     {
@@ -1950,16 +1950,16 @@
         "borealis"
       ],
       "scores": [
-        0.5496,
-        0.3593,
-        0.3809
+        -7.4577,
+        -4.2245,
+        -0.7138
       ],
       "top1": true,
       "top3": true,
       "recall_at_3": 1.0,
       "reciprocal_rank": 1.0,
       "correct_abstention": null,
-      "latency_ms": 27.02,
+      "latency_ms": 5.16,
       "unauthorized_leak": false
     },
     {
@@ -1976,7 +1976,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 23.55,
+      "latency_ms": 4.72,
       "unauthorized_leak": false
     },
     {
@@ -1996,7 +1996,7 @@
       "recall_at_3": null,
       "reciprocal_rank": 0,
       "correct_abstention": true,
-      "latency_ms": 23.34,
+      "latency_ms": 6.99,
       "unauthorized_leak": false
     }
   ],
@@ -2011,8 +2011,8 @@
       "negative_queries": 0,
       "correct_abstentions": 0,
       "unauthorized_leaks": 0,
-      "median_latency_ms": 26.67,
-      "p95_latency_ms": 32.55
+      "median_latency_ms": 6.51,
+      "p95_latency_ms": 7.63
     },
     "lexical_held_out": {
       "queries": 42,
@@ -2024,8 +2024,8 @@
       "negative_queries": 4,
       "correct_abstentions": 3,
       "unauthorized_leaks": 0,
-      "median_latency_ms": 23.455,
-      "p95_latency_ms": 28.93
+      "median_latency_ms": 6.63,
+      "p95_latency_ms": 12.41
     },
     "lexical_fresh_held_out": {
       "queries": 10,
@@ -2037,8 +2037,8 @@
       "negative_queries": 2,
       "correct_abstentions": 2,
       "unauthorized_leaks": 0,
-      "median_latency_ms": 22.665,
-      "p95_latency_ms": 26.14
+      "median_latency_ms": 5.744999999999999,
+      "p95_latency_ms": 7.8
     },
     "lexical_independent": {
       "queries": 24,
@@ -2050,8 +2050,8 @@
       "negative_queries": 9,
       "correct_abstentions": 3,
       "unauthorized_leaks": 0,
-      "median_latency_ms": 22.405,
-      "p95_latency_ms": 40.99
+      "median_latency_ms": 6.125,
+      "p95_latency_ms": 7.8
     },
     "lexical_all": {
       "queries": 84,
@@ -2063,9 +2063,9 @@
       "negative_queries": 15,
       "correct_abstentions": 8,
       "unauthorized_leaks": 0,
-      "median_latency_ms": 23.380000000000003,
-      "p95_latency_ms": 32.55
+      "median_latency_ms": 6.35,
+      "p95_latency_ms": 12.24
     }
   },
-  "finished_at": "2026-11-26T18:07:05.005957+00:00"
+  "finished_at": "2026-11-26T18:38:31.613060+00:00"
 }

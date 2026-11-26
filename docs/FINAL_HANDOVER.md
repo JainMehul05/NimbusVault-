@@ -1,5 +1,7 @@
 # Final handover
 
+> Independent audit update (27 November 2026): Current independent handover:449 automated passes,84 search queries,40/40 strict Qwen cases and browser54+7. Read [the independent audit report](INDEPENDENT_AUDIT_REPORT.md) for the final results and dependable demonstration. The prior cloud rehearsal is consumed:do not upload new demonstration files without fresh cloud-mutation approval. Existing synthetic fixtures and dated native evidence support a repeatable local demonstration.
+
 Location: `C:\Users\hp\Downloads\nimbus vault final`. Local branch: `codex/nimbusvault-integration`. No changes were pushed and no application was deployed to hosting.
 
 ## Daily operation

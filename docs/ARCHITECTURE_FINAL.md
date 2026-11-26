@@ -1,5 +1,7 @@
 # Final architecture
 
+> Independent audit update (27 November 2026): Independent audit refinements:five distinct retrieval modes (dense,hybrid,BM25,exact,filename); BM25 makes no embedding call. Primary/private scope limits agree at250 indexed files. New authenticated private busy-status endpoint supports strict Stop verification. Source failures propagate; completion requires document write permission. [Current audit](INDEPENDENT_AUDIT_REPORT.md).
+
 ```mermaid
 flowchart LR
  B[Browser: NimbusVault React] -->|same origin 3100| E[Express auth and permissions]

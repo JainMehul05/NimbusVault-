@@ -1,0 +1,395 @@
+{
+  "started_at": "2026-11-26T18:45:10.743Z",
+  "checks": [
+    "Existing account sign-in through browser passed",
+    "54 route/viewport/direct-reload checks passed",
+    "Actual browser folder creation passed",
+    "Nested folder and actual S3-backed file visible",
+    "Real Qwen answer, clickable exact passage, browser download byte equality passed",
+    "Persistent history reopened with authorized citations",
+    "Administrator cloud snapshot displays actual guard and native evidence"
+  ],
+  "responsive": [
+    {
+      "route": "/",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 1920,
+      "viewport": 1920,
+      "document": 1920,
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "finished_at": "2026-11-26T18:46:16.842Z",
+  "result": "passed"
+}

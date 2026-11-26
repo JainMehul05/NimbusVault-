@@ -26,10 +26,22 @@ const fs=require('fs'),crypto=require('crypto');const users=require('../.runtime
   report.checks.actual_abstention=true;
   const before=ok(await call(owner,'GET','/ai/conversations')).map(x=>x.id).sort();
   const requestId=crypto.randomUUID();
-  const pending=call(owner,'POST','/ai/ask',{question:'Explain the full local processing and Borealis access controls using both documents.',fileIds:[first,second],requestId});
-  await new Promise(resolve=>setTimeout(resolve,200));
+  const env=fs.readFileSync('.env','utf8');
+  const token=env.match(/^INTERNAL_SERVICE_TOKEN=(.+)$/m)[1].trim().replace(/^['"]|['"]$/g,'');
+  let completed=false;
+  const pending=call(owner,'POST','/ai/ask',{question:'Explain local MiniLM/Qwen processing and the Borealis synthetic access number.',fileIds:[first,second],requestId}).then(result=>{completed=true;return result});
+  let observedBusy=false;
+  for(let attempt=0;attempt<100&&!completed;attempt++){
+   const status=await fetch('http://127.0.0.1:8101/api/ai/status',{headers:{'X-Service-Token':token,'X-Actor-Id':users.owner.id,'X-File-Scope':JSON.stringify([first,second])}});
+   if(!status.ok)throw new Error('Private status '+status.status);
+   if((await status.json()).busy){observedBusy=true;break}
+   await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  report.cancellation_observed_busy=observedBusy;
+  if(!observedBusy||completed)throw new Error('Could not observe active answer preparation before Stop');
   ok(await call(owner,'POST','/ai/cancel',{requestId}));
   const stopped=await pending;
+  report.cancellation_attempt=stopped;
   if(stopped.status!==499)throw new Error('Generation did not stop: '+stopped.status);
   const after=ok(await call(owner,'GET','/ai/conversations')).map(x=>x.id).sort();
   if(JSON.stringify(before)!==JSON.stringify(after))throw new Error('Canceled generation was stored as completed history');

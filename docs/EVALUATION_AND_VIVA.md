@@ -1,5 +1,7 @@
 # Evaluation and viva notes
 
+> Independent audit update (27 November 2026): Latest evidence:[independent audit and demonstration](INDEPENDENT_AUDIT_REPORT.md). Explain why perfect acceptance on40 synthetic cases is not universal model reliability; why BM25 has7 negative-query matches; why hybrid trades a small amount of complementary recall for precision; why current configuration observations differ from dated native workflow evidence; and why a credit guard is not a hard AWS billing cap.
+
 ## Demonstration sequence
 
 1. Show the actual NimbusVault landing page, register/sign in, dashboard and account controls at the single local URL.

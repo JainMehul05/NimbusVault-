@@ -1,5 +1,7 @@
 # Measured local search evaluation
 
+> Independent audit update (27 November 2026): Latest independent evaluation:84 queries (69 positive/15 negative), hybrid69/69 top1 and15/15 correct negatives; dense65/69 top1; genuine BM2564/69 top1 and8/15 negatives. Separate13/13 mode-specific checks passed. [Current results and precision/recall tradeoff](INDEPENDENT_AUDIT_REPORT.md#search-evaluation) supersede historical results below.
+
 All fixtures are non-sensitive and local-only. No benchmark document was uploaded to AWS and no AWS vector queries were made. The same cached MiniLM model, normalization and 384D pipeline were used throughout. Canonical extraction/indexing and the private search adapter ran against a temporary database, never the live runtime or donor database.
 
 ## Method

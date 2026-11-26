@@ -18,4 +18,4 @@ Full requested columns are in [the structured matrix](AWS_ACCEPTANCE_MATRIX.json
 | CloudFormation | Configuration verified; live-verified independently | Auditable resource relationships/deployed configuration. Original NimbusVault production CDK remains inactive; no new deployment |
 | IAM / STS | Live-verified through NimbusVault; configuration verified independently | Cloud identity, signed APIs, resource-scoped service permissions. Application-user authorization is separate; no IAM permissions changed |
 
-Current guard observation: 2026-11-26T17:17:55.307453+00:00; FREE / ACTIVE; USD 139.998445 credits. The guard is not a hard AWS billing cap. EventBridge DISABLED, mapping Disabled, no running workflow, ingestion queue empty, one historical DLQ message preserved. Further cloud writes/rehearsals require fresh owner approval.
+Current guard observation: 2026-11-26T18:02:54.849598+00:00; FREE / ACTIVE; USD 139.998443 credits. The guard is not a hard AWS billing cap. EventBridge DISABLED, mapping Disabled, no running workflow, ingestion queue empty, one historical DLQ message preserved. Further cloud writes/rehearsals require fresh owner approval.

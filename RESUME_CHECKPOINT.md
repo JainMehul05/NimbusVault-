@@ -1,3 +1,11 @@
+# NimbusVault final independent checkpoint
+
+Independent audit completed. Read `docs/INDEPENDENT_AUDIT_REPORT.md` first; it supersedes historical figures below. Current449 automated tests (296 backend/57 frontend/74 Python/22 infrastructure), real browser54+7, focused UI/access checks,84 search queries, original24/24 plus new16/16 strict Qwen cases. Active cancellation observed and passed499/no completed history/next slot; cloud-paused and model-stopped checks restored. Final app running/warmed at http://127.0.0.1:3100. `git log -1` gives final checkpoint; no push.
+
+The single approved cloud write rehearsal remains consumed. Current independent cloud work was read-only. Keep EventBridge and SQS consumer disabled. Never reset runtime data:it includes a private user PDF. Preserve all12 donor originals/61 vectors and unassigned legacy ownership. Source/configuration preservation passed. Private final backup under `.private-backup`; do not expose it. Use `npm start`, `npm run warmup`, `npm stop`, `npm run backup`. Any fresh cloud mutation/rehearsal needs fresh owner approval and current guard.
+
+## Historical checkpoint
+
 # NimbusVault final checkpoint
 
 Expanded continuation completed: read `docs/CONTINUATION_RELEASE_REPORT.md`, `docs/SEMANTIC_SEARCH_BENCHMARK.md`, `docs/AI_QUALITY_EVALUATION.md` and `docs/AWS_ACCEPTANCE_MATRIX.md`. Latest test totals supersede the historical figures below:293 backend +55 frontend +68 Python +22 infrastructure =438. Real browser54+7 passed again. Search60 queries; hybrid54/54 positive top-1,5/6 correct negatives; two original held-out defects were repaired and ten fresh queries retained as untuned evaluation. Actual Qwen22/24 strict,19/19 real positive generations,5/5 abstentions; two summary coverage shortfalls visibly partial. Current detailed AWS audit read-only and idle verified; no new mutation authorization. Source checkpoint baseline8d07eda exists; source/preservation audits passed; git log -1 identifies the final checkpoint. Services restored/running/warmed; only own LocalStack test container stopped. Do not replay cloud writes or reset final private data.

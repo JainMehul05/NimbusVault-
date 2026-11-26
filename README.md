@@ -1,5 +1,7 @@
 # NimbusVault Final
 
+> Independent audit update (27 November 2026): Latest independent audit completed:449 automated passes,84-query search evaluation and40/40 strict Qwen cases. [Current report, startup, AWS evidence and limitations](docs/INDEPENDENT_AUDIT_REPORT.md). Ordinary operation remains local MiniLM/Qwen; the single cloud write rehearsal must not be replayed without fresh approval.
+
 The original NimbusVault React interface, Express authentication and Prisma application, integrated with CloudVault's guarded AWS storage and local Python intelligence. The final application runs at **http://127.0.0.1:3100**. This is a local Windows application; no hosting deployment is required.
 
 ![Actual final dashboard with synthetic verification data](docs/screenshots/final-dashboard.png)

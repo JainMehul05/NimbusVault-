@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-26T17:30:01.156Z",
+  "started_at": "2026-11-26T18:36:29.068Z",
   "checks": {
     "actual_multi_document_Qwen": true,
     "actual_followup": true,
@@ -26,6 +26,7 @@
         "pageEnd": null,
         "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
         "score": 0.5928053855895996,
+        "scoreKind": "cosine",
         "permission": "VIEWER",
         "ref": "S1"
       },
@@ -40,6 +41,7 @@
         "pageEnd": null,
         "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
         "score": 0.21734236180782318,
+        "scoreKind": "cosine",
         "permission": "OWNER",
         "ref": "S2"
       }
@@ -48,25 +50,25 @@
     "model": "qwen2.5:3b",
     "mode": "generated",
     "warning": null,
-    "conversationId": "785b6f2d-ed44-47e0-b2e2-4b9971291171",
+    "conversationId": "a1d08fed-4ee3-4ffa-8dfa-cf6680178d6f",
     "timings": {
-      "retrieval_ms": 7065.08,
+      "retrieval_ms": 53659.12,
       "citation_alignment_repairs": 0,
       "generation": {
-        "total_duration": 1767884000,
-        "load_duration": 9397800,
+        "total_duration": 11682098500,
+        "load_duration": 9824534800,
         "prompt_eval_count": 1020,
-        "prompt_eval_duration": 98916000,
+        "prompt_eval_duration": 451073000,
         "eval_count": 108,
-        "eval_duration": 1634535000
+        "eval_duration": 1382473000
       },
-      "total_ms": 9148.12
+      "total_ms": 65785.25
     },
     "retrievalBackend": "local"
   },
   "followup": {
     "status": "answered",
-    "answer": "Project Borealis's synthetic access number is 914. [S1]\n\nProject Borealis uses violet balloons. [S1]",
+    "answer": "Its synthetic access number is 914. [S1]\n\nProject Borealis uses violet balloons. [S1]\n\nThis document belongs only to the second rehearsal account. [S1]",
     "citations": [
       {
         "chunkId": "2",
@@ -79,6 +81,7 @@
         "pageEnd": null,
         "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
         "score": 0.6159569025039673,
+        "scoreKind": "cosine",
         "permission": "VIEWER",
         "ref": "S1"
       }
@@ -86,29 +89,29 @@
     "sourcesConsidered": 1,
     "model": "qwen2.5:3b",
     "mode": "generated",
-    "warning": "Only statements that passed source verification are shown; some generated details were omitted.",
-    "conversationId": "785b6f2d-ed44-47e0-b2e2-4b9971291171",
+    "warning": null,
+    "conversationId": "a1d08fed-4ee3-4ffa-8dfa-cf6680178d6f",
     "timings": {
-      "retrieval_ms": 28.15,
+      "retrieval_ms": 26.31,
       "citation_alignment_repairs": 0,
       "initial_generation": {
-        "total_duration": 1406834100,
-        "load_duration": 6064500,
+        "total_duration": 1301298500,
+        "load_duration": 4280100,
         "prompt_eval_count": 861,
-        "prompt_eval_duration": 42073000,
+        "prompt_eval_duration": 35514000,
         "eval_count": 100,
-        "eval_duration": 1345456000
+        "eval_duration": 1251966000
       },
       "correction_attempted": true,
       "generation": {
-        "total_duration": 1002124300,
-        "load_duration": 7112400,
-        "prompt_eval_count": 1013,
-        "prompt_eval_duration": 79393000,
-        "eval_count": 62,
-        "eval_duration": 902862000
+        "total_duration": 1857130200,
+        "load_duration": 4628200,
+        "prompt_eval_count": 467,
+        "prompt_eval_duration": 136022000,
+        "eval_count": 127,
+        "eval_duration": 1692273000
       },
-      "total_ms": 2801.32
+      "total_ms": 3568.98
     },
     "retrievalBackend": "local"
   },
@@ -120,13 +123,28 @@
     "model": "Extractive fallback",
     "mode": "insufficient",
     "warning": null,
-    "conversationId": "be9394f8-24c9-41e9-910c-5312f817a962",
+    "conversationId": "6b723d2b-943b-4af3-91fd-34e62dfe7c76",
     "timings": {
-      "retrieval_ms": 25.35,
-      "total_ms": 25.36
+      "retrieval_ms": 21.35,
+      "total_ms": 21.36
     },
     "retrievalBackend": "local"
   },
+  "cancellation_observed_busy": true,
+  "cancellation_attempt": {
+    "status": 499,
+    "body": {
+      "success": false,
+      "message": "Answer preparation interrupted",
+      "error": {
+        "code": "AI_CANCELLED"
+      },
+      "meta": {
+        "requestId": "f0cedea8-551f-4eb7-8aac-86b88b56e58d",
+        "timestamp": "2026-11-26T18:37:39.610Z"
+      }
+    }
+  },
   "result": "passed",
-  "finished_at": "2026-11-26T17:30:17.829Z"
+  "finished_at": "2026-11-26T18:37:43.675Z"
 }

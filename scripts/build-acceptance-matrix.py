@@ -111,7 +111,7 @@ entries = [
         "intelligence/app/internal.py; scripts/verify-aws-detail.py",
         "Final-app logs/Invocations; independent Errors/Duration read",
         "Real datapoints or explicit unavailable; short retention",
-        "5 sampled native events, 11 prior-window invocations; Errors Sum 0 and Duration Average 83.2075 ms in sampled 3h window",
+        "5 previously sampled native events, 11 prior-window invocations; latest Errors/Duration datapoints: "+json.dumps(detail['checks']['cloudwatch_metrics'],default=str),
         "APP_CLOUD_PROBE.json; AWS_DETAILED_READ_AUDIT.json",
         detail["observed_at"],
         "3-day log retention; on-demand reads",

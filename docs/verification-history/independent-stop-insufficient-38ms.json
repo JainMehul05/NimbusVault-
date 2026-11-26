@@ -1,0 +1,156 @@
+{
+  "started_at": "2026-11-26T18:31:19.952Z",
+  "checks": {
+    "actual_multi_document_Qwen": true,
+    "actual_followup": true,
+    "actual_abstention": true
+  },
+  "multi": {
+    "status": "answered",
+    "answer": "Local MiniLM/Qwen processing runs on the local laptop. [S2]\n\nThe Borealis synthetic access number is 914. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.5928053855895996,
+        "scoreKind": "cosine",
+        "permission": "VIEWER",
+        "ref": "S1"
+      },
+      {
+        "chunkId": "3",
+        "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+        "filename": "Nimbus native evidence.txt",
+        "mimeType": "text/plain",
+        "folderId": "47dfc6fb-56b0-41d9-8178-13ec1a8948ff",
+        "chunkIndex": 3,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "score": 0.21734236180782318,
+        "scoreKind": "cosine",
+        "permission": "OWNER",
+        "ref": "S2"
+      }
+    ],
+    "sourcesConsidered": 2,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "ee7aede1-88a2-4dad-ba08-023abeb61ad2",
+    "timings": {
+      "retrieval_ms": 50.28,
+      "citation_alignment_repairs": 0,
+      "generation": {
+        "total_duration": 6972572800,
+        "load_duration": 5141904900,
+        "prompt_eval_count": 1020,
+        "prompt_eval_duration": 441534000,
+        "eval_count": 108,
+        "eval_duration": 1369522000
+      },
+      "total_ms": 7310.83
+    },
+    "retrievalBackend": "local"
+  },
+  "followup": {
+    "status": "answered",
+    "answer": "Project Borealis uses violet balloons. [S1]\n\nIts synthetic access number is 914. [S1]\n\nThis document belongs only to the second rehearsal account. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.6159569025039673,
+        "scoreKind": "cosine",
+        "permission": "VIEWER",
+        "ref": "S1"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "ee7aede1-88a2-4dad-ba08-023abeb61ad2",
+    "timings": {
+      "retrieval_ms": 20.86,
+      "citation_alignment_repairs": 0,
+      "initial_generation": {
+        "total_duration": 1297087800,
+        "load_duration": 4310400,
+        "prompt_eval_count": 861,
+        "prompt_eval_duration": 35693000,
+        "eval_count": 100,
+        "eval_duration": 1248706000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1864009000,
+        "load_duration": 3177200,
+        "prompt_eval_count": 467,
+        "prompt_eval_duration": 136085000,
+        "eval_count": 127,
+        "eval_duration": 1701231000
+      },
+      "total_ms": 3567.9
+    },
+    "retrievalBackend": "local"
+  },
+  "insufficient": {
+    "status": "insufficient_evidence",
+    "answer": "The indexed documents do not contain enough relevant evidence to answer this question.",
+    "citations": [],
+    "sourcesConsidered": 0,
+    "model": "Extractive fallback",
+    "mode": "insufficient",
+    "warning": null,
+    "conversationId": "db634a97-8f9b-470d-b08b-10f3f7d64236",
+    "timings": {
+      "retrieval_ms": 23.18,
+      "total_ms": 23.19
+    },
+    "retrievalBackend": "local"
+  },
+  "cancellation_attempt": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "message": "Answer",
+      "data": {
+        "status": "insufficient_evidence",
+        "answer": "The indexed documents do not contain enough relevant evidence to answer this question.",
+        "citations": [],
+        "sourcesConsidered": 0,
+        "model": "Extractive fallback",
+        "mode": "insufficient",
+        "warning": null,
+        "conversationId": "63eafb06-c969-478b-861b-d6763e943a80",
+        "timings": {
+          "retrieval_ms": 37.67,
+          "total_ms": 37.68
+        },
+        "retrievalBackend": "local"
+      },
+      "meta": {
+        "requestId": "de8e11c3-2a18-4383-b9d0-b920caaa4de0",
+        "timestamp": "2026-11-26T18:31:31.738Z"
+      }
+    }
+  },
+  "result": "failed",
+  "failure": "Generation did not stop: 200",
+  "finished_at": "2026-11-26T18:31:31.920Z"
+}

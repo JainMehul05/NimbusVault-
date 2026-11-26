@@ -1,0 +1,319 @@
+{
+  "started_at": "2026-11-26T18:43:49.956Z",
+  "checks": [
+    "Existing account sign-in through browser passed"
+  ],
+  "responsive": [
+    {
+      "route": "/",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 360,
+      "viewport": 360,
+      "document": 360,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/account",
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "pass": true
+    },
+    {
+      "route": "/",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/dashboard",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/files",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/shared-with-me",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/ask",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/cloud",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/activity",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    },
+    {
+      "route": "/trash",
+      "width": 1366,
+      "viewport": 1366,
+      "document": 1366,
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "result": "failed",
+  "failure": "expect(page).toHaveURL(expected) failed\n\nExpected: \"http://127.0.0.1:3100/account\"\nReceived: \"http://127.0.0.1:3100/login\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.have.url\" with timeout 5000ms\n    14 × unexpected value \"http://127.0.0.1:3100/login\"\n"
+}

@@ -1,0 +1,130 @@
+{
+  "started_at": "2026-11-26T18:30:07.940Z",
+  "checks": {
+    "actual_multi_document_Qwen": true,
+    "actual_followup": true,
+    "actual_abstention": true
+  },
+  "multi": {
+    "status": "answered",
+    "answer": "Local MiniLM/Qwen processing runs on the local laptop. [S2]\n\nThe Borealis synthetic access number is 914. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.5928053855895996,
+        "scoreKind": "cosine",
+        "permission": "VIEWER",
+        "ref": "S1"
+      },
+      {
+        "chunkId": "3",
+        "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+        "filename": "Nimbus native evidence.txt",
+        "mimeType": "text/plain",
+        "folderId": "47dfc6fb-56b0-41d9-8178-13ec1a8948ff",
+        "chunkIndex": 3,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "score": 0.21734236180782318,
+        "scoreKind": "cosine",
+        "permission": "OWNER",
+        "ref": "S2"
+      }
+    ],
+    "sourcesConsidered": 2,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "df132feb-618b-49d1-8ef9-88b81a5f4636",
+    "timings": {
+      "retrieval_ms": 41.85,
+      "citation_alignment_repairs": 0,
+      "generation": {
+        "total_duration": 1464689300,
+        "load_duration": 3344000,
+        "prompt_eval_count": 1020,
+        "prompt_eval_duration": 74037000,
+        "eval_count": 108,
+        "eval_duration": 1379063000
+      },
+      "total_ms": 1721.48
+    },
+    "retrievalBackend": "local"
+  },
+  "followup": {
+    "status": "answered",
+    "answer": "Project Borealis uses violet balloons. [S1]\n\nIts synthetic access number is 914. [S1]\n\nThis document belongs only to the second rehearsal account. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.6159569025039673,
+        "scoreKind": "cosine",
+        "permission": "VIEWER",
+        "ref": "S1"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "df132feb-618b-49d1-8ef9-88b81a5f4636",
+    "timings": {
+      "retrieval_ms": 22.5,
+      "citation_alignment_repairs": 0,
+      "initial_generation": {
+        "total_duration": 1302396300,
+        "load_duration": 5247000,
+        "prompt_eval_count": 861,
+        "prompt_eval_duration": 37674000,
+        "eval_count": 100,
+        "eval_duration": 1251768000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1871550500,
+        "load_duration": 2786300,
+        "prompt_eval_count": 467,
+        "prompt_eval_duration": 154194000,
+        "eval_count": 127,
+        "eval_duration": 1691533000
+      },
+      "total_ms": 3538.06
+    },
+    "retrievalBackend": "local"
+  },
+  "insufficient": {
+    "status": "insufficient_evidence",
+    "answer": "The indexed documents do not contain enough relevant evidence to answer this question.",
+    "citations": [],
+    "sourcesConsidered": 0,
+    "model": "Extractive fallback",
+    "mode": "insufficient",
+    "warning": null,
+    "conversationId": "fe3f1d3b-67c2-41b4-8ec4-bf60e037a310",
+    "timings": {
+      "retrieval_ms": 20.85,
+      "total_ms": 20.85
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "failed",
+  "failure": "Generation did not stop: 200",
+  "finished_at": "2026-11-26T18:30:14.182Z"
+}

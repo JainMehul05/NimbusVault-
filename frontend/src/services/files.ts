@@ -61,6 +61,7 @@ export interface FileListParams {
 export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 export const filesApi = {
+  statistics: async () => (await api.get<ApiResponse<{indexedFiles:number;totalFiles:number;totalBytes:string;types:Array<{category:string;count:number;bytes:string}>;uploads:Array<{day:string;count:number;bytes:string}>}>>('/files/statistics')).data.data!,
   list: async (p: FileListParams) => {
     const params = new URLSearchParams({
       page: String(p.page ?? 1),

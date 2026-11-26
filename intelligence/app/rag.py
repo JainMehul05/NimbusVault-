@@ -55,6 +55,56 @@ def normalize_quote(text):
     return " ".join(text.casefold().split())
 
 
+def align_citations(answer, sources):
+    """Repair a known source label only when its exact quote identifies one source.
+
+    Unknown/fabricated IDs, absent quotes and ambiguous shared quotations remain invalid.
+    Claim meaning, numbers and relevance still pass the unchanged strict validator.
+    """
+    available = {s["citation"]: s for s in sources}
+    repaired = []
+    count = 0
+    for claim in answer.claims:
+        labels = list(claim.sources)
+        for index, (label, quote) in enumerate(zip(labels, claim.quotes)):
+            if label not in available or len(quote.strip()) < 12:
+                continue
+            normalized = normalize_quote(quote)
+            if normalized in normalize_quote(available[label]["passage"]):
+                continue
+            matches = [
+                s["citation"] for s in sources if normalized in normalize_quote(s["passage"])
+            ]
+            if len(matches) == 1:
+                labels[index] = matches[0]
+                count += 1
+        repaired.append(claim.model_copy(update={"sources": labels}))
+    return answer.model_copy(update={"claims": repaired}), count
+
+
+def merge_verified_claims(primary, previous):
+    selected = []
+    for claim in [*primary, *previous]:
+        duplicate = False
+        for existing in selected:
+            if claim["citations"] != existing["citations"]:
+                continue
+            numbers = set(re.findall(r"\d+(?:\.\d+)?", claim["text"]))
+            other_numbers = set(re.findall(r"\d+(?:\.\d+)?", existing["text"]))
+            quote = normalize_quote(" ".join(claim["quotes"]))
+            other_quote = normalize_quote(" ".join(existing["quotes"]))
+            if normalize_quote(claim["text"]) == normalize_quote(existing["text"]) or (
+                numbers == other_numbers and (quote in other_quote or other_quote in quote)
+            ):
+                duplicate = True
+                break
+        if not duplicate:
+            selected.append(claim)
+        if len(selected) >= 7:
+            break
+    return selected
+
+
 def validate_claims(answer, sources):
     available = {s["citation"]: s for s in sources}
     accepted = []
@@ -65,6 +115,11 @@ def validate_claims(answer, sources):
         numbers = set(re.findall(r"\d+(?:\.\d+)?", claim.text))
         quoted_numbers = set(re.findall(r"\d+(?:\.\d+)?", " ".join(claim.quotes)))
         if not numbers.issubset(quoted_numbers):
+            valid = False
+        purpose = r"\b(?:uses?|using|used)\b.*\b(?:for|to)\b"
+        if re.search(purpose, claim.text, re.I) and not any(
+            re.search(purpose, quote, re.I) for quote in claim.quotes
+        ):
             valid = False
         if re.search(r"\brespectively\b", claim.text, re.I) and not any(
             re.search(r"\brespectively\b", quote, re.I) for quote in claim.quotes
@@ -211,7 +266,10 @@ async def ask(payload: Ask, request: Request):
                         generated, timing = await wait_for_generation(
                             task, request, payload.request_id
                         )
+                        generated, repairs = align_citations(generated, sources)
+                        result["timings"]["citation_alignment_repairs"] = repairs
                         claims = await run_in_threadpool(validate_claims, generated, sources)
+                        initial_claims = claims
                         if not generated.insufficient and (
                             not claims or len(claims) != len(generated.claims)
                         ):
@@ -220,6 +278,7 @@ async def ask(payload: Ask, request: Request):
                             correction = (
                                 retrieval_query
                                 + "\nCitation correction: Produce fewer strictly supported claims. Each claim must cite exactly one supplied source and copy one short exact relevant quote. Do not add numbers absent from that quotation. Answer the original question; abstain if evidence is insufficient."
+                                + " Use the same subject and technical words as the quoted source sentence. Return one supported claim for each requested topic when evidence answers it. Match source labels to exact quotations."
                             )
                             task = asyncio.create_task(
                                 asyncio.wait_for(llm.generate(correction, sources), timeout=30)
@@ -227,7 +286,11 @@ async def ask(payload: Ask, request: Request):
                             generated, timing = await wait_for_generation(
                                 task, request, payload.request_id
                             )
+                            generated, repairs = align_citations(generated, sources)
+                            result["timings"]["citation_alignment_repairs"] += repairs
                             claims = await run_in_threadpool(validate_claims, generated, sources)
+                            if not generated.insufficient:
+                                claims = merge_verified_claims(claims, initial_claims)
                         if generated.insufficient:
                             result.update(
                                 mode="insufficient",

@@ -1,0 +1,162 @@
+{
+  "started_at": "2026-11-26T14:58:29.119707+00:00",
+  "origin": "final NimbusVault API http://127.0.0.1:3100",
+  "mutations": [
+    {
+      "operation": "enable existing event rule",
+      "at": "2026-11-26T14:58:39.669023+00:00"
+    },
+    {
+      "operation": "enable existing SQS consumer",
+      "at": "2026-11-26T14:58:40.253155+00:00"
+    },
+    {
+      "operation": "final application multipart upload",
+      "at": "2026-11-26T14:59:01.206012+00:00",
+      "file_id": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+      "bytes": 242,
+      "sha256": "5baf6e09227e3516c398a189c862e4fa3ca7f906542d9a7480d5b6eb610663f8"
+    },
+    {
+      "operation": "final application scoped local completion",
+      "at": "2026-11-26T14:59:11.737069+00:00",
+      "file_id": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48"
+    },
+    {
+      "operation": "second isolated synthetic application upload",
+      "at": "2026-11-26T14:59:45.223997+00:00",
+      "file_id": "14c28ada-5afe-4369-afc7-22fa54096b59",
+      "bytes": 134,
+      "sha256": "73c6310f199dc8c6d0d46865e134fe4776989e5ba1bd0c3680e3148bd31c1c69"
+    },
+    {
+      "operation": "restore event rule disabled",
+      "at": "2026-11-26T14:59:54.645236+00:00"
+    },
+    {
+      "operation": "restore SQS consumer disabled",
+      "at": "2026-11-26T14:59:55.150658+00:00"
+    }
+  ],
+  "checks": {
+    "local_index_ready": true,
+    "S3_original_byte_equality": true,
+    "native_event_workflow": {
+      "bucket": "<existing-private-bucket>",
+      "correlation_id": "cv-8d150c4c93ef713a9a02881f124ccd812fe9d6ab1a1a98c0c647de6deb31",
+      "created_at": "2026-11-26T14:59:02.519704+00:00",
+      "event_etag": "f65c2a4f8d85c9d972f62c4700ef1074",
+      "event_revision": "006B0849349C4A3F8A",
+      "file_id": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+      "job_key": "JOB#cv-8d150c4c93ef713a9a02881f124ccd812fe9d6ab1a1a98c0c647de6deb31",
+      "key": "cloudvault/files/ab7748dd-9c71-44bb-96d7-867d1c5c4e48/nimbus-native-1795705136.txt",
+      "size": 242,
+      "mime": "text/plain",
+      "state": "awaiting_local_embedding",
+      "updated_at": "2026-11-26T14:59:03.445343+00:00",
+      "history": [
+        {
+          "stage": "validated",
+          "at": "2026-11-26T14:59:02.904871+00:00"
+        },
+        {
+          "stage": "cloud_extracted_or_classified",
+          "at": "2026-11-26T14:59:03.205209+00:00"
+        },
+        {
+          "stage": "cloud_stage_complete",
+          "at": "2026-11-26T14:59:03.331711+00:00"
+        },
+        {
+          "stage": "awaiting_local_embedding",
+          "at": "2026-11-26T14:59:03.445343+00:00"
+        }
+      ],
+      "sha256": "5baf6e09227e3516c398a189c862e4fa3ca7f906542d9a7480d5b6eb610663f8",
+      "artifact_key": "cloudvault/derived/ab7748dd-9c71-44bb-96d7-867d1c5c4e48/5baf6e09227e3516c398a189c862e4fa3ca7f906542d9a7480d5b6eb610663f8/text.json",
+      "cloud_extraction": "approved_plain_text"
+    },
+    "Step_Functions_execution_succeeded": true,
+    "DynamoDB_metadata_readback": true,
+    "final_application_live_probe": {
+      "observed_at": "2026-11-26T14:59:29.856829+00:00",
+      "api_signed_ok": true,
+      "api_unsigned_status": 403,
+      "standard_parameters_read": 3,
+      "lambda_invocation_datapoints": [],
+      "native_log_event_count": 5,
+      "latest_log_timestamp": 1795705157221
+    },
+    "local_search": {
+      "results": [
+        {
+          "chunkId": "1",
+          "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+          "filename": "nimbus-native-1795705136.txt",
+          "mimeType": "text/plain",
+          "folderId": null,
+          "chunkIndex": 1,
+          "pageStart": null,
+          "pageEnd": null,
+          "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+          "score": 0.43265843391418457,
+          "permission": "OWNER"
+        }
+      ],
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "retrievalBackend": "local",
+      "awsCalls": 0
+    },
+    "final_application_Qwen": {
+      "status": "answered",
+      "answer": "MiniLM embeddings and Qwen answer generation run on the local laptop. [S1]",
+      "citations": [
+        {
+          "chunkId": "1",
+          "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+          "filename": "nimbus-native-1795705136.txt",
+          "mimeType": "text/plain",
+          "folderId": null,
+          "chunkIndex": 1,
+          "pageStart": null,
+          "pageEnd": null,
+          "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+          "score": 0.3001253604888916,
+          "permission": "OWNER",
+          "ref": "S1"
+        }
+      ],
+      "sourcesConsidered": 1,
+      "model": "qwen2.5:3b",
+      "mode": "generated",
+      "warning": null,
+      "conversationId": "20df5ceb-34a6-4e2f-9168-c3296d7c21be",
+      "timings": {
+        "retrieval_ms": 58.36,
+        "generation": {
+          "total_duration": 11896948500,
+          "load_duration": 10384192400,
+          "prompt_eval_count": 493,
+          "prompt_eval_duration": 498310000,
+          "eval_count": 70,
+          "eval_duration": 978190000
+        },
+        "total_ms": 12182.51
+      },
+      "retrievalBackend": "local"
+    },
+    "authorized_citation_open": true,
+    "two_user_private_search_download_citation_isolation": true,
+    "nested_folder_inherited_share_and_revoke": true,
+    "logical_rename_move_trash_restore": true
+  },
+  "prior_idle": {
+    "rule": "DISABLED",
+    "consumer": "Disabled"
+  },
+  "restored_idle": {
+    "rule": "DISABLED",
+    "consumer": "Disabled"
+  },
+  "finished_at": "2026-11-26T15:00:06.787277+00:00"
+}

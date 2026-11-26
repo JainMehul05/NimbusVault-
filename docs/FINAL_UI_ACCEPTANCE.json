@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-11-26T16:00:19.519Z",
+  "checks": [
+    {
+      "width": 360,
+      "dashboard_real_statistics": true,
+      "document_scope_badge": true,
+      "no_horizontal_overflow": true
+    },
+    {
+      "width": 390,
+      "dashboard_real_statistics": true,
+      "document_scope_badge": true,
+      "no_horizontal_overflow": true
+    },
+    {
+      "width": 1366,
+      "dashboard_real_statistics": true,
+      "document_scope_badge": true,
+      "no_horizontal_overflow": true
+    }
+  ],
+  "pageErrors": [],
+  "result": "passed"
+}

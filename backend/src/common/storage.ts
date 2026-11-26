@@ -60,6 +60,7 @@ export class StorageService {
   private readonly log = createChildLogger({ module: 'storage' });
 
   initialize(): void {
+    if(intelligenceEnabled()) { this.log.info('Using the guarded private Python storage adapter'); return; }
     if (this.client) return;
 
     const { region, accessKeyId, secretAccessKey, s3Bucket, s3Endpoint, s3PublicEndpoint, s3ForcePathStyle } = config.aws;

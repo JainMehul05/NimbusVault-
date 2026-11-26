@@ -46,6 +46,7 @@ router.get('/', validate(fileListQuerySchema), filesController.list);
 
 // Get storage info
 router.get('/storage/info', filesController.getStorageInfo);
+router.get('/statistics',filesController.statistics);
 
 // Presigned uploads: begin → PUT to storage → complete (or abort)
 router.post('/presigned-upload', validate(filePresignedUploadSchema), filesController.beginPresignedUpload);

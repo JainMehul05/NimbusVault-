@@ -1,0 +1,15 @@
+# Security and preservation
+
+The original NimbusVault authentication was retained: password hashes, in-memory browser access token, HttpOnly refresh cookie, token rotation/reuse detection, session checks and logout invalidation. The integration did not add a universal password, hardcoded administrator login or anonymous AI route. The internal FastAPI service requires a long private token, binds loopback and has documentation endpoints disabled. Express supplies the actor and resolved file scope; clients cannot choose another actor or elevate a share-link token into AI access.
+
+Scopes are checked before retrieval and again before releasing sources, the complete answer and history. A revoked or trashed source withholds historical answers whose original scope is no longer available. Being an administrator permits infrastructure diagnostics, not reading other accounts' files. Tests cover forged requested IDs, forged returned sources, permission changes during generation and early cancellation races.
+
+Cloud writes use the existing account/region and fail-closed plan/reserve guard. Uploads use immutable keys and checksums; original S3 content is not overwritten by rename/move. Permanent deletion and automatic retention maintenance are disabled. Private extracted text is kept locally by default; optional cloud-vector demonstration is fixed to an explicitly approved synthetic legacy canary and returns no legacy content or ownership grant. Ordinary query telemetry records local retrieval, not a fabricated cloud invocation.
+
+The initial online donor backup passed SQLite integrity checks: 12 files, 61 chunks, 21 conversations, 32 exchanges. No legacy owner mapping or import was performed. The final runtime can contain real user-created documents in addition to synthetic verification fixtures: it is not disposable test data. Verification scopes only the identified fixtures and never deletes or resets the live database. Destructive inherited suites use a separate `nimbusvault_test` PostgreSQL database and isolated LocalStack; never point them at the runtime database.
+
+Read-only cloud preservation evidence in `PRESERVATION_CLOUD_AUDIT.json` verifies all 12 original object keys remain present and all 61 original vector payloads are byte-equivalent after float32 normalization. Counts include historical metadata/tombstones; they are not counts of newly assigned account documents. No cloud cleanup is proposed.
+
+Private backups and generated configuration are excluded from Git and restricted locally. AWS sessions remain in the AWS credential provider; no static credentials were copied into source. Model caches contain weights, not account access controls. Keep the existing cache available or configure an independent cache before removing the donor folder.
+
+This is a local demonstration architecture, not a multi-tenant hosted security certification. Source quotation validation is conservative but not a proof of semantic truth. Large corpora, hostile-document adversarial evaluation, OCR, high concurrency and Internet exposure require separate work and authorization. No production deployment or public endpoint was added.

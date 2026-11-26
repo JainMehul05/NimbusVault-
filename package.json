@@ -10,7 +10,12 @@
     "infra"
   ],
   "scripts": {
-    "dev": "docker compose up",
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1",
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1",
+    "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop.ps1",
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1",
+    "warmup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/warmup.ps1",
+    "backup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup.ps1",
     "dev:backend": "npm run start:dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=backend --workspace=frontend",
@@ -27,9 +32,9 @@
     "db:studio": "npm run prisma:studio --workspace=backend",
     "db:push": "npm run prisma:push --workspace=backend",
     "docker:build": "docker compose build",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f",
+    "docker:up": "docker compose --env-file .env -f compose.local.yml up -d --wait",
+    "docker:down": "docker compose --env-file .env -f compose.local.yml stop",
+    "docker:logs": "docker compose --env-file .env -f compose.local.yml logs -f",
     "test:e2e": "npm run e2e --workspace=e2e"
   },
   "devDependencies": {

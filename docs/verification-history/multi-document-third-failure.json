@@ -1,0 +1,54 @@
+{
+  "started_at": "2026-11-26T15:36:05.803Z",
+  "checks": {},
+  "multi": {
+    "status": "answered",
+    "answer": "Project Borealis uses violet balloons. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.5928053855895996,
+        "permission": "VIEWER",
+        "ref": "S1"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": "Only statements that passed source verification are shown; some generated details were omitted.",
+    "conversationId": "9b19cee2-b724-4301-80e1-9e08381049a2",
+    "timings": {
+      "retrieval_ms": 71.24,
+      "initial_generation": {
+        "total_duration": 6436396200,
+        "load_duration": 4510181100,
+        "prompt_eval_count": 558,
+        "prompt_eval_duration": 347919000,
+        "eval_count": 123,
+        "eval_duration": 1567230000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1355703200,
+        "load_duration": 9979900,
+        "prompt_eval_count": 606,
+        "prompt_eval_duration": 38448000,
+        "eval_count": 103,
+        "eval_duration": 1297638000
+      },
+      "total_ms": 8118.85
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "failed",
+  "failure": "Actual two-document grounded generation did not include both documents",
+  "finished_at": "2026-11-26T15:36:14.714Z"
+}

@@ -5,6 +5,16 @@ import { intelligence } from '@common/intelligence';
 import { AppError } from '@common/errors';
 import type { SearchResult, AnswerResult } from './rag.service';
 export const activeRequests = new Map<string,string>();
+const pendingStops=new Map<string,number>();
+export async function requestStop(userId:string,requestId:string) {
+  const active=activeRequests.get(requestId);
+  if(active && active!==userId) throw AppError.notFound('Active request not found');
+  if(active===userId) return intelligence('/api/ai/cancel',{request_id:requestId},userId);
+  for(const [key,until] of pendingStops) if(until<Date.now()) pendingStops.delete(key);
+  if(pendingStops.size>=128) pendingStops.delete(pendingStops.keys().next().value!);
+  pendingStops.set(`${userId}:${requestId}`,Date.now()+30000);
+  return {cancellation_requested:true};
+}
 interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number }
 interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown> }
 
@@ -36,17 +46,27 @@ export async function localHistory(userId:string,id:string) {
   const history=await intelligence<{file_ids:string[];exchanges:Array<{question:string;response:LocalAnswer}>}>(`/api/ai/conversations/${id}`,undefined,userId,scope);
   const current=await allowedScope(userId);
   if(!history.file_ids.every(key=>current.includes(key))) throw AppError.notFound('History unavailable after access change');
+  for(const exchange of history.exchanges) {
+    for(const source of exchange.response.sources || []) {
+      const resolved=await intelligence<{id:number}>('/passage/resolve',{file_id:source.file_id,passage:source.passage});
+      source.chunk_id=resolved.id;
+    }
+  }
   return {exchanges:await Promise.all(history.exchanges.map(async e=>({question:e.question,response:await mapAnswer(userId,e.response)})))};
 }
 export const localIntelligence = {
   async search(userId:string,query:string,options:{limit:number;fileIds?:string[];mode?:string}) {
     const scope=await allowedScope(userId,options.fileIds);
-    const result=await intelligence<{sources:EvidenceSource[]}>('/api/ai/search',{query,...options},userId,scope);
+    const names=options.mode==='filename' ? await prisma.file.findMany({where:{id:{in:scope}},select:{id:true,filename:true}}) : [];
+    const result=await intelligence<{sources:EvidenceSource[]}>('/api/ai/search',{query,...options,...(options.mode==='filename'?{filenames:Object.fromEntries(names.map(f=>[f.id,f.filename]))}:{})},userId,scope);
     return {results:await mapSources(userId,result.sources),model:'sentence-transformers/all-MiniLM-L6-v2',retrievalBackend:'local',awsCalls:0};
   },
   async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string}):Promise<AnswerResult> {
     const scope=await allowedScope(userId,options.fileIds);
     const requestId=options.requestId||randomUUID();
+    const pending=pendingStops.get(`${userId}:${requestId}`);
+    pendingStops.delete(`${userId}:${requestId}`);
+    if(pending && pending>Date.now()) throw new AppError('Generation interrupted',499,'AI_CANCELLED');
     if(activeRequests.has(requestId)) throw AppError.conflict('Request already running');
     activeRequests.set(requestId,userId);
     let result:LocalAnswer;

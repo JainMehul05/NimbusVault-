@@ -7,6 +7,8 @@ import { useToast } from '@components/ui/Toast'
 import { aiApi, isProviderUnavailable, type AiCapabilities, type AiDocument, type Passage } from '@services/ai'
 import { formatDateTime, getErrorMessage } from '@lib/format'
 import { AiStatusBadge, aiStatusHint } from './AiStatusBadge'
+import { filesApi } from '@services/files'
+import { Link } from 'react-router-dom'
 
 export interface InsightsTarget {
   id: string
@@ -119,7 +121,7 @@ export function DocumentInsightsDialog({ target, onClose, onStatusChange }: {
       title="Document insights"
       description={<span className="break-all">{target?.filename}</span>}
       icon={<Sparkles className="h-5 w-5" />}
-      footer={<Button variant="secondary" onClick={onClose}>Close</Button>}
+      footer={<>{target && <Link className="text-sm text-primary hover:underline" to={`/ask?fileId=${target.id}`} onClick={onClose}>Ask about this document</Link>}<Button variant="secondary" disabled={!target} onClick={async () => { if(!target) return; try { const result=await filesApi.downloadUrl(target.id); window.location.assign(result.downloadUrl) } catch { toast.error('Original unavailable', 'Your access or the AWS session may have changed.') } }}>Download original</Button><Button variant="secondary" onClick={onClose}>Close</Button></>}
     >
       {error ? (
         <ErrorState title="Couldn’t load insights" message={error} onRetry={load} className="py-8" />
@@ -185,7 +187,7 @@ export function DocumentInsightsDialog({ target, onClose, onStatusChange }: {
                   </p>
                 </div>
               ) : !caps.features.summaries ? (
-                <p className="text-sm text-muted-foreground">Summaries need a text-generation provider, which isn’t configured on this server.</p>
+                <p className="text-sm text-muted-foreground">Standalone summaries are not enabled in this local integration. Ask NimbusVault can answer grounded questions with cited excerpts.</p>
               ) : doc.summary.status === 'failed' ? (
                 <p className="text-sm text-[#ff7b70]">The summary couldn’t be generated: {doc.summary.error}</p>
               ) : (

@@ -9,6 +9,7 @@ import { ErrorCodes } from '@common/errors';
 import { contentProblem, isInlineSafe } from '@common/file-signature';
 import { contentDisposition, sanitizeFilename } from '@common/names';
 import { storageService } from '@common/storage';
+import prisma from '@database/prisma';
 import { createRequestLogger } from '@common/logger';
 import { authorizationService } from '@common/authorization';
 import { activityLogService } from '@modules/activity/activity.service';
@@ -78,6 +79,15 @@ async function afterUpload(file: File, userId: string, req: Request): Promise<Fi
 }
 
 export const filesController = {
+  statistics: asyncHandler(async (req: AuthenticatedRequest,res:Response)=>{
+    const ownerId=req.user!.userId;
+    const [groups,indexedFiles,uploads]=await Promise.all([
+      prisma.file.groupBy({by:['category'],where:{ownerId,deletedAt:null,status:'READY'},_count:{_all:true},_sum:{sizeBytes:true}}),
+      prisma.file.count({where:{ownerId,deletedAt:null,status:'READY',aiStatus:'INDEXED'}}),
+      prisma.$queryRaw<Array<{day:string;count:number;bytes:string}>>`SELECT DATE("uploadedAt")::text AS day,COUNT(*)::int AS count,SUM("sizeBytes")::text AS bytes FROM files WHERE "ownerId"=${ownerId} AND "deletedAt" IS NULL AND status='READY' AND "uploadedAt">=NOW()-INTERVAL '7 days' GROUP BY 1 ORDER BY 1`,
+    ]);
+    res.json(successResponse({indexedFiles,totalFiles:groups.reduce((n,g)=>n+g._count._all,0),totalBytes:groups.reduce((n,g)=>n+(g._sum.sizeBytes||0n),0n).toString(),types:groups.map(g=>({category:g.category,count:g._count._all,bytes:(g._sum.sizeBytes||0n).toString()})),uploads},'Private vault statistics',req.requestId));
+  }),
   upload: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const userId = req.user!.userId;
     const requestId = req.requestId;

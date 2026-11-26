@@ -38,6 +38,13 @@ Source IDs must come from evidence. Do not put citation markers or URLs in text;
 Keep each claim to one factual mechanism or relationship. Its quotation must support EVERY part of that claim. Preserve who does what and what risk is reduced. Omit unsupported elaboration. Answer the CURRENT question; previous questions only resolve missing context."""
 
 
+SYSTEM += """\nAnswer each part of a multipart question with a separate supported claim.
+Adjacent facts do not establish a causal, purpose, ownership or implementation relationship.
+Do not connect two sentences using 'for', 'to', or 'because' unless the evidence states that relationship.
+Prefer copying a complete supported sentence over adding an inferred connection."""
+SYSTEM += "\nState the value or mechanism actually requested for each topic. An unrelated fact about the same subject does not answer that question."
+
+
 async def status():
     result = {
         "runtime": "Ollama",

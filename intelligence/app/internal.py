@@ -114,14 +114,30 @@ def index(payload: Index):
     sections = extract(payload.filename, data)
     if sections is None:
         raise HTTPException(415, "Unsupported document")
-    chunks = engine.chunks(sections)
+    chunks = list(dict.fromkeys(engine.chunks(sections)))
     vectors = engine.encode([text for _, text in chunks]) if chunks else []
     timestamp = now()
     with connect() as db:
-        db.execute("DELETE FROM files WHERE id=?", (payload.file_id,))
+        db.execute("BEGIN IMMEDIATE")
+        previous = db.execute(
+            "SELECT sha256,object_key FROM files WHERE id=?", (payload.file_id,)
+        ).fetchone()
+        if previous and (
+            previous["sha256"] != payload.sha256 or previous["object_key"] != payload.object_key
+        ):
+            raise HTTPException(
+                409, "An immutable original cannot be replaced under an existing file ID"
+            )
+        retained = {
+            (r["section"], r["text"]): r["id"]
+            for r in db.execute(
+                "SELECT id,section,text FROM chunks WHERE file_id=? AND model=? AND dimension=384",
+                (payload.file_id, settings.embedding_model),
+            )
+        }
         db.execute(
             """INSERT INTO files(id,original_name,name,object_key,size,mime,extension,sha256,created_at,updated_at,status,chunk_count,extracted_text,indexed_at)
-                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,status=excluded.status,chunk_count=excluded.chunk_count,extracted_text=excluded.extracted_text,indexed_at=excluded.indexed_at,updated_at=excluded.updated_at""",
             (
                 payload.file_id,
                 payload.filename,
@@ -139,7 +155,13 @@ def index(payload: Index):
                 timestamp,
             ),
         )
+        active = []
         for (section, text), vector in zip(chunks, vectors):
+            if (section, text) in retained:
+                key = retained[(section, text)]
+                db.execute("UPDATE chunks SET vector=? WHERE id=?", (vector.tobytes(), key))
+                active.append(key)
+                continue
             db.execute(
                 "INSERT INTO chunks(file_id,text,section,vector,model,dimension) VALUES(?,?,?,?,?,?)",
                 (
@@ -151,6 +173,12 @@ def index(payload: Index):
                     len(vector),
                 ),
             )
+            active.append(db.execute("SELECT last_insert_rowid()").fetchone()[0])
+        for row in db.execute(
+            "SELECT id FROM chunks WHERE file_id=?", (payload.file_id,)
+        ).fetchall():
+            if row["id"] not in active:
+                db.execute("DELETE FROM chunks WHERE id=?", (row["id"],))
     cloud.enqueue(payload.file_id)
     if os.environ.get("AWS_WRITES_ENABLED") == "true":
         try:
@@ -241,14 +269,23 @@ async def search(request: Request):
     if mode not in {"filename", "exact", "semantic", "hybrid"}:
         raise HTTPException(400, "Invalid search mode")
     if mode in {"filename", "exact"}:
+        names = payload.get("filenames", {}) if mode == "filename" else {}
+        if not isinstance(names, dict):
+            raise HTTPException(400, "Invalid filename metadata")
         with connect() as db:
             rows = [
                 dict(r)
                 for r in db.execute(
-                    "SELECT c.*,f.name FROM chunks c JOIN files f ON f.id=c.file_id WHERE f.status='indexed'"
+                    "SELECT c.*,f.name FROM chunks c JOIN files f ON f.id=c.file_id WHERE f.status='indexed' AND c.file_id IN ("
+                    + ",".join("?" for _ in scope)
+                    + ")",
+                    scope,
                 )
                 if r["file_id"] in scope
-                and query.casefold() in (r["name"] if mode == "filename" else r["text"]).casefold()
+                and query.casefold()
+                in (
+                    str(names.get(r["file_id"], r["name"])) if mode == "filename" else r["text"]
+                ).casefold()
             ]
         sources = [
             {
@@ -276,6 +313,24 @@ def passage(file_id: str, chunk_id: int):
         ).fetchone()
     if not row:
         raise HTTPException(404, "Passage missing")
+    return dict(row)
+
+
+class ResolvePassage(BaseModel):
+    file_id: str
+    passage: str = Field(min_length=1, max_length=12000)
+
+
+@app.post("/passage/resolve")
+def resolve_passage(payload: ResolvePassage):
+    UUID(payload.file_id)
+    with connect() as db:
+        row = db.execute(
+            "SELECT c.id,c.text,c.section FROM chunks c JOIN files f ON f.id=c.file_id WHERE c.file_id=? AND c.text=? AND c.model=? AND f.status='indexed' ORDER BY c.id LIMIT 1",
+            (payload.file_id, payload.passage, settings.embedding_model),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "Historical evidence is no longer in the current index")
     return dict(row)
 
 
@@ -364,8 +419,26 @@ def cloud_status():
         snapshot = json.loads((ROOT / ".runtime/aws-audit.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         snapshot = {"services": {}, "status": "not audited in the final application"}
+    proof = {}
+    try:
+        journal = json.loads((ROOT / ".runtime/aws-rehearsal.json").read_text(encoding="utf-8"))
+        proof = {
+            "history": journal.get("checks", {})
+            .get("native_event_workflow", {})
+            .get("history", []),
+            "restored_idle": journal.get("restored_idle"),
+            "finished_at": journal.get("finished_at"),
+        }
+    except (OSError, ValueError):
+        pass
+    try:
+        probe = json.loads((ROOT / ".runtime/app-cloud-probe.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        probe = {}
     return {
         "audit": snapshot,
+        "native_rehearsal": proof,
+        "live_probe": probe,
         "guard": cost_guard.status()
         if os.environ.get("AWS_OPERATIONS_ENABLED") == "true"
         else {"allowed": False, "status": "paused"},
@@ -445,3 +518,57 @@ def probe():
         json.dumps(result, default=str, indent=2), encoding="utf-8"
     )
     return result
+
+
+@app.post("/cloud/vector-demo")
+def vector_demo():
+    """One configured non-sensitive fixture, never a global corpus query."""
+    cloud_allowed()
+    from .config import ROOT
+
+    try:
+        fixture = json.loads((ROOT / ".runtime/vector-demo.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise HTTPException(503, "An approved vector demonstration fixture is not configured")
+    vector = engine.encode(["Where do MiniLM embeddings and Qwen answer generation run?"])[0]
+    cfg = cloud.configuration()
+    result = cloud.client("s3vectors").query_vectors(
+        vectorBucketName=cfg["vector_bucket"],
+        indexName=cfg["vector_index"],
+        queryVector={"float32": vector.tolist()},
+        topK=1,
+        returnDistance=True,
+        returnMetadata=True,
+        queryMode="ENHANCED",
+        filter={
+            "$and": [
+                {"file_id": {"$eq": fixture["file_id"]}},
+                {"model": {"$eq": settings.embedding_model}},
+                {"scope": {"$eq": "corpus"}},
+            ]
+        },
+    )
+    found = result.get("vectors", [])
+    if (
+        not found
+        or result.get("distanceMetric") != "cosine"
+        or found[0].get("metadata", {}).get("file_id") != fixture["file_id"]
+        or found[0]["key"] not in fixture.get("allowed_keys", [])
+    ):
+        raise HTTPException(
+            503, "The approved fixture did not produce a verified cloud vector match"
+        )
+    proof = {
+        "provider": "AWS S3 Vectors",
+        "scope": "existing hash-approved non-sensitive canary only",
+        "matched": True,
+        "cosine_similarity": 1 - float(found[0]["distance"]),
+        "aws_calls": 1,
+        "observed_at": now(),
+        "default_retrieval": "local",
+        "does_not_grant_legacy_document_access": True,
+    }
+    (ROOT / ".runtime/vector-demo-result.json").write_text(
+        json.dumps(proof, indent=2), encoding="utf-8"
+    )
+    return proof

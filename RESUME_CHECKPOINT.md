@@ -1,18 +1,13 @@
-# NimbusVault resume checkpoint
+# NimbusVault final checkpoint
 
-Read MERGE_PROGRESS.md and the two original master attachments before further implementation.
-Workspace: C:\Users\hp\Downloads\nimbus vault final. Branch codex/nimbusvault-integration.
+Workspace: `C:\Users\hp\Downloads\nimbus vault final`; branch `codex/nimbusvault-integration`. Read README, MERGE_PROGRESS and `docs/FINAL_HANDOVER.md` before maintenance.
 
-Start: ./scripts/start.ps1
-Stop: ./scripts/stop.ps1
-Warm existing MiniLM and Qwen: ./scripts/warmup.ps1
-URL: http://127.0.0.1:3100
-Read-only AWS audit: ./scripts/verify-aws.ps1
+The local integration and final core verification are complete. Main URL http://127.0.0.1:3100. Commands: `npm start`, `npm run warmup`, `npm stop`, `npm run backup`; first-time repair: `npm run setup`. Docker Desktop is required. Final services were left running and warmed after degraded-mode verification. Stop only recorded owned processes, preserving volumes.
 
-Setup (existing .env preserved): ./scripts/setup.ps1
-Dependencies: Node24, uv/Python3.13, Docker with isolated PostgreSQL16, existing local MiniLM cache and Ollama/Qwen cache, default temporary AWS authentication in Sydney. Local model locations are private runtime configuration, not source imports.
+Latest actual suites:290 backend /55 frontend /60 Python /22 infrastructure passed. Browser54 responsive route checks +7 real workflows passed; focused final mobile/desktop dashboard and selected-document Ask checks passed. Real multi-document/follow-up/Stop/history-revocation and conflicting-policy generation passed. AWS-disabled local AI and Ollama-unavailable fallback passed. See sanitized reports in docs and private logs/screenshots in `.runtime`.
 
-Owner approved ONE bounded rehearsal after Free-plan guard and no running donor workers; owner completed aws login. Rehearsal may currently be running: inspect .runtime/aws-rehearsal.json and .runtime/rehearsal-execution.log. Do not repeat if journal exists. Restore prior idle state on failure. Never provision, purge objects, assign legacy private content or run donor workers.
+The one approved AWS write rehearsal is finished. `.runtime/aws-rehearsal.json` is the private authoritative journal; **do not delete it or rerun uploads**. EventBridge rule and SQS consumer restored DISABLED/Disabled. Read-only audits and final-app probes are documented. No paid plan/new resources/deployment/purge. Cloud writes need current active-Free-plan/account/reserve guard and any further rehearsal needs fresh approval.
 
-Current verification gaps: pending full browser/security/local-RAG checks and rehearsal completion evidence; do not declare release complete from build/tests alone.
-Private source/config/consistent SQLite backups: .private-backup (ignored and owner restricted). Original CloudVault untouched. Active runtime PostgreSQL and SQLite contain only new synthetic accounts/documents; legacy12files/61chunks/history remain unassigned.
+Original CloudVault source/config/database unchanged:12 files,61 chunks,21 conversations,32 exchanges; all61 original vectors intact. Legacy owner unassigned. Private initial and final backups are under ignored `.private-backup`. Final runtime includes private user data as well as synthetic fixtures; never reset it or point inherited tests at it. Use separate `nimbusvault_test` and isolated LocalStack for destructive test suites.
+
+Current laptop reuses existing MiniLM and Ollama model caches through private configuration; no code/database imports from donor. Read transfer guidance before removing donor caches. Local model accuracy, cold latency, licensing and disabled capabilities are documented honestly. No additional work should be inferred as authorization for cloud mutations.

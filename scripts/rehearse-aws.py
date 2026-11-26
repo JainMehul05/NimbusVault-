@@ -17,8 +17,7 @@ from dotenv import load_dotenv
 root = Path(__file__).resolve().parents[1]
 load_dotenv(root / ".env")
 sys.path.insert(0, str(root / "intelligence"))
-from app import cloud, cost_guard, storage  # noqa: E402
-from app.config import settings  # noqa: E402
+from app import cloud, cost_guard  # noqa: E402
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--approved-rehearsal", action="store_true")
@@ -72,8 +71,16 @@ assert rule in {"ENABLED", "DISABLED"} and mapping in {"Enabled", "Disabled"}, (
     "Consumers in transitional state"
 )
 report["prior_idle"] = {"rule": rule, "consumer": mapping}
-queue_state=cloud.client('sqs').get_queue_attributes(QueueUrl=out['QueueUrl'],AttributeNames=['ApproximateNumberOfMessages','ApproximateNumberOfMessagesNotVisible'])['Attributes']
-assert all(int(value)==0 for value in queue_state.values()),'Shared ingestion queue is not idle; do not process legacy work'
+queue_state = cloud.client("sqs").get_queue_attributes(
+    QueueUrl=out["QueueUrl"],
+    AttributeNames=[
+        "ApproximateNumberOfMessages",
+        "ApproximateNumberOfMessagesNotVisible",
+    ],
+)["Attributes"]
+assert all(int(value) == 0 for value in queue_state.values()), (
+    "Shared ingestion queue is not idle; do not process legacy work"
+)
 save()
 credentials = json.loads(
     (root / ".runtime/rehearsal-users.json").read_text(encoding="utf-8")
@@ -177,49 +184,131 @@ try:
         search.raise_for_status()
         report["checks"]["local_search"] = search.json()["data"]
         assert search.json()["data"]["awsCalls"] == 0
-        answer=app.post('/ai/ask',json={'question':'Where do MiniLM embeddings and Qwen answer generation run?','fileIds':[file_id]})
+        answer = app.post(
+            "/ai/ask",
+            json={
+                "question": "Where do MiniLM embeddings and Qwen answer generation run?",
+                "fileIds": [file_id],
+            },
+        )
         answer.raise_for_status()
-        report['checks']['final_application_Qwen']=answer.json()['data']
-        assert answer.json()['data']['mode']=='generated',answer.json()
-        citation=answer.json()['data']['citations'][0]
-        passage=app.get(f"/ai/files/{file_id}/chunks/{citation['chunkIndex']}");passage.raise_for_status()
-        report['checks']['authorized_citation_open']=bool(passage.json()['data']['content'])
+        report["checks"]["final_application_Qwen"] = answer.json()["data"]
+        assert answer.json()["data"]["mode"] == "generated", answer.json()
+        citation = answer.json()["data"]["citations"][0]
+        passage = app.get(f"/ai/files/{file_id}/chunks/{citation['chunkIndex']}")
+        passage.raise_for_status()
+        report["checks"]["authorized_citation_open"] = bool(
+            passage.json()["data"]["content"]
+        )
         # Two distinct synthetic accounts/documents; no legacy owner assignment.
-        with httpx.Client(base_url='http://127.0.0.1:3100/api/v1',timeout=180) as other:
-            signin=other.post('/auth/login',json={'email':credentials['other']['email'],'password':credentials['other']['password']});signin.raise_for_status()
-            other.headers['Authorization']='Bearer '+signin.json()['data']['tokens']['accessToken']
-            private_bytes=b'Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.'
-            second=other.post('/files',files={'file':('nimbus-private-borealis.txt',private_bytes,'text/plain')});second.raise_for_status()
-            second_id=second.json()['data']['id']
-            mutation('second isolated synthetic application upload',{'file_id':second_id,'bytes':len(private_bytes),'sha256':hashlib.sha256(private_bytes).hexdigest()})
+        with httpx.Client(
+            base_url="http://127.0.0.1:3100/api/v1", timeout=180
+        ) as other:
+            signin = other.post(
+                "/auth/login",
+                json={
+                    "email": credentials["other"]["email"],
+                    "password": credentials["other"]["password"],
+                },
+            )
+            signin.raise_for_status()
+            other.headers["Authorization"] = (
+                "Bearer " + signin.json()["data"]["tokens"]["accessToken"]
+            )
+            private_bytes = b"Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account."
+            second = other.post(
+                "/files",
+                files={
+                    "file": ("nimbus-private-borealis.txt", private_bytes, "text/plain")
+                },
+            )
+            second.raise_for_status()
+            second_id = second.json()["data"]["id"]
+            mutation(
+                "second isolated synthetic application upload",
+                {
+                    "file_id": second_id,
+                    "bytes": len(private_bytes),
+                    "sha256": hashlib.sha256(private_bytes).hexdigest(),
+                },
+            )
             for _ in range(30):
-                state=other.get('/ai/files/'+second_id);state.raise_for_status()
-                if state.json()['data']['status'] in {'ready','failed'}:break
+                state = other.get("/ai/files/" + second_id)
+                state.raise_for_status()
+                if state.json()["data"]["status"] in {"ready", "failed"}:
+                    break
                 time.sleep(2)
-            assert state.json()['data']['status']=='ready',state.json()
-            assert other.get('/files/'+file_id+'/download').status_code==404
-            assert other.get(f"/ai/files/{file_id}/chunks/{citation['chunkIndex']}").status_code==404
-            denied=app.post('/ai/search',json={'query':'violet balloons synthetic access number','mode':'hybrid'});denied.raise_for_status()
-            assert all(r['fileId']!=second_id for r in denied.json()['data']['results'])
-            own=other.post('/ai/search',json={'query':'violet balloons','mode':'hybrid'});own.raise_for_status()
-            assert any(r['fileId']==second_id for r in own.json()['data']['results'])
-            top=app.post('/folders',json={'name':'Native rehearsal'});top.raise_for_status();top_id=top.json()['data']['id']
-            nested=app.post('/folders',json={'name':'Evidence','parentFolderId':top_id});nested.raise_for_status();nested_id=nested.json()['data']['id']
-            app.patch('/files/'+file_id+'/move',json={'folderId':nested_id}).raise_for_status()
-            app.patch('/files/'+file_id+'/rename',json={'filename':'Nimbus native evidence.txt'}).raise_for_status()
-            app.post('/sharing',json={'resourceType':'FOLDER','resourceId':top_id,'granteeEmail':credentials['other']['email'],'level':'VIEWER'}).raise_for_status()
-            assert other.get('/files/'+file_id+'/download').status_code==200
-            shared=other.post('/ai/search',json={'query':'MiniLM embeddings Qwen local laptop','fileIds':[file_id]});shared.raise_for_status()
-            assert any(r['fileId']==file_id for r in shared.json()['data']['results'])
-            app.delete(f"/sharing/FOLDER/{top_id}/{credentials['other']['id']}").raise_for_status()
-            assert other.get('/files/'+file_id+'/download').status_code==404
-            report['checks']['two_user_private_search_download_citation_isolation']=True
-            report['checks']['nested_folder_inherited_share_and_revoke']=True
+            assert state.json()["data"]["status"] == "ready", state.json()
+            assert other.get("/files/" + file_id + "/download").status_code == 404
+            assert (
+                other.get(
+                    f"/ai/files/{file_id}/chunks/{citation['chunkIndex']}"
+                ).status_code
+                == 404
+            )
+            denied = app.post(
+                "/ai/search",
+                json={
+                    "query": "violet balloons synthetic access number",
+                    "mode": "hybrid",
+                },
+            )
+            denied.raise_for_status()
+            assert all(
+                r["fileId"] != second_id for r in denied.json()["data"]["results"]
+            )
+            own = other.post(
+                "/ai/search", json={"query": "violet balloons", "mode": "hybrid"}
+            )
+            own.raise_for_status()
+            assert any(r["fileId"] == second_id for r in own.json()["data"]["results"])
+            top = app.post("/folders", json={"name": "Native rehearsal"})
+            top.raise_for_status()
+            top_id = top.json()["data"]["id"]
+            nested = app.post(
+                "/folders", json={"name": "Evidence", "parentFolderId": top_id}
+            )
+            nested.raise_for_status()
+            nested_id = nested.json()["data"]["id"]
+            app.patch(
+                "/files/" + file_id + "/move", json={"folderId": nested_id}
+            ).raise_for_status()
+            app.patch(
+                "/files/" + file_id + "/rename",
+                json={"filename": "Nimbus native evidence.txt"},
+            ).raise_for_status()
+            app.post(
+                "/sharing",
+                json={
+                    "resourceType": "FOLDER",
+                    "resourceId": top_id,
+                    "granteeEmail": credentials["other"]["email"],
+                    "level": "VIEWER",
+                },
+            ).raise_for_status()
+            assert other.get("/files/" + file_id + "/download").status_code == 200
+            shared = other.post(
+                "/ai/search",
+                json={
+                    "query": "MiniLM embeddings Qwen local laptop",
+                    "fileIds": [file_id],
+                },
+            )
+            shared.raise_for_status()
+            assert any(r["fileId"] == file_id for r in shared.json()["data"]["results"])
+            app.delete(
+                f"/sharing/FOLDER/{top_id}/{credentials['other']['id']}"
+            ).raise_for_status()
+            assert other.get("/files/" + file_id + "/download").status_code == 404
+            report["checks"]["two_user_private_search_download_citation_isolation"] = (
+                True
+            )
+            report["checks"]["nested_folder_inherited_share_and_revoke"] = True
             # Local reversible trash/restore only. No S3 object or vector deletion.
-            app.delete('/files/'+file_id).raise_for_status()
-            assert app.get('/files/'+file_id+'/download').status_code==404
-            app.post('/trash/files/'+file_id+'/restore').raise_for_status()
-            report['checks']['logical_rename_move_trash_restore']=True
+            app.delete("/files/" + file_id).raise_for_status()
+            assert app.get("/files/" + file_id + "/download").status_code == 404
+            app.post("/trash/files/" + file_id + "/restore").raise_for_status()
+            report["checks"]["logical_rename_move_trash_restore"] = True
         save()
 except Exception as error:
     report["failure"] = {"type": type(error).__name__, "message": str(error)[:500]}

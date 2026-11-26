@@ -1,68 +1,61 @@
-# NimbusVault
+# NimbusVault Final
 
-Secure cloud storage with sharing and document intelligence, built with React, TypeScript, Express, PostgreSQL/pgvector and S3-compatible storage, with AWS infrastructure as code.
+The original NimbusVault React interface, Express authentication and Prisma application, integrated with CloudVault's guarded AWS storage and local Python intelligence. The final application runs at **http://127.0.0.1:3100**. This is a local Windows application; no hosting deployment is required.
 
-> **Status:** Phases 1–5 are implemented. Everything that can be checked without an AWS account has been (see the [engineering report](NIMBUSVAULT_FINAL_ENGINEERING_REPORT.md)). It has **not** been deployed to AWS, and hosted-LLM answers have not been tried with a real API key.
+![Actual final dashboard with synthetic verification data](docs/screenshots/final-dashboard.png)
 
-## What it does
+## Run on this laptop
 
-- **Accounts**: registration, sign-in, per-device sessions you can end, password change. Refresh tokens rotate in an HttpOnly cookie; nothing usable is kept in browser storage.
-- **Files**: upload (direct or presigned), download, rename, move, search, sort, nested folders, quotas, trash with restore and automatic purge.
-- **Sharing**: Viewer and Editor roles on files and folders with inheritance, shared-by-you overview, and share links with expiry, password, download limit and revocation.
-- **Activity**: an audit trail of what you and others did with your files.
-- **Document intelligence** (optional): PDF, DOCX, Markdown and text indexing with local embeddings, semantic search, optional OCR of scans, and summaries and cited answers when an LLM provider is configured. Always limited to documents you can currently read.
-- **Operations**: Docker stack, CI with real PostgreSQL, LocalStack and Chromium, AWS CDK, monitoring, backups and runbooks.
+From this folder in PowerShell, with Docker Desktop running:
 
-## Quick start
-
-```bash
-git clone https://github.com/JainMehul05/NimbusVault-.git
-cd NimbusVault-
-docker compose up --build
+```powershell
+npm start
+npm run warmup
 ```
 
-Open http://localhost:5173. Without Docker, or for hot reload, see [local development](docs/guides/local-development.md).
+Open http://127.0.0.1:3100 and register or sign in with your own account. There is no published administrator password. Warmup loads the existing MiniLM and Qwen models locally and makes no AWS requests. First model load can take substantially longer than a warm answer.
+
+```powershell
+npm stop
+npm run backup
+```
+
+Stop affects only recorded processes whose PID and start time match, and the isolated PostgreSQL container. It preserves all database volumes. Backups go to the ignored, private `.private-backup` directory.
+
+For first setup or dependency repair use `npm run setup`. It preserves an existing `.env`, installs locked dependencies, starts the isolated database, applies migrations and builds the application. Prerequisites: Node 20+ (validated with 24), uv/Python 3.13, Docker Desktop, sufficient disk space for local models. The current laptop reuses existing model caches; source code and application databases are independent of the donor project. See [handover](docs/FINAL_HANDOVER.md) before moving to another laptop.
+
+## Features and controls
+
+- Existing NimbusVault registration, login, refresh rotation, logout, account management and sessions.
+- Private AWS originals through guarded multipart uploads (25 MiB), downloads with integrity checks, folders, rename/move, sharing/revocation, trash and restore.
+- Owner-scoped dashboard statistics, activity, file insights and search.
+- Local normalized 384D MiniLM embeddings, exact/filename/semantic/hybrid search, FTS/BM25 evidence, Qwen2.5:3b Q4_K_M answers, source passages, history, follow-ups and Stop.
+- Rechecking authorization before returning results, citations and historical answers. Administration does not grant document access.
+- Visible abstention and cited extractive fallback when evidence or generation is insufficient.
+- Administrator diagnostics for existing CloudVault resources. A fixed optional S3 Vectors demonstration is separate from normal search.
+
+Original CloudVault documents and history remain preserved and **unassigned**. They are not automatically imported into any new account. The final runtime contains new application data and must also be treated as private.
+
+## Cloud and cost controls
+
+The supported AWS configuration is the existing `default` profile in `ap-southeast-2`. Credentials are resolved locally, never embedded in source. Run `aws login --profile default` yourself when authentication expires. No account upgrades, new resources or paid AI services were introduced.
+
+Cloud operations fail closed unless the approved account, active Free plan and USD 1 reserve can be verified. Observed balances are historical evidence, not a promise of future availability. The user's requirement is zero out-of-pocket expenditure: do not upgrade the account or bypass the guard. Normal cached retrieval and generation make no AWS calls. Set `AWS_OPERATIONS_ENABLED=false` to pause cloud access.
+
+The one approved native AWS rehearsal is complete; EventBridge and its SQS consumer were restored to their prior disabled states. **Do not repeat cloud mutations or enable the pipeline without fresh authorization.** New uploads remain usable with local indexing while the native pipeline is idle. Permanent deletion, empty-trash purge and presigned uploads are disabled to protect original objects. Standalone summaries and OCR are not enabled; Ask provides grounded answers for extracted text.
 
 ## Documentation
 
-| | |
-|---|---|
-| Understand | [Architecture](docs/guides/architecture.md) · [API](docs/guides/api.md) · [Security](docs/guides/security.md) · [AI](docs/phase-4/ai-document-intelligence.md) · [Status](docs/guides/status.md) |
-| Run | [Local development](docs/guides/local-development.md) · [Docker](docs/guides/docker.md) · [Environment variables](docs/guides/environment.md) · [Migrations](docs/guides/migrations.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
-| Deploy | [AWS architecture](docs/phase-5/aws-architecture.md) · [Deployment](docs/phase-5/aws-deployment.md) · [CI/CD](docs/phase-5/ci-cd.md) · [Backup, recovery, rollback](docs/phase-5/operations.md) · [Costs](docs/phase-5/cost.md) |
-| History | [Changelog](CHANGELOG.md) · [Integration report](docs/release/integration-report.md) · [Phase 0 design documents](docs/index.md) |
+- [Final handover](docs/FINAL_HANDOVER.md)
+- [Architecture and source mapping](docs/ARCHITECTURE_FINAL.md)
+- [Verification and limitations](docs/VERIFICATION_FINAL.md)
+- [Security, migration and rollback](docs/SECURITY_AND_PRESERVATION.md)
+- [Existing AWS inventory](docs/AWS_RESOURCE_INVENTORY.md)
+- [Evaluation and viva](docs/EVALUATION_AND_VIVA.md)
+- [Resume checkpoint](RESUME_CHECKPOINT.md)
 
-## Commands
+Historical upstream documents under `docs/phase-*`, `docs/release` and `docs/donor-cloudvault`, and the old root Docker Compose describe donor architectures. Supported final entry points are `scripts/start.ps1`, `compose.local.yml` and `intelligence/app/internal.py`. The production deploy workflow is an inactive example under `docs/inactive`; nothing was deployed. Infrastructure source is retained for traceability, not permission to provision it.
 
-| Command | |
-|---|---|
-| `npm ci` | Install every workspace |
-| `npm run dev:backend` / `npm run dev:frontend` | Hot-reloading development servers |
-| `npm run build` | Build both apps |
-| `npm run lint` | Lint both apps |
-| `npm run test:prepare --workspace=backend` | Create and migrate the test database |
-| `npm test` | Backend and frontend tests |
-| `npm run test:e2e` | Browser tests against the built apps |
-| `npm test --workspace=infra` | Infrastructure tests |
-| `docker compose up --build` | The whole stack |
+## Licensing
 
-## Layout
-
-```text
-backend/    Express API, worker, Prisma schema and migrations, tests
-frontend/   React app and component tests
-e2e/        Playwright browser tests
-infra/      AWS CDK app, tests and deployment scripts
-docs/       Guides and design documents
-scripts/    LocalStack set-up, smoke test
-```
-
-`nimbus-vault-landing-page-design/` is an early design prototype kept for reference; it is not part of the product.
-
-## Contributing
-
-Create a branch, keep changes focused, run the commands above, and open a pull request. CI must pass. Never commit secrets or `.env` files.
-
-## License
-
-The `LICENSE` file is currently empty, so no license has been granted. The owners should add one before others reuse the code.
+CloudVault-derived code retains Apache-2.0 license and notices in `LICENSE.cloudvault` and `NOTICE.cloudvault`. NimbusVault's upstream LICENSE is empty; no redistribution license is asserted. Qwen2.5:3b reports the Qwen Research License, which must be reviewed separately before redistribution or different use. Models and private runtime data are excluded from Git.

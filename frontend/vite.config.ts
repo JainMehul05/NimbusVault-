@@ -4,7 +4,7 @@ import path from 'path';
 
 // Where the dev and preview servers forward /api (docker compose publishes the backend on 3002).
 const proxy = {
-  '/api': { target: process.env.API_PROXY_TARGET || 'http://localhost:3000', changeOrigin: true },
+  '/api': { target: process.env.API_PROXY_TARGET || 'http://127.0.0.1:3100', changeOrigin: true },
 };
 
 export default defineConfig({
@@ -24,7 +24,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true,
+    host: '127.0.0.1',
     strictPort: true,
     proxy,
   },

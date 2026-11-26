@@ -1,0 +1,55 @@
+{
+  "started_at": "2026-11-26T15:42:55.621Z",
+  "checks": {},
+  "multi": {
+    "status": "answered",
+    "answer": "MiniLM embeddings and Qwen answer generation run on the local laptop. [S2]",
+    "citations": [
+      {
+        "chunkId": "3",
+        "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+        "filename": "Nimbus native evidence.txt",
+        "mimeType": "text/plain",
+        "folderId": "47dfc6fb-56b0-41d9-8178-13ec1a8948ff",
+        "chunkIndex": 3,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "score": 0.21734236180782318,
+        "permission": "OWNER",
+        "ref": "S2"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": "Only statements that passed source verification are shown; some generated details were omitted.",
+    "conversationId": "e9cba092-c409-4ce8-a1b0-6859fe4573cc",
+    "timings": {
+      "retrieval_ms": 72.57,
+      "citation_alignment_repairs": 2,
+      "initial_generation": {
+        "total_duration": 5761204100,
+        "load_duration": 3881852000,
+        "prompt_eval_count": 634,
+        "prompt_eval_duration": 353606000,
+        "eval_count": 117,
+        "eval_duration": 1513184000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1538990000,
+        "load_duration": 4496000,
+        "prompt_eval_count": 715,
+        "prompt_eval_duration": 60527000,
+        "eval_count": 113,
+        "eval_duration": 1464375000
+      },
+      "total_ms": 7791.25
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "failed",
+  "failure": "Actual two-document grounded generation did not include both documents",
+  "finished_at": "2026-11-26T15:43:04.494Z"
+}

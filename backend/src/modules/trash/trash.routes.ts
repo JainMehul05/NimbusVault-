@@ -6,6 +6,8 @@ import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
 import { validate } from '@common/validation';
 import { config } from '@config/index';
+import { intelligenceEnabled } from '@common/intelligence';
+import { AppError } from '@common/errors';
 import { authenticate } from '@modules/auth/auth.middleware';
 import type { AccessTokenPayload } from '@modules/auth/jwt.utils';
 import { activityLogService } from '@modules/activity/activity.service';
@@ -42,6 +44,10 @@ const router = Router();
 
 // Trash is private to its owner; every operation is scoped to the caller.
 router.use(authenticate);
+router.use((req,_res,next)=>{
+  if(req.method==='DELETE' && intelligenceEnabled()) return next(AppError.conflict('Permanent cloud deletion is disabled; restore items from trash instead.'));
+  next();
+});
 
 router.get(
   '/',
@@ -51,7 +57,7 @@ router.get(
     const { items, total, totalPages } = await trashService.list(req.user!.userId, page, limit);
     res.json(
       successResponse(
-        { items, retentionDays: config.storage.trashRetentionDays, pagination: { page, limit, total, totalPages } },
+        { items, retentionDays: config.storage.trashRetentionDays, permanentDeletionEnabled: !intelligenceEnabled(), pagination: { page, limit, total, totalPages } },
         'Trash retrieved',
         req.requestId
       )

@@ -1,32 +1,26 @@
 # NimbusVault integration progress
 
-Final workspace: C:\Users\hp\Downloads\nimbus vault final
-Branch: codex/nimbusvault-integration
-Foundation: NimbusVault phase-5-production-readiness/main 06bccdf.
-CloudVault: 5f2e2ba389fc45923f756794780661f64f994fac, original tracked tree clean.
+## Active continuation audit
 
-## A — preservation complete
-Both user attachments read fully. Original sources unchanged. Private source/config snapshot and SQLite online backup integrity checked: 12 files, 61 chunks, 21 conversations, 32 exchanges. Legacy data remains unassigned and absent from active accounts.
+The new master continuation prompt has been read in full. Its expanded acceptance supersedes the earlier completion statement below. Next: 40–60-query semantic benchmark, 20–30-question real Qwen benchmark, current read-only AWS/idle audit, repairs and final release checks. Last filename-search test had a TypeScript assertion error; fixed the assertion shape without weakening expected metadata. Final readiness remains under verification.
 
-## B/C/D/E/F — implemented, verification in progress
-Actual NimbusVault frontend/auth/Express/Prisma preserved. PostgreSQL16 isolated in Docker on 127.0.0.1:55432. One main URL http://127.0.0.1:3100. Private token-authenticated Python adapter on 127.0.0.1:8101. Local MiniLM, FTS/BM25, hybrid retrieval and validated Qwen RAG integrated; model caches reused. No duplicate index worker/model runtime. Original CloudVault Python donor modules and infrastructure retained with attribution. Internal endpoint exposes no anonymous path. Express resolves file scope and rechecks permissions before results and whole answers. History belongs to one account and is withheld after access changes.
+Final workspace: `C:\Users\hp\Downloads\nimbus vault final`; branch `codex/nimbusvault-integration`.
 
-Original AWS identifiers configured privately, no new resources. Owner explicitly approved one bounded rehearsal and refreshed default AWS sign-in. Read-only audit: assumed role, Sydney, FREE/ACTIVE, USD139.998445 reserve, expiry24May2027; twelve service/capability groups audited. Rule DISABLED; mapping Disabled. S3 private/encrypted. AWS writes remain guard-protected. Active rehearsal script journals operations and restores prior states in finally. Do not rerun if .runtime/aws-rehearsal.json exists: inspect journal first.
+All implementation phases are complete for the local integration described in README. Both authoritative attachments were read. Actual NimbusVault main/phase-5 foundation `06bccdf` is retained; CloudVault foundation `5f2e2ba389fc45923f756794780661f64f994fac` was selectively integrated. Donor source remains clean and configuration unchanged. Independent runtime databases, private consistent backups and local Git checkpoints exist. Legacy 12 files / 61 chunks / 21 conversations / 32 exchanges remain unchanged and unassigned.
 
-## Actual checks so far
-- Donor original backend:46 passed.
-- Final inherited backend first run:280 passed/3 failed (hardcoded LocalStack address). Fixed assertions to use configured endpoint; affected2suites rerun90passed.
-- New backend adapter isolation:5 passed (server scope, forged source, sharing/revocation, revoke during generation, trash exclusion).
-- TypeScript source/test typecheck passed; backend/frontend production builds passed; lint no errors/warnings after typing cleanup.
-- Frontend inherited55 initially passed; adding request ID/search-mode changed2 request-shape assertions; updated exact expectations, final rerun pending.
-- Python initial51tests:46passed/5failed due legacy empty-scope contract. Fixed legacy RAG entry while private empty scope still denies all. Rerun17passed/1failed; cold actual Qwen timed out. Genuine warm Qwen rerun passed, validated generated numeric answer total4.574s. Cold failure retained honestly.
-- Installed existing Qwen2.5:3b3.1B Q4_K_M1.93GB; GPU VRAM usage2.33GB observed. Embeddings produce384D normalized vectors. No models downloaded.
-- Real Brave browser registration/dashboard/file route worked with no page errors. Full responsive/workflow checks pending.
+## Implemented and verified
 
-## Next executable steps
-1. Collect running approved rehearsal. Inspect .runtime/rehearsal-execution.log and .runtime/aws-rehearsal.json; NEVER repeat uploads blindly. Verify restored idle states.
-2. Complete browser flows using isolated rehearsal accounts; no additional cloud upload beyond approved two synthetic fixtures.
-3. Finish tests/repair as necessary, safe config templates, README/architecture/security/evaluation/viva/handover. Preserve failed evidence.
-4. Final secret/Git/donor-preservation audits and checkpoint; no push/deployment.
+- NimbusVault frontend/auth/Express/Prisma/folders/shares/trash retained; one loopback URL 3100, isolated PostgreSQL 55432, private token-authenticated Python 8101.
+- Canonical local MiniLM extraction/index/retrieval; real Qwen2.5:3b Q4_K_M generation, multi-document grounding, follow-up, conflicting policies, source validation, cancellation, history and revocation. Existing caches reused; no model redownload on this laptop.
+- Original AWS resources reused. Owner refreshed temporary login and approved one bounded native rehearsal. FREE/ACTIVE and reserve verified. Two tiny synthetic originals used through final app. Native EventBridge/SQS/Lambda/Step Functions/DynamoDB path, original hash/download and local completion passed. Prior rule DISABLED / mapping Disabled restored. Final-app signed API, SSM, logs, metrics and one fixed optional S3 Vectors query passed. No new infrastructure, paid AI, account upgrade or destructive cloud cleanup.
+- Full latest suites: backend290, frontend55, Python60, infrastructure22 passed. Builds, typecheck, lint and production dependency audit passed. Real browser54 responsive route checks +7 workflows passed; latest dashboard/scoped-Ask checks passed at360/390/1366 with zero page errors.
+- Actual AWS-disabled cached search/generated answer and owned-model-stopped cited fallback passed. Services/configuration restored and warmed. Local donor row/config audit and cloud12-original/61-vector preservation audit passed.
+- README, architecture/source mapping, AWS inventory/live verification, security, migration dry-run, operating/backup/rollback guide, evaluation/viva and transparent limitations written. Real synthetic dashboard screenshot included. Public source scan found no generated secret/AWS key/private key matches; private runtime paths ignored.
 
-No legacy owner assignment, destructive cloud deletion, new AWS resource, plan upgrade or hosted AI call was performed.
+## Release boundaries
+
+Permanent cloud purge, OCR, standalone summaries, hosted deployment and large-scale/adversarial benchmarks are not enabled. Cloud guard is not a hard billing cap. Default inference/retrieval are local. Old production deployment is inactive; historical donor documentation is labeled. Qwen reports Research License; NimbusVault upstream LICENSE is empty, so no redistribution license is invented.
+
+Final runtime may contain private user uploads in addition to test fixtures. Never reset it, test against it destructively or use private documents as demonstrations. Failed retrieval/model/harness evidence remains preserved; final passes are genuine, not relabeled fallbacks. See `docs/VERIFICATION_FINAL.md` and JSON acceptance reports.
+
+No remaining mandatory implementation blocker was identified in the tested local scope. Do not replay cloud mutations; further rehearsal or expansion requires fresh owner approval. No push or deployment was performed.

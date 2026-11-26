@@ -9,7 +9,7 @@ import { intelligence } from '@common/intelligence';
 import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
 import { AppError } from '@common/errors';
-import { activeRequests, allowedScope, localHistory } from './local-intelligence';
+import { allowedScope, localHistory, requestStop } from './local-intelligence';
 import prisma from '@database/prisma';
 import { aiController } from './ai.controller';
 import { aiAskSchema, aiChunkParamsSchema, aiFileParamsSchema, aiSearchSchema, aiTextQuerySchema } from './ai.validation';
@@ -36,8 +36,8 @@ const searchLimiter = perUser(config.ai.limits.queriesPerWindow * 3);
 router.post('/cancel', queryLimiter, asyncHandler(async (req, res) => {
   const userId=(req as Request & {user:{userId:string}}).user.userId;
   const requestId=String(req.body.requestId||'');
-  if(activeRequests.get(requestId)!==userId) throw AppError.notFound('Active request not found');
-  res.json(successResponse(await intelligence('/api/ai/cancel',{request_id:requestId},userId),'Cancellation requested',req.requestId));
+  if(!/^[0-9a-f-]{36}$/i.test(requestId)) throw AppError.badRequest('Invalid request ID');
+  res.json(successResponse(await requestStop(userId,requestId),'Cancellation requested',req.requestId));
 }));
 router.get('/conversations',asyncHandler(async(req,res)=>{
   const userId=(req as Request & {user:{userId:string}}).user.userId;
@@ -67,6 +67,12 @@ router.post('/cloud/probe',queryLimiter,asyncHandler(async(req,res)=>{
   const user=await prisma.user.findUnique({where:{id:userId}});
   if(user?.role!=='admin') throw AppError.forbidden('Administrator required');
   res.json(successResponse(await intelligence('/cloud/probe',{}),'Bounded live probe',req.requestId));
+}));
+router.post('/cloud/vector-demo',queryLimiter,asyncHandler(async(req,res)=>{
+  const userId=(req as Request & {user:{userId:string}}).user.userId;
+  const user=await prisma.user.findUnique({where:{id:userId}});
+  if(user?.role!=='admin') throw AppError.forbidden('Administrator required');
+  res.json(successResponse(await intelligence('/cloud/vector-demo',{}),'Approved cloud fixture demonstration',req.requestId));
 }));
 
 router.get('/status', aiController.status);

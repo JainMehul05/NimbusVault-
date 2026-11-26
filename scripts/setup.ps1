@@ -14,10 +14,12 @@ if($OllamaModels){$options+=@('--ollama-models',$OllamaModels)}
 & intelligence/.venv/Scripts/python.exe scripts/configure-local.py @options
 Checked 'Configuration'
 icacls '.env' /inheritance:r /grant:r "$($env:USERNAME):F" | Out-Null
+foreach($configFile in 'backend/.env','intelligence/.env'){icacls $configFile /inheritance:r /grant:r "$($env:USERNAME):F" | Out-Null}
 & npm ci --no-audit --no-fund
 Checked 'Node dependencies'
 & uv pip sync --python intelligence/.venv/Scripts/python.exe intelligence/requirements.lock --torch-backend cpu
 Checked 'Python dependencies'
+& "$PSScriptRoot/setup-ai.ps1"
 & docker compose --env-file .env -f compose.local.yml up -d --wait
 Checked 'PostgreSQL'
 & npm run prisma:generate --workspace=backend

@@ -1,0 +1,132 @@
+{
+  "started_at": "2026-11-26T15:46:02.629Z",
+  "checks": {
+    "actual_multi_document_Qwen": true,
+    "actual_followup": true,
+    "actual_abstention": true,
+    "actual_stop_no_completed_history": true,
+    "generation_slot_released": true,
+    "actual_history_revocation": true,
+    "actual_private_dashboard_statistics": true,
+    "invalid_password_rejected": true,
+    "logout_revokes_access_immediately": true
+  },
+  "multi": {
+    "status": "answered",
+    "answer": "MiniLM embeddings and Qwen answer generation run on the local laptop. [S2]\n\nThe Borealis synthetic access number is 914. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.5928053855895996,
+        "permission": "VIEWER",
+        "ref": "S1"
+      },
+      {
+        "chunkId": "3",
+        "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+        "filename": "Nimbus native evidence.txt",
+        "mimeType": "text/plain",
+        "folderId": "47dfc6fb-56b0-41d9-8178-13ec1a8948ff",
+        "chunkIndex": 3,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "score": 0.21734236180782318,
+        "permission": "OWNER",
+        "ref": "S2"
+      }
+    ],
+    "sourcesConsidered": 2,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "6f36749a-549a-4d75-a420-220461096a58",
+    "timings": {
+      "retrieval_ms": 43.2,
+      "citation_alignment_repairs": 2,
+      "initial_generation": {
+        "total_duration": 5453400500,
+        "load_duration": 3559786100,
+        "prompt_eval_count": 634,
+        "prompt_eval_duration": 377641000,
+        "eval_count": 117,
+        "eval_duration": 1507922000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1516315700,
+        "load_duration": 2729500,
+        "prompt_eval_count": 715,
+        "prompt_eval_duration": 58593000,
+        "eval_count": 113,
+        "eval_duration": 1446545000
+      },
+      "total_ms": 7299.72
+    },
+    "retrievalBackend": "local"
+  },
+  "followup": {
+    "status": "answered",
+    "answer": "The synthetic access number for Project Borealis is 914. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.6159569025039673,
+        "permission": "VIEWER",
+        "ref": "S1"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "6f36749a-549a-4d75-a420-220461096a58",
+    "timings": {
+      "retrieval_ms": 20.84,
+      "citation_alignment_repairs": 0,
+      "generation": {
+        "total_duration": 827181400,
+        "load_duration": 3728600,
+        "prompt_eval_count": 551,
+        "prompt_eval_duration": 30933000,
+        "eval_count": 63,
+        "eval_duration": 785852000
+      },
+      "total_ms": 1072.32
+    },
+    "retrievalBackend": "local"
+  },
+  "insufficient": {
+    "status": "insufficient_evidence",
+    "answer": "The indexed documents do not contain enough relevant evidence to answer this question.",
+    "citations": [],
+    "sourcesConsidered": 0,
+    "model": "Extractive fallback",
+    "mode": "insufficient",
+    "warning": null,
+    "conversationId": "c60089fb-54d9-4aed-b5f4-3ca7ceb45287",
+    "timings": {
+      "retrieval_ms": 13.7,
+      "total_ms": 13.71
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "passed",
+  "finished_at": "2026-11-26T15:46:13.577Z"
+}

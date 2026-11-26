@@ -1,0 +1,36 @@
+{
+  "observed_at": "2026-11-26T15:59:34.356817+00:00",
+  "read_only": true,
+  "legacy_owner_assignment": "none",
+  "tables": {
+    "files": {
+      "rows": 12,
+      "identical_to_initial_backup": true
+    },
+    "chunks": {
+      "rows": 61,
+      "identical_to_initial_backup": true
+    },
+    "conversations": {
+      "rows": 21,
+      "identical_to_initial_backup": true
+    },
+    "exchanges": {
+      "rows": 32,
+      "identical_to_initial_backup": true
+    }
+  },
+  "private_configuration": {
+    ".env": {
+      "unchanged": true
+    },
+    ".runtime/cloud-resources.json": {
+      "unchanged": true
+    },
+    ".runtime/cloud-config.json": {
+      "unchanged": true
+    }
+  },
+  "original_tracked_tree_clean": true,
+  "result": "passed"
+}

@@ -69,6 +69,9 @@ try:
         (runtime / "cloud-resources.json").read_text(encoding="utf-8-sig")
     )
     outputs = resources["serverless_outputs"]
+    assert identity["Account"] == outputs["WorkflowArn"].split(":")[4], (
+        "Unexpected AWS account"
+    )
 
     def s3():
         flags = client("s3").get_public_access_block(Bucket=settings.s3_bucket)[

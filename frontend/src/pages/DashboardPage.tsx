@@ -42,6 +42,7 @@ export function DashboardPage() {
   // Root-level manager powers quick upload / new folder, the folder count, and storage.
   const fm = useFileManager(null)
   const [recent, setRecent] = useState<FileRecord[]>([])
+  const [statistics,setStatistics]=useState<Awaited<ReturnType<typeof filesApi.statistics>> | null>(null)
   const [fileTotal, setFileTotal] = useState(0)
   const [recentState, setRecentState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [sharedCount, setSharedCount] = useState<number | null>(null)
@@ -54,7 +55,8 @@ export function DashboardPage() {
   const loadRecent = useCallback(async () => {
     setRecentState('loading')
     try {
-      const data = await filesApi.list({ limit: 6, sortBy: 'uploadedAt', sortOrder: 'desc' })
+      const [data,stats] = await Promise.all([filesApi.list({ limit: 6, sortBy: 'uploadedAt', sortOrder: 'desc' }),filesApi.statistics()])
+      setStatistics(stats)
       setRecent(data.files)
       setFileTotal(data.pagination.total)
       setRecentState('ready')
@@ -120,6 +122,15 @@ export function DashboardPage() {
         <Stat label="Folders" value={fm.allFolders.length} icon={FolderClosed} to="/files" loading={!fm.treeLoaded} />
         <Stat label="Shared with you" value={sharedCount ?? '—'} icon={Users} to="/shared-with-me" loading={sharedCount === null && recentState === 'loading'} />
       </div>
+
+      {statistics && <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <Panel title={`File types · ${statistics.indexedFiles} locally indexed`} bodyClassName="space-y-3 p-4">
+          {statistics.types.length ? statistics.types.map(t=><div key={t.category}><div className="mb-1 flex justify-between text-xs text-muted-foreground"><span className="capitalize">{t.category}</span><span>{t.count} · {formatFileSize(t.bytes)}</span></div><div className="h-1.5 bg-white/10" aria-hidden="true"><div className="h-full bg-primary" style={{width:`${statistics.totalFiles ? 100*t.count/statistics.totalFiles : 0}%`}} /></div></div>) : <p className="text-sm text-muted-foreground">Upload a file to see your vault breakdown.</p>}
+        </Panel>
+        <Panel title="Uploads · last 7 days (UTC)" bodyClassName="space-y-3 p-4">
+          {statistics.uploads.length ? statistics.uploads.map(day=><div key={day.day}><div className="mb-1 flex justify-between text-xs text-muted-foreground"><time>{day.day}</time><span>{day.count} uploads · {formatFileSize(day.bytes)}</span></div><div className="h-1.5 bg-white/10" aria-hidden="true"><div className="h-full bg-primary" style={{width:`${100*day.count/Math.max(...statistics.uploads.map(d=>d.count))}%`}} /></div></div>) : <p className="text-sm text-muted-foreground">No uploads in this period.</p>}
+        </Panel>
+      </div>}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">

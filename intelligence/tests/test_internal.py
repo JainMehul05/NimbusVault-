@@ -194,3 +194,161 @@ def test_real_local_qwen_grounding(private):
     assert result["model"] == "qwen2.5:3b"
     assert "73" in result["answer"]
     assert result["claims"] and all(c["quotes"] for c in result["claims"])
+
+
+def test_reindex_preserves_exact_passage_ids(private):
+    from app.database import connect
+
+    client, h = private
+    text = "Aurora uses sunlight for renewable electricity."
+    key = add(client, h, text)
+    with connect() as db:
+        before = [r["id"] for r in db.execute("SELECT id FROM chunks WHERE file_id=?", (key,))]
+    raw = text.encode()
+    payload = {
+        "file_id": key,
+        "filename": "policy.txt",
+        "object_key": f"cloudvault/files/{key}/policy.txt",
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "mime": "text/plain",
+        "content": base64.b64encode(raw).decode(),
+    }
+    assert client.post("/index", headers=h, json=payload).status_code == 200
+    with connect() as db:
+        after = [r["id"] for r in db.execute("SELECT id FROM chunks WHERE file_id=?", (key,))]
+    assert before == after
+    payload["object_key"] = "cloudvault/files/other/original.txt"
+    assert client.post("/index", headers=h, json=payload).status_code == 409
+
+
+def test_invented_purpose_relationship_is_rejected():
+    from app.llm import GroundedAnswer
+    from app.rag import validate_claims
+
+    passage = "Project Borealis uses violet balloons. Its synthetic access number is 914."
+    result = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Project Borealis uses violet balloons for its synthetic access number.",
+                    "sources": [1],
+                    "quotes": [passage],
+                }
+            ],
+        }
+    )
+    assert validate_claims(result, [{"citation": 1, "passage": passage}]) == []
+
+
+def test_real_qwen_conflicting_policies(private):
+    from pathlib import Path
+
+    client, h = private
+    a = add(
+        client,
+        h,
+        "Policy North retains audit logs for 30 days. This is the North policy.",
+        "north.txt",
+    )
+    b = add(
+        client,
+        h,
+        "Policy South retains audit logs for 90 days. This is the South policy.",
+        "south.txt",
+    )
+    scoped = {**h, "x-file-scope": json.dumps([a, b])}
+    response = client.post(
+        "/api/ai/ask",
+        headers=scoped,
+        json={
+            "question": "Compare the audit-log retention periods in Policy North and Policy South.",
+            "request_id": str(uuid4()),
+        },
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()
+    (
+        Path(__file__).resolve().parents[2] / ".runtime/conflicting-policies-acceptance.json"
+    ).write_text(json.dumps(result, indent=2), encoding="utf-8")
+    assert result["mode"] == "generated", result
+    assert "30" in result["answer"] and "90" in result["answer"]
+    assert {source["file_id"] for source in result["sources"]} == {a, b}
+
+
+def test_multitopic_retrieval_covers_each_authorized_intent(private):
+    client, h = private
+    a = add(
+        client,
+        h,
+        "Original documents are stored privately in Amazon S3. MiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "processing.txt",
+    )
+    b = add(
+        client,
+        h,
+        "Project Borealis uses violet balloons. Its synthetic access number is 914.",
+        "borealis.txt",
+    )
+    response = client.post(
+        "/api/ai/search",
+        headers={**h, "x-file-scope": json.dumps([a, b])},
+        json={
+            "query": "Explain local MiniLM/Qwen processing and the Borealis synthetic access number.",
+            "mode": "hybrid",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert {s["file_id"] for s in response.json()["sources"]} == {a, b}
+    assert response.json()["retrieval_backend"]["aws_calls"] == 0
+
+
+def test_exact_unique_quote_can_align_known_source_label():
+    from app.llm import GroundedAnswer
+    from app.rag import align_citations
+
+    passages = [
+        {"citation": 1, "passage": "Policy North retains logs for 30 days."},
+        {"citation": 2, "passage": "Policy South retains logs for 90 days."},
+    ]
+    answer = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Policy South retains logs for 90 days.",
+                    "sources": [1],
+                    "quotes": ["Policy South retains logs for 90 days."],
+                }
+            ],
+        }
+    )
+    aligned, count = align_citations(answer, passages)
+    assert count == 1 and aligned.claims[0].sources == [2]
+    answer.claims[0].sources = [99]
+    aligned, count = align_citations(answer, passages)
+    assert count == 0 and aligned.claims[0].sources == [99]
+
+
+def test_filename_search_uses_current_trusted_names_within_scope(private):
+    client, h = private
+    own = add(client, h, "Authorized policy text.", "old-name.txt")
+    other = add(client, h, "Other account private policy.", "renamed-policy.txt")
+    scoped = {**h, "x-file-scope": json.dumps([own])}
+    response = client.post(
+        "/api/ai/search",
+        headers=scoped,
+        json={
+            "query": "renamed",
+            "mode": "filename",
+            "filenames": {own: "renamed-policy.txt", other: "renamed-policy.txt"},
+        },
+    )
+    assert response.status_code == 200
+    assert {row["file_id"] for row in response.json()["sources"]} == {own}
+    response = client.post(
+        "/api/ai/search",
+        headers=scoped,
+        json={"query": "old-name", "mode": "filename", "filenames": {own: "renamed-policy.txt"}},
+    )
+    assert response.json()["sources"] == []

@@ -13,6 +13,7 @@ export interface TrashItem {
 }
 
 export interface TrashPage {
+  permanentDeletionEnabled?: boolean;
   items: TrashItem[];
   retentionDays: number;
   pagination: { page: number; limit: number; total: number; totalPages: number };

@@ -2,7 +2,10 @@ import { randomUUID } from 'crypto';
 import { prisma } from '@/database/prisma';
 import { createUser, cleanupUsers, share } from './helpers';
 import { intelligence } from '@common/intelligence';
-import { localIntelligence } from '@modules/ai/local-intelligence';
+import { localIntelligence, requestStop } from '@modules/ai/local-intelligence';
+import request from 'supertest';
+import app from '@app';
+import { auth } from './helpers';
 
 jest.mock('@common/intelligence', () => ({
   ...jest.requireActual('@common/intelligence'),
@@ -52,4 +55,24 @@ it('excludes trashed files from trusted scope before retrieval',async()=>{
   call.mockResolvedValue({sources:[]});
   await localIntelligence.search(a.id,'Aurora',{limit:8});
   expect(call.mock.calls[0][3]).toEqual([]);
+});
+it('aggregates dashboard statistics only for the authenticated owner',async()=>{
+  await prisma.file.create({data:{filename:'other-private.png',ownerId:b.id,sizeBytes:999n,mimeType:'image/png',category:'image',s3Key:`test/${randomUUID()}`,status:'READY',aiStatus:'UNSUPPORTED'}});
+  const response=await request(app).get('/api/v1/files/statistics').set(auth(a));
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({totalFiles:1,totalBytes:'35',indexedFiles:1});
+  expect(response.body.data.types).toEqual([{category:'document',count:1,bytes:'35'}]);
+});
+it('honors a Stop that arrives before the corresponding ask request',async()=>{
+  const requestId=randomUUID();
+  await requestStop(a.id,requestId);
+  await expect(localIntelligence.ask(a.id,'What does Aurora produce?',{topK:8,requestId})).rejects.toMatchObject({statusCode:499});
+  expect(call).not.toHaveBeenCalled();
+});
+it('uses current authorized filenames after a logical rename',async()=>{
+  await prisma.file.update({where:{id:fileId},data:{filename:'renamed-policy.txt'}});
+  call.mockResolvedValue({sources:[source()]});
+  const result=await localIntelligence.search(a.id,'renamed',{limit:8,mode:'filename'});
+  expect(call.mock.calls[0][1]).toMatchObject({filenames:{[fileId]:'renamed-policy.txt'}});
+  expect(result.results[0].filename).toBe('renamed-policy.txt');
 });

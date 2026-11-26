@@ -1,0 +1,68 @@
+{
+  "started_at": "2026-11-26T15:38:58.569Z",
+  "checks": {},
+  "multi": {
+    "status": "answered",
+    "answer": "Relevant source passages are shown below. This is an extractive response, not generated synthesis.",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.5928053855895996,
+        "permission": "VIEWER",
+        "ref": "S1"
+      },
+      {
+        "chunkId": "3",
+        "fileId": "ab7748dd-9c71-44bb-96d7-867d1c5c4e48",
+        "filename": "Nimbus native evidence.txt",
+        "mimeType": "text/plain",
+        "folderId": "47dfc6fb-56b0-41d9-8178-13ec1a8948ff",
+        "chunkIndex": 3,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "CloudVault cloud-stage canary.\nOriginal documents are stored privately in Amazon S3.\nThe cloud workflow validates the object, extracts approved text and records job state.\nMiniLM embeddings and Qwen answer generation run on the local laptop.",
+        "score": 0.21734236180782318,
+        "permission": "OWNER",
+        "ref": "S2"
+      }
+    ],
+    "sourcesConsidered": 2,
+    "model": "Extractive fallback",
+    "mode": "extractive",
+    "warning": "Generated claims did not pass citation/quotation validation. Showing source excerpts instead.",
+    "conversationId": "490e628a-4a47-4077-8205-82a2e1466e77",
+    "timings": {
+      "retrieval_ms": 149.99,
+      "initial_generation": {
+        "total_duration": 5592290200,
+        "load_duration": 3695544800,
+        "prompt_eval_count": 634,
+        "prompt_eval_duration": 368837000,
+        "eval_count": 117,
+        "eval_duration": 1519824000
+      },
+      "correction_attempted": true,
+      "generation": {
+        "total_duration": 1627265700,
+        "load_duration": 5687200,
+        "prompt_eval_count": 682,
+        "prompt_eval_duration": 81491000,
+        "eval_count": 115,
+        "eval_duration": 1521144000
+      },
+      "total_ms": 7811.33
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "failed",
+  "failure": "Actual two-document grounded generation did not include both documents",
+  "finished_at": "2026-11-26T15:39:07.172Z"
+}

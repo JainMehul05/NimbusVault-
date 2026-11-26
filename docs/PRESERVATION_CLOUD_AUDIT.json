@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-11-26T15:44:17.186645+00:00",
+  "read_only": true,
+  "deletion_authorized": false,
+  "proposed_deletions": [],
+  "preserve_existing_stack": true,
+  "managed_original_objects": 15,
+  "managed_original_bytes": 2155512,
+  "file_metadata_rows": 16,
+  "workflow_rows": 5,
+  "vector_keys_first_page": 65,
+  "vector_listing_truncated": false,
+  "legacy_originals_present": 12,
+  "legacy_originals_missing": 0,
+  "legacy_vectors_expected": 61,
+  "legacy_vectors_byte_equivalent": 61,
+  "note": "All existing objects/resources are protected. Metadata counts include tombstones and historical workflow tests. No contents, credentials or private names are exported."
+}

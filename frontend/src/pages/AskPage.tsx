@@ -9,6 +9,7 @@ import { DocumentInsightsDialog, type InsightsTarget } from '@components/ai/Docu
 import { aiApi, errorCode, type AiCapabilities, type AnswerResult, type Citation, type SearchResult } from '@services/ai'
 import { getErrorMessage } from '@lib/format'
 import { cn } from '@lib/utils'
+import { useSearchParams } from 'react-router-dom'
 
 type Tab = 'ask' | 'search'
 
@@ -70,6 +71,8 @@ function SourceCard({ r, label, onOpen }: { r: SearchResult; label?: string; onO
 }
 
 export function AskPage() {
+  const [params]=useSearchParams()
+  const selectedFileId=params.get('fileId')
   const [caps, setCaps] = useState<AiCapabilities | null>(null)
   const [capsError, setCapsError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('ask')
@@ -83,6 +86,8 @@ export function AskPage() {
   const [conversationId, setConversationId] = useState<string>()
   const [history, setHistory] = useState<Array<{id:string;title:string}>>([])
   const [mode, setMode] = useState('hybrid')
+  const [stopError,setStopError]=useState<string | null>(null)
+  useEffect(() => {setConversationId(undefined);setTurns([])},[selectedFileId])
   const continueConversation = async (id: string) => {
     setConversationId(id || undefined)
     if (!id) { setTurns([]); return }
@@ -107,12 +112,13 @@ export function AskPage() {
     const q = question.trim()
     if (q.length < 3) return
     const id = ++seq.current
+    setStopError(null)
     setTurns((prev) => [{ id, question: q, state: 'loading' as const }, ...prev].slice(0, 20))
     setQuestion('')
     try {
       const requestId = crypto.randomUUID()
       request.current = requestId
-      const result = await aiApi.ask(q, { conversationId, requestId })
+      const result = await aiApi.ask(q, { conversationId, requestId, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}) })
       setConversationId(result.conversationId)
       setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'done', result } : t)))
     } catch (err) {
@@ -129,7 +135,7 @@ export function AskPage() {
     if (q.length < 2) return
     setSearch({ state: 'loading', results: [], query: q })
     try {
-      const { results } = await aiApi.search(q, { limit: 10, mode })
+      const { results } = await aiApi.search(q, { limit: 10, mode, ...(selectedFileId ? {fileIds:[selectedFileId]} : {}) })
       setSearch({ state: 'done', results, query: q })
     } catch (err) {
       setSearch({ state: 'error', results: [], error: getErrorMessage(err, 'Search failed.'), query: q })
@@ -160,7 +166,7 @@ export function AskPage() {
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <Badge tone="brand">Local retrieval</Badge><span>MiniLM · Qwen2.5 3B · no hosted AI</span>
+            <Badge tone="brand">Local retrieval</Badge><span>MiniLM · Qwen2.5 3B · no hosted AI</span>{selectedFileId && <Badge tone="brand">Selected document only</Badge>}
             <Button variant="secondary" onClick={() => { setConversationId(undefined); setTurns([]) }}>New conversation</Button>
             <Button variant="secondary" onClick={() => aiApi.conversations().then(setHistory).catch(() => setCapsError('Conversation history is unavailable.'))}>History</Button>
             {history.length > 0 && <select aria-label="Continue conversation" value={conversationId ?? ''} onChange={(e) => { void continueConversation(e.target.value) }} className="max-w-full border border-border bg-surface p-2"><option value="">New conversation</option>{history.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}</select>}
@@ -207,8 +213,9 @@ export function AskPage() {
                       <Button type="submit" disabled={question.trim().length < 3 || turns.some((t) => t.state === 'loading')}>
                         <Sparkles className="h-4 w-4" /> Ask
                       </Button>
-                      {turns.some(t => t.state === 'loading') && <Button type="button" variant="secondary" onClick={() => { if(request.current) void aiApi.cancel(request.current) }}>Stop</Button>}
+                      {turns.some(t => t.state === 'loading') && <Button type="button" variant="secondary" onClick={() => { if(request.current) void aiApi.cancel(request.current).catch(()=>setStopError('Stop could not be delivered. Please retry.')) }}>Stop</Button>}
                     </div>
+                    {stopError && <p role="alert" className="mt-2 text-xs text-warning">{stopError}</p>}
                   </form>
 
                   <div className="mt-5 space-y-4" aria-live="polite">

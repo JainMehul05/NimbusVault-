@@ -125,6 +125,7 @@ app.get(`/api/${config.apiPrefix}/health/ready`, async (req, res) => {
 });
 
 app.use(
+  '/api',
   rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.max,

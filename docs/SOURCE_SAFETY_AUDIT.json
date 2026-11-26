@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-11-26T16:03:19.584303+00:00",
+  "files_scanned": 434,
+  "secret_matching_paths": [],
+  "private_runtime_ignored": {
+    ".env": true,
+    "backend/.env": true,
+    "intelligence/.env": true,
+    ".runtime/processes.json": true,
+    "data/cloudvault.db": true,
+    ".private-backup/cloudvault.db": true
+  },
+  "result": "passed"
+}

@@ -1,0 +1,45 @@
+{
+  "started_at": "2026-11-26T15:30:55.145Z",
+  "checks": {},
+  "multi": {
+    "status": "answered",
+    "answer": "Project Borealis uses violet balloons for its synthetic access number. [S1]\n\nThe synthetic access number for Project Borealis is 914. [S1]",
+    "citations": [
+      {
+        "chunkId": "2",
+        "fileId": "14c28ada-5afe-4369-afc7-22fa54096b59",
+        "filename": "nimbus-private-borealis.txt",
+        "mimeType": "text/plain",
+        "folderId": null,
+        "chunkIndex": 2,
+        "pageStart": null,
+        "pageEnd": null,
+        "snippet": "Project Borealis uses violet balloons. Its synthetic access number is 914. This document belongs only to the second rehearsal account.",
+        "score": 0.43743494153022766,
+        "permission": "VIEWER",
+        "ref": "S1"
+      }
+    ],
+    "sourcesConsidered": 1,
+    "model": "qwen2.5:3b",
+    "mode": "generated",
+    "warning": null,
+    "conversationId": "e30e297c-476f-433e-818d-064aca6b375e",
+    "timings": {
+      "retrieval_ms": 29.36,
+      "generation": {
+        "total_duration": 7941570000,
+        "load_duration": 6094243800,
+        "prompt_eval_count": 470,
+        "prompt_eval_duration": 291696000,
+        "eval_count": 123,
+        "eval_duration": 1544116000
+      },
+      "total_ms": 8265.13
+    },
+    "retrievalBackend": "local"
+  },
+  "result": "failed",
+  "failure": "Actual two-document grounded generation did not include both documents",
+  "finished_at": "2026-11-26T15:31:04.399Z"
+}

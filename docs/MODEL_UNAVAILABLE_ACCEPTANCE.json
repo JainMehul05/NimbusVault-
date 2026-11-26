@@ -1,0 +1,11 @@
+{
+  "observed_at": "2026-11-26T15:58:25.310Z",
+  "phase": "model-stopped",
+  "result": "passed",
+  "local_search": true,
+  "answer_mode": "extractive",
+  "citations": 1,
+  "cloud_download_status": 503,
+  "warning": "Local runtime unavailable. Run scripts/start-ai.ps1; search and storage still work.",
+  "aws_operations_enabled": false
+}

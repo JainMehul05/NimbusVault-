@@ -1,0 +1,11 @@
+{
+  "observed_at": "2026-11-26T15:58:21.758Z",
+  "phase": "cloud-paused",
+  "result": "passed",
+  "local_search": true,
+  "answer_mode": "generated",
+  "citations": 1,
+  "cloud_download_status": 503,
+  "warning": null,
+  "aws_operations_enabled": false
+}

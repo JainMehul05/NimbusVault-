@@ -2,7 +2,7 @@ $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
 if(-not(Test-Path '.env')){throw 'Run scripts/setup.ps1 first.'}
-foreach($line in Get-Content '.env'){if($line -match '^([A-Z_]+)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}}
+foreach($line in Get-Content '.env'){if($line -match '^([A-Z_][A-Z0-9_]*)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}}
 New-Item -ItemType Directory -Force '.runtime' | Out-Null
 $owned=@()
 if(Test-Path '.runtime/processes.json'){
@@ -19,7 +19,7 @@ if($LASTEXITCODE -ne 0){throw 'PostgreSQL did not start.'}
 function Launch($exe,$arguments,$directory,$name){
   $process=Start-Process -FilePath $exe -ArgumentList $arguments -WorkingDirectory $directory -WindowStyle Hidden -RedirectStandardOutput "$root/.runtime/$name.log" -RedirectStandardError "$root/.runtime/$name-error.log" -PassThru
   $script:owned+=@{pid=$process.Id;started=$process.StartTime.ToUniversalTime().ToString('o');name=$name}
-  $script:owned | ConvertTo-Json -AsArray | Set-Content '.runtime/processes.json'
+  ConvertTo-Json -InputObject @($script:owned) | Set-Content '.runtime/processes.json'
 }
 try {
   try {$null=Invoke-RestMethod 'http://127.0.0.1:11434/api/tags' -TimeoutSec 2} catch {
@@ -33,7 +33,11 @@ try {
   Launch (Get-Command node).Source @('dist/main.js') "$root/backend" 'api'
   $ready=$false
   for($i=0;$i -lt 40;$i++){
-    try{$null=Invoke-RestMethod 'http://127.0.0.1:3100/api/v1/health' -TimeoutSec 2;$ready=$true;break}catch{Start-Sleep -Milliseconds 500}
+    try{
+      $null=Invoke-RestMethod 'http://127.0.0.1:3100/api/v1/health' -TimeoutSec 2
+      $private=Invoke-RestMethod 'http://127.0.0.1:8101/health' -Headers @{'x-service-token'=$env:INTERNAL_SERVICE_TOKEN} -TimeoutSec 2
+      if($private.status -eq 'ok'){$ready=$true;break}
+    }catch{Start-Sleep -Milliseconds 500}
   }
   if(-not $ready){throw 'NimbusVault did not start; inspect .runtime logs.'}
   Write-Host 'NimbusVault: http://127.0.0.1:3100'

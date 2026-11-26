@@ -83,7 +83,7 @@ export function TrashPage() {
     <AppShell
       title="Trash"
       description={data && data.retentionDays > 0 ? `Items are permanently deleted after ${data.retentionDays} days. They don’t count towards your storage.` : 'Deleted files and folders. They don’t count towards your storage.'}
-      actions={items.length > 0 ? <Button variant="secondary" onClick={() => setPending({ kind: 'empty' })}><Trash2 className="h-4 w-4" /> Empty trash</Button> : undefined}
+        actions={items.length > 0 && data?.permanentDeletionEnabled !== false ? <Button variant="secondary" onClick={() => setPending({ kind: 'empty' })}><Trash2 className="h-4 w-4" /> Empty trash</Button> : undefined}
     >
       {state === 'error' ? (
         <div className="border border-border bg-surface"><ErrorState title="Couldn’t load the trash" message={error} onRetry={() => load()} /></div>
@@ -111,7 +111,7 @@ export function TrashPage() {
                   <Button size="sm" variant="ghost" loading={busyId === item.id} onClick={() => restore(item)} aria-label={`Restore ${item.name}`}>
                     <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">Restore</span>
                   </Button>
-                  <Button size="icon-sm" variant="ghost" onClick={() => setPending({ kind: 'purge', item })} aria-label={`Permanently delete ${item.name}`} className="text-[#ff7b70] hover:bg-danger/10 hover:text-[#ff7b70]">
+                  <Button size="icon-sm" variant="ghost" disabled={data?.permanentDeletionEnabled === false} title={data?.permanentDeletionEnabled === false ? 'Permanent cloud deletion is disabled' : undefined} onClick={() => setPending({ kind: 'purge', item })} aria-label={`Permanently delete ${item.name}`} className="text-[#ff7b70] hover:bg-danger/10 hover:text-[#ff7b70]">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

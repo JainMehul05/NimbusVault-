@@ -176,7 +176,9 @@ async def ask(payload: Ask, request: Request):
                 + "\nPrevious user questions: "
                 + "\n".join(p["question"] for p in previous)[:1400]
             )
-        sources, coverage = await run_in_threadpool(retrieve, retrieval_query, scope)
+        # The legacy standalone route uses [] for its single-user collection. The private
+        # NimbusVault boundary rejects an empty authorized scope before reaching this route.
+        sources, coverage = await run_in_threadpool(retrieve, retrieval_query, scope or None)
         if payload.request_id in cancelled_requests:
             raise HTTPException(499, "Answer preparation interrupted")
         retrieval_ms = (time.perf_counter() - started) * 1000

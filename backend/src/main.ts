@@ -13,7 +13,7 @@ const startServer = () => {
     process.exit(1);
   }
 
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, '127.0.0.1', () => {
     logger.info(
       { port: config.port, env: config.nodeEnv, health: `/api/${config.apiPrefix}/health` },
       'NimbusVault backend listening'

@@ -228,7 +228,7 @@ describe('File and Folder Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.downloadUrl).toBeDefined();
-      expect(response.body.data.downloadUrl).toContain('localhost:4566');
+      expect(response.body.data.downloadUrl).toContain(new URL(config.aws.s3PublicEndpoint || config.aws.s3Endpoint).host);
       expect(response.body.data.expiresIn).toBe(config.storage.downloadUrlTtlSeconds);
       expect(response.body.data.filename).toBe('download.txt');
 
@@ -275,7 +275,7 @@ describe('File and Folder Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.key).toBeDefined();
       expect(response.body.data.url).toBeDefined();
-      expect(response.body.data.url).toContain('localhost:4566');
+      expect(response.body.data.url).toContain(new URL(config.aws.s3PublicEndpoint || config.aws.s3Endpoint).host);
       expect(response.body.data.expiresIn).toBe(config.storage.uploadUrlTtlSeconds);
 
       const { key, url, fileId } = response.body.data;

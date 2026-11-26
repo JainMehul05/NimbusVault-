@@ -36,12 +36,12 @@ import { cn } from '@lib/utils'
 // Every feature listed here is implemented (Phases 1–4). AI features require a server-side provider.
 const features = [
   { icon: LockKeyhole, eyebrow: 'Accounts', title: 'Secure sign-in', body: 'Sessions you can review and end per device, rotating tokens your browser scripts can never read, and permission checks on every request.', accent: 'cyan' },
-  { icon: UploadCloud, eyebrow: 'Storage', title: 'Upload and download', body: 'Drag files in, track progress per file, and download anytime. Up to 100 MB per file with a clear storage meter.', accent: 'blue' },
+  { icon: UploadCloud, eyebrow: 'Storage', title: 'Upload and download', body: 'Drag files in, track progress per file, and download anytime. Up to 25 MB per file with a clear storage meter.', accent: 'blue' },
   { icon: FolderOpen, eyebrow: 'Organization', title: 'Folders that nest', body: 'Create, rename, and move folders. Breadcrumbs, a folder tree, search, sorting, and a trash you can restore from.', accent: 'violet' },
   { icon: Users, eyebrow: 'Collaboration', title: 'Share with people', body: 'Invite registered users to files or whole folders as Viewers or Editors, and change or remove access anytime.', accent: 'blue' },
   { icon: Link2, eyebrow: 'Share links', title: 'Links you control', body: 'Create view-only or download links with expiry dates, optional passwords, and download limits. Revoke in one click.', accent: 'cyan' },
   { icon: Activity, eyebrow: 'Audit trail', title: 'Activity history', body: 'See uploads, downloads, renames, moves, deletions, sign-ins, and sharing changes in one chronological, filterable timeline.', accent: 'violet' },
-  { icon: Sparkles, eyebrow: 'Document AI', title: 'Search and ask your documents', body: 'PDF, Word, Markdown, and text files are indexed for meaning-based search, summaries, and answers that cite their sources — only across documents you can access. Available when your server has an AI provider enabled.', accent: 'blue' },
+  { icon: Sparkles, eyebrow: 'Document AI', title: 'Search and ask your documents', body: 'PDF, Word, Markdown, and text files are indexed for local meaning-based search and Qwen answers that cite their sources — only across documents you can access. MiniLM embeddings and Qwen generation run on your laptop; original files use private AWS S3.', accent: 'blue' },
 ]
 
 const docs = [
@@ -98,7 +98,6 @@ function VaultVisual() {
 function ProductPreview() {
   const [activeDoc, setActiveDoc] = useState(0)
   const [query, setQuery] = useState('')
-  const [uploading, setUploading] = useState(false)
   const filteredDocs = docs.filter((doc) => doc.name.toLowerCase().includes(query.toLowerCase()))
 
   return (
@@ -119,10 +118,10 @@ function ProductPreview() {
           </div>
           <button
             type="button"
-            className={cn('new-button', uploading && 'uploading')}
-            onClick={() => { setUploading(true); window.setTimeout(() => setUploading(false), 1400) }}
+            className="new-button"
+            onClick={() => { window.location.assign('/files') }}
           >
-            <UploadCloud size={13} /> {uploading ? 'Uploading…' : 'Upload file'}
+            <UploadCloud size={13} /> Open your files
           </button>
           <div className="sidebar-label">Workspace</div>
           <div className="sidebar-item active"><FolderOpen size={14} /> My Files <span>24</span></div>
@@ -215,7 +214,7 @@ const securityItems: Array<[string, string]> = [
 const faqs: Array<[string, string]> = [
   ['Who can see my files?', 'Only you, unless you share. You choose each person’s role. Viewers can view and download. Editors can also upload, rename, move, and share. You can change or remove access at any time.'],
   ['Can I share with someone who doesn’t have an account?', 'Yes, with a share link. Choose view-only or download access, set an expiry date, add a password, and cap the number of downloads. Revoke the link whenever you like.'],
-  ['How much can I store?', 'Each account includes 5 GB of storage, and individual files can be up to 100 MB. Your storage meter always shows what’s used and what’s left.'],
+  ['How much can I store?', 'Each account includes 5 GB of storage, and individual files can be up to 25 MB. Your storage meter always shows what’s used and what’s left.'],
   ['Can I see what happened to a file?', 'Yes. The Activity page records downloads, renames, moves, deletions, and sharing changes, with filters for event, item type, and date.'],
 ]
 
@@ -291,7 +290,7 @@ export default function LandingPage() {
         <div className="hero-grid" />
         <div className="container-custom relative grid items-center gap-14 pb-20 pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8 lg:pb-28 lg:pt-28">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> Secure cloud storage & sharing</div>
+            <div className="eyebrow"><span className="eyebrow-dot" /> AWS storage · local intelligence</div>
             <h1>Your files. Your rules. <span>Secured.</span></h1>
             <p className="hero-lede">NimbusVault keeps your files organized in folders, lets you share them with exactly the right people, and records what happens to them.</p>
             <div className="flex flex-wrap items-center gap-4">
@@ -305,7 +304,7 @@ export default function LandingPage() {
           </div>
           <div className="hero-art"><VaultVisual /></div>
         </div>
-        <div className="container-custom"><ProductPreview /></div>
+        <div className="container-custom"><p className="mb-3 text-xs text-slate-400">Illustrative product preview · sample data</p><ProductPreview /></div>
       </section>
 
       <section className="stack-strip" aria-label="Technology">
@@ -434,7 +433,7 @@ export default function LandingPage() {
           </div>
           <div className="trust-stats">
             <div><strong>5 GB</strong><span>storage per account</span></div>
-            <div><strong>100 MB</strong><span>max size per file</span></div>
+            <div><strong>25 MB</strong><span>max size per file</span></div>
             <div><strong>3</strong><span>access roles</span></div>
           </div>
         </div>

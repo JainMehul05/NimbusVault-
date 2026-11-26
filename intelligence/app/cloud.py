@@ -1,6 +1,7 @@
 """Explicit cloud providers with local fallback, stable revisions and durable outbox."""
 
 import hashlib
+import os
 import json
 import time
 from functools import lru_cache
@@ -34,6 +35,8 @@ def signed_get(path):
 
 
 def configuration():
+    if os.environ.get('NIMBUS_LOCAL_RETRIEVAL') == 'true' and os.environ.get('AWS_OPERATIONS_ENABLED') != 'true':
+        return {'disabled_reason':'cloud_operations_paused'}
     # Isolated tests never inherit real cloud activation.
     if settings.data_dir.resolve() != (ROOT / "data").resolve():
         return {}
@@ -59,6 +62,8 @@ def vector_key(row):
 
 def dense_scores(rows, matrix, vector, scope=None):
     started = time.perf_counter()
+    if os.environ.get('NIMBUS_LOCAL_RETRIEVAL') == 'true':
+        return matrix @ vector, {'provider':'local','aws_calls':0,'fallback':False}
     cfg = configuration()
     allowed = set(scope or [])
     if cfg.get("vectors_enabled"):
@@ -359,10 +364,10 @@ def jobs():
     return sorted(records, key=lambda r: r.get("created_at", ""), reverse=True)
 
 
-def complete_jobs(limit=3):
+def complete_jobs(limit=3, file_ids=None):
     cfg = configuration()
     completed = []
-    for job in [r for r in jobs() if r.get("state") == "awaiting_local_embedding"][:limit]:
+    for job in [r for r in jobs() if r.get("state") == "awaiting_local_embedding" and (file_ids is None or r['file_id'] in file_ids)][:limit]:
         record = get_file(job["file_id"])
         if not record or record["status"] != "indexed":
             continue
@@ -376,7 +381,7 @@ def complete_jobs(limit=3):
             "updated_at": stamp,
             "history": [
                 *job.get("history", []),
-                {"stage": "local_embedding_and_cloud_vector_sync", "at": stamp},
+                {"stage": "local_embedding_and_cloud_vector_sync" if cfg.get('vectors_enabled') else 'local_embedding_and_metadata_sync', "at": stamp},
             ][-8:],
         }
         client("dynamodb").update_item(

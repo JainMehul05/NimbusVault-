@@ -1,4 +1,5 @@
 import { config } from '@config/index';
+import { intelligenceEnabled } from '@common/intelligence';
 import { getEmbeddingProvider, getGenerationProvider } from './providers';
 import { SUPPORTED_AI_MIME_TYPES } from './extraction';
 
@@ -12,6 +13,10 @@ export const setWorkerRunning = (running: boolean) => {
  * `privacy.sendsDocumentsToThirdParty` drives the disclosure shown in the UI.
  */
 export function getAiStatus() {
+  if (intelligenceEnabled()) return {
+    enabled:true,embedding:{configured:true,provider:'CloudVault local',model:'all-MiniLM-L6-v2',dimensions:384},generation:{configured:true,provider:'Ollama local',model:'qwen2.5:3b'},
+    features:{indexing:true,semanticSearch:true,summaries:false,questionAnswering:true,ocr:false},worker:{running:workerRunning,concurrency:1},limits:config.ai.limits,supportedMimeTypes:SUPPORTED_AI_MIME_TYPES,privacy:{sendsDocumentsToThirdParty:false,externalProviders:[]},
+  };
   const embedding = getEmbeddingProvider();
   const generation = getGenerationProvider();
   const external = [embedding, generation].filter((p) => p?.sendsDataExternally).map((p) => p!.name);

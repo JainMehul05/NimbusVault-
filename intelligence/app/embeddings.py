@@ -17,7 +17,7 @@ class Embeddings:
                     from sentence_transformers import SentenceTransformer
 
                     torch.set_num_threads(2)
-                    cache = settings.data_dir / "models"
+                    cache = settings.embedding_cache_dir or settings.data_dir / "models"
                     cached_model = (
                         cache
                         / ("models--" + settings.embedding_model.replace("/", "--"))
@@ -26,7 +26,7 @@ class Embeddings:
                     self.model = SentenceTransformer(
                         settings.embedding_model,
                         device="cpu",
-                        cache_folder=str(settings.data_dir / "models"),
+                        cache_folder=str(cache),
                         trust_remote_code=False,
                         local_files_only=cached_model.exists() and any(cached_model.iterdir()),
                     )

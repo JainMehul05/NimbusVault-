@@ -1,0 +1,10 @@
+{
+  "checked_at": "2026-11-26T14:30:35.122382+00:00",
+  "profile": "default",
+  "region": "ap-southeast-2",
+  "mutations": [],
+  "blocked": {
+    "type": "LoginRefreshRequired",
+    "action": "Run aws login --profile default interactively, then rerun verification."
+  }
+}

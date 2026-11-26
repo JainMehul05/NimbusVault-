@@ -70,7 +70,7 @@ describe('AskPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /^ask$/i }));
 
     expect(await screen.findByText(/Hotels are capped at €200 per night/)).toBeInTheDocument();
-    expect(api.post).toHaveBeenCalledWith('/ai/ask', { question: 'What is the hotel cap?' });
+    expect(api.post).toHaveBeenCalledWith('/ai/ask', { question: 'What is the hotel cap?', conversationId: undefined, requestId: expect.stringMatching(/^[0-9a-f-]{36}$/i) });
     const cite = screen.getByRole('button', { name: /Source S1: travel-policy\.pdf, p\. 3/ });
     expect(cite).toBeInTheDocument();
     expect(screen.getByText('Sources')).toBeInTheDocument();
@@ -116,6 +116,6 @@ describe('AskPage', () => {
     const card = snippet.closest('button')!;
     expect(within(card).getByText('travel-policy.pdf')).toBeInTheDocument();
     expect(within(card).getByText('82%')).toBeInTheDocument();
-    expect(api.post).toHaveBeenCalledWith('/ai/search', { query: 'accommodation costs', limit: 10 });
+    expect(api.post).toHaveBeenCalledWith('/ai/search', { query: 'accommodation costs', limit: 10, mode: 'hybrid' });
   });
 });

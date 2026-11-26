@@ -1,0 +1,57 @@
+import { randomUUID } from 'crypto';
+import prisma from '@database/prisma';
+import { authorizationService } from '@common/authorization';
+import { intelligence } from '@common/intelligence';
+import { AppError } from '@common/errors';
+import type { SearchResult, AnswerResult } from './rag.service';
+export const activeRequests = new Map<string,string>();
+interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number }
+interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown> }
+
+export async function allowedScope(userId: string, selected?: string[]) {
+  const ids = await authorizationService.listAccessibleFileIds(userId, selected);
+  const files = await prisma.file.findMany({where:{id:{in:ids},status:'READY',aiStatus:'INDEXED',deletedAt:null}});
+  return files.map(f=>f.id);
+}
+async function mapSources(userId:string,sources:EvidenceSource[]):Promise<SearchResult[]> {
+  const result:SearchResult[]=[];
+  for(const s of sources) {
+    try {
+      const access=await authorizationService.authorizeFileAccess({userId,isAuthenticated:true},s.file_id,'read');
+      const file=access.file!;
+      if(file.aiStatus!=='INDEXED'||file.status!=='READY') continue;
+      result.push({chunkId:String(s.chunk_id),fileId:file.id,filename:file.filename,mimeType:file.mimeType,folderId:access.isOwner?file.folderId:null,chunkIndex:Number(s.chunk_id),pageStart:null,pageEnd:null,snippet:s.passage,score:s.similarity,permission:access.effectiveLevel});
+    } catch { /* A revoked/deleted source is withheld. */ }
+  }
+  return result;
+}
+export async function mapAnswer(userId:string,result:LocalAnswer):Promise<AnswerResult> {
+  const sources=result.sources||[];
+  const mapped=await mapSources(userId,sources);
+  if(mapped.length!==sources.length) throw AppError.notFound('Access changed while preparing the answer. Start a new question.');
+  return {status:result.mode==='insufficient'?'insufficient_evidence':'answered',answer:result.answer?.replace(/\[(\d+)\]/g,'[S$1]'),citations:mapped.map((s,i)=>({...s,ref:`S${sources[i].citation}`})),sourcesConsidered:sources.length,model:result.mode==='generated'?result.model:'Extractive fallback',...{mode:result.mode,warning:result.warning,conversationId:result.conversation_id,timings:result.timings,retrievalBackend:'local'}};
+}
+export async function localHistory(userId:string,id:string) {
+  const scope=await allowedScope(userId);
+  const history=await intelligence<{file_ids:string[];exchanges:Array<{question:string;response:LocalAnswer}>}>(`/api/ai/conversations/${id}`,undefined,userId,scope);
+  const current=await allowedScope(userId);
+  if(!history.file_ids.every(key=>current.includes(key))) throw AppError.notFound('History unavailable after access change');
+  return {exchanges:await Promise.all(history.exchanges.map(async e=>({question:e.question,response:await mapAnswer(userId,e.response)})))};
+}
+export const localIntelligence = {
+  async search(userId:string,query:string,options:{limit:number;fileIds?:string[];mode?:string}) {
+    const scope=await allowedScope(userId,options.fileIds);
+    const result=await intelligence<{sources:EvidenceSource[]}>('/api/ai/search',{query,...options},userId,scope);
+    return {results:await mapSources(userId,result.sources),model:'sentence-transformers/all-MiniLM-L6-v2',retrievalBackend:'local',awsCalls:0};
+  },
+  async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string}):Promise<AnswerResult> {
+    const scope=await allowedScope(userId,options.fileIds);
+    const requestId=options.requestId||randomUUID();
+    if(activeRequests.has(requestId)) throw AppError.conflict('Request already running');
+    activeRequests.set(requestId,userId);
+    let result:LocalAnswer;
+    try { result=await intelligence<LocalAnswer>('/api/ai/ask',{question,file_ids:scope,conversation_id:options.conversationId,request_id:requestId},userId,scope); }
+    finally { activeRequests.delete(requestId); }
+    return mapAnswer(userId,result);
+  },
+};

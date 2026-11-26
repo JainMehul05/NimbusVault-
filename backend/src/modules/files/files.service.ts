@@ -6,6 +6,7 @@ import { authorizationService } from '@common/authorization';
 import { fileNamesLock, lockInTransaction } from '@common/locks';
 import { firstFreeName } from '@common/names';
 import { releaseQuota, reserveQuota } from './quota.service';
+import { intelligenceEnabled } from '@common/intelligence';
 
 export type FileCategoryName = 'pdf' | 'image' | 'video' | 'document' | 'other';
 
@@ -137,7 +138,9 @@ export class FileService {
       if (!folder) throw AppError.notFound('Folder not found', ErrorCodes.FOLDER_NOT_FOUND);
     }
     const filename = await this.freeName(tx, input.ownerId, input.folderId, input.filename);
-    return tx.file.create({ data: { ...input, filename } });
+    const cloudId = intelligenceEnabled() ? /^cloudvault\/files\/([0-9a-f-]{36})\//i.exec(input.s3Key)?.[1] : undefined;
+    if(intelligenceEnabled() && !cloudId) throw AppError.badRequest('Unmanaged original key');
+    return tx.file.create({ data: { ...input, filename, ...(cloudId ? {id:cloudId} : {}) } });
   }
 
   private async freeName(tx: Prisma.TransactionClient, ownerId: string, folderId: string | null, name: string): Promise<string> {

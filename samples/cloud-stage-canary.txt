@@ -1,0 +1,4 @@
+CloudVault cloud-stage canary.
+Original documents are stored privately in Amazon S3.
+The cloud workflow validates the object, extracts approved text and records job state.
+MiniLM embeddings and Qwen answer generation run on the local laptop.

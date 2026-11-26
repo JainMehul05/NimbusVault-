@@ -24,6 +24,7 @@ export const aiSearchSchema = z.object({
   body: z.object({
     query: z.string().trim().min(2, 'Query is too short').max(500, 'Query is too long'),
     limit: z.coerce.number().int().min(1).max(20).default(8),
+    mode: z.enum(['filename','exact','semantic','hybrid']).default('hybrid'),
     fileIds: fileIdList,
   }),
 });
@@ -33,6 +34,8 @@ export const aiAskSchema = z.object({
     question: z.string().trim().min(3, 'Question is too short').max(1000, 'Question is too long'),
     fileIds: fileIdList,
     topK: z.coerce.number().int().min(1).max(12).default(8),
+    conversationId: z.string().uuid().optional(),
+    requestId: z.string().uuid().optional(),
   }),
 });
 

@@ -1,4 +1,6 @@
 from functools import lru_cache
+import base64
+import hashlib
 import boto3
 from botocore.config import Config
 from .config import settings
@@ -60,6 +62,7 @@ def upload(key, data, mime, file_id):
         ServerSideEncryption="AES256",
         Metadata={"cloudvault-id": file_id},
         IfNoneMatch="*",
+        ChecksumSHA256=base64.b64encode(hashlib.sha256(data).digest()).decode(),
     )
 
 

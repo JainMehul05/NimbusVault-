@@ -69,6 +69,9 @@ export interface Citation extends SearchResult {
 }
 
 export interface AnswerResult {
+  mode?: 'generated' | 'extractive' | 'insufficient';
+  warning?: string | null;
+  conversationId?: string;
   status: 'answered' | 'insufficient_evidence' | 'ungrounded';
   answer: string | null;
   citations: Citation[];
@@ -97,9 +100,12 @@ export const aiApi = {
     ),
   passage: (fileId: string, chunkIndex: number) => data<Passage>(api.get(`/ai/files/${fileId}/chunks/${chunkIndex}`)),
   summarize: (fileId: string) => data<AiDocument['summary']>(api.post(`/ai/files/${fileId}/summary`)),
-  search: (query: string, opts: { limit?: number; fileIds?: string[] } = {}) =>
+  search: (query: string, opts: { limit?: number; fileIds?: string[]; mode?: string } = {}) =>
     data<{ results: SearchResult[]; model: string }>(api.post('/ai/search', { query, ...opts })),
-  ask: (question: string, opts: { fileIds?: string[] } = {}) => data<AnswerResult>(api.post('/ai/ask', { question, ...opts })),
+  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string } = {}) => data<AnswerResult>(api.post('/ai/ask', { question, ...opts })),
+  cancel: (requestId: string) => api.post('/ai/cancel', { requestId }),
+  conversations: () => data<Array<{ id: string; title: string }>>(api.get('/ai/conversations')),
+  conversation: (id: string) => data<{exchanges:Array<{question:string;response:AnswerResult}>}>(api.get(`/ai/conversations/${id}`)),
 };
 
 /** Error code from an Axios error, if any. */

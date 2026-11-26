@@ -17,6 +17,9 @@ import { config } from '@config/index';
 import { createChildLogger } from '@common/logger';
 import { AppError } from '@common/errors';
 import { ErrorCodes } from '@common/errors';
+import { intelligence, intelligenceEnabled } from './intelligence';
+import { Readable as BufferReadable } from 'stream';
+import { randomUUID } from 'crypto';
 
 export interface UploadResult {
   key: string;
@@ -92,11 +95,25 @@ export class StorageService {
 
   /** Unguessable key. The user's filename contributes only a short alphanumeric extension. */
   generateObjectKey(userId: string, originalFilename: string): string {
+    if (intelligenceEnabled()) return `cloudvault/files/${randomUUID()}/${originalFilename.replace(/[^A-Za-z0-9._-]/g, '_')}`;
     const ext = /\.([A-Za-z0-9]{1,10})$/.exec(originalFilename)?.[1]?.toLowerCase();
     return `${userId}/${Date.now()}-${randomBytes(16).toString('hex')}${ext ? `.${ext}` : ''}`;
   }
 
   async upload(userId: string, originalFilename: string, stream: Readable, contentType: string): Promise<UploadResult> {
+    if (intelligenceEnabled()) {
+      const chunks: Buffer[] = [];
+      let size = 0;
+      for await (const chunk of stream) {
+        const part = Buffer.from(chunk); size += part.length;
+        if (size > config.storage.maxFileBytes) { stream.destroy(); throw AppError.badRequest('File too large'); }
+        chunks.push(part);
+      }
+      const key = this.generateObjectKey(userId, originalFilename);
+      const bytes = Buffer.concat(chunks);
+      const result = await intelligence<{size:number;checksumSha256:string}>('/storage', {operation:'put',key,mime:contentType,content:bytes.toString('base64')});
+      return {key,...result};
+    }
     const { client, Bucket } = this.ctx();
     const key = this.generateObjectKey(userId, originalFilename);
 
@@ -138,6 +155,10 @@ export class StorageService {
   }
 
   async download(key: string): Promise<{ stream: Readable; metadata: FileMetadata }> {
+    if (intelligenceEnabled()) {
+      const result = await intelligence<{content:string;size:number;contentType:string}>('/storage',{operation:'get',key});
+      return {stream:BufferReadable.from(Buffer.from(result.content,'base64')),metadata:{size:result.size,contentType:result.contentType,lastModified:new Date()}};
+    }
     const { client, Bucket } = this.ctx();
     try {
       const res = await client.send(new GetObjectCommand({ Bucket, Key: key }));
@@ -182,6 +203,7 @@ export class StorageService {
   }
 
   async delete(key: string): Promise<void> {
+    if (intelligenceEnabled()) { await intelligence('/storage',{operation:'delete',key}); return; }
     const { client, Bucket } = this.ctx();
     try {
       await client.send(new DeleteObjectCommand({ Bucket, Key: key }));
@@ -194,6 +216,7 @@ export class StorageService {
   }
 
   async getMetadata(key: string): Promise<FileMetadata> {
+    if (intelligenceEnabled()) return intelligence('/storage',{operation:'head',key});
     const { client, Bucket } = this.ctx();
     try {
       const res = await client.send(new HeadObjectCommand({ Bucket, Key: key }));
@@ -212,6 +235,7 @@ export class StorageService {
 
   /** Copies an object. With `ifMatch`, fails if the source changed since it was inspected. */
   async copy(sourceKey: string, destinationKey: string, options: { ifMatch?: string; contentType?: string } = {}): Promise<void> {
+    if (intelligenceEnabled()) { await intelligence('/storage',{operation:'copy',key:destinationKey,source:sourceKey}); return; }
     const { client, Bucket } = this.ctx();
     try {
       await client.send(
@@ -238,6 +262,7 @@ export class StorageService {
     expiresInSeconds = config.storage.downloadUrlTtlSeconds,
     response: { disposition?: string; contentType?: string } = {}
   ): Promise<PresignedUrlResult> {
+    if (intelligenceEnabled()) return intelligence('/storage',{operation:'presign-get',key,expires:Math.min(expiresInSeconds,120),disposition:response.disposition || 'attachment',mime:response.contentType || 'application/octet-stream'});
     const { presign, Bucket } = this.ctx();
     try {
       const command = new GetObjectCommand({
@@ -260,6 +285,7 @@ export class StorageService {
     contentLength: number,
     expiresInSeconds = config.storage.uploadUrlTtlSeconds
   ): Promise<PresignedUrlResult> {
+    if (intelligenceEnabled()) throw AppError.badRequest('Use the authenticated multipart upload in this local application');
     const { presign, Bucket } = this.ctx();
     try {
       const command = new PutObjectCommand({ Bucket, Key: key, ContentType: contentType, ContentLength: contentLength });
@@ -275,6 +301,7 @@ export class StorageService {
   }
 
   async healthCheck(): Promise<boolean> {
+    if (intelligenceEnabled()) return intelligence<{guard:{allowed:boolean}}>('/cloud/status').then(r=>r.guard.allowed).catch(()=>false);
     if (!this.client || !this.bucket) return false;
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }), { abortSignal: AbortSignal.timeout(5000) });

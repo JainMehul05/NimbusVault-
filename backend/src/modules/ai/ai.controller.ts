@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { DocumentIndex, File } from '@prisma/client';
 import prisma from '@database/prisma';
+import { intelligence, intelligenceEnabled } from '@common/intelligence';
+import { localIntelligence } from './local-intelligence';
 import { asyncHandler } from '@common/async-handler';
 import { successResponse } from '@common/response';
 import { AppError, ErrorCodes } from '@common/errors';
@@ -126,6 +128,13 @@ export const aiController = {
   getChunk: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const { file } = await readableFile(req.user!.userId, req.params.fileId);
     const chunkIndex = Number(req.params.chunkIndex);
+    if (intelligenceEnabled()) {
+      if(file.aiStatus!=='INDEXED') throw AppError.notFound('Passage unavailable');
+      const passage=await intelligence<{text:string;section:string}>(`/passage/${file.id}/${chunkIndex}`);
+      await readableFile(req.user!.userId,file.id);
+      res.json(successResponse({fileId:file.id,filename:file.filename,chunkIndex,content:passage.text,pageStart:null,pageEnd:null},'Passage',req.requestId));
+      return;
+    }
     const index = await prisma.documentIndex.findUnique({ where: { fileId: file.id }, select: { generation: true } });
     const chunk = index
       ? await prisma.documentChunk.findFirst({
@@ -149,15 +158,15 @@ export const aiController = {
   }),
 
   search: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const { query, limit, fileIds } = req.body as AiSearchInput;
-    const result = await ragService.search(req.user!.userId, query, { limit, fileIds });
+    const { query, limit, fileIds, mode } = req.body as AiSearchInput;
+    const result = intelligenceEnabled() ? await localIntelligence.search(req.user!.userId,query,{limit,fileIds,mode}) : await ragService.search(req.user!.userId, query, { limit, fileIds });
     res.json(successResponse(result, 'Search results', req.requestId));
   }),
 
   ask: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const userId = req.user!.userId;
-    const { question, fileIds, topK } = req.body as AiAskInput;
-    const result = await ragService.ask(userId, question, { fileIds, topK });
+    const { question, fileIds, topK, conversationId, requestId } = req.body as AiAskInput;
+    const result = intelligenceEnabled() ? await localIntelligence.ask(userId,question,{fileIds,topK,conversationId,requestId}) : await ragService.ask(userId, question, { fileIds, topK });
     // The question text itself is not stored in the audit log.
     await activityLogService.logActivity(userId, 'ai_query', {
       resourceType: 'USER',

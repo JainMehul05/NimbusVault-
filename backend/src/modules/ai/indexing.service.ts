@@ -2,6 +2,7 @@ import type { AiJob, File, PrismaClient } from '@prisma/client';
 import type { Readable } from 'stream';
 import prisma from '@database/prisma';
 import { config } from '@config/index';
+import { intelligence, intelligenceEnabled } from '@common/intelligence';
 import { createChildLogger } from '@common/logger';
 import { storageService } from '@common/storage';
 import { AppError, ErrorCodes } from '@common/errors';
@@ -41,7 +42,7 @@ export class AiIndexingService {
   constructor(private readonly prismaClient: PrismaClient = prisma) {}
 
   isEnabled(): boolean {
-    return !!getEmbeddingProvider();
+    return intelligenceEnabled() || !!getEmbeddingProvider();
   }
 
   /**
@@ -214,6 +215,22 @@ export class AiIndexingService {
       }
 
       const embedder = getEmbeddingProvider();
+      if (intelligenceEnabled()) {
+        const file = await this.prismaClient.file.findUniqueOrThrow({where:{id:job.fileId}});
+        const bytes = await readObject(file.s3Key,config.ai.limits.maxFileBytes);
+        const result = await intelligence<{chunkCount:number;text:string;model:string}>('/index',{file_id:file.id,filename:file.filename,object_key:file.s3Key,sha256:file.checksumSha256,mime:file.mimeType,content:bytes.toString('base64')});
+        const committed=await this.prismaClient.$transaction(async tx=>{
+          await tx.$queryRaw`SELECT "generation" FROM "document_indexes" WHERE "fileId"=${file.id} FOR UPDATE`;
+          const index=await tx.documentIndex.findUnique({where:{fileId:file.id}});
+          const current=await tx.file.findUnique({where:{id:file.id}});
+          if(index?.generation!==job.generation||!current||current.deletedAt) return false;
+          await tx.documentIndex.update({where:{fileId:file.id},data:{textContent:result.text,textLength:result.text.length,chunkCount:result.chunkCount,embeddingModel:result.model,embeddingDim:384,sourceChecksum:file.checksumSha256,indexedAt:new Date(),extractor:'CloudVault canonical local extraction',errorCode:null,errorMessage:null}});
+          await tx.file.update({where:{id:file.id},data:{aiStatus:'INDEXED'}});
+          return true;
+        });
+        await this.finishJob(job,committed?'SUCCEEDED':'CANCELLED');
+        return committed?'succeeded':'cancelled';
+      }
       if (!embedder) {
         await this.finishJob(job, 'FAILED', 'AI embeddings are not configured');
         await this.markFileFailed(job, 'FAILED', 'AI_PROVIDER_UNAVAILABLE', 'AI embeddings are not configured on this server');

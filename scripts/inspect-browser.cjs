@@ -1,0 +1,24 @@
+const { chromium } = require('playwright');
+const fs = require('fs');
+const crypto = require('crypto');
+(async () => {
+ const browser = await chromium.launch({headless:true,executablePath:process.env.NIMBUS_BROWSER || `${process.env.PROGRAMFILES}/BraveSoftware/Brave-Browser/Application/brave.exe`});
+ const page = await browser.newPage({viewport:{width:1366,height:768},reducedMotion:'reduce'});
+ const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ const email=`browser-${Date.now()}@example.test`, password=crypto.randomBytes(24).toString('hex');
+ await page.goto('http://127.0.0.1:3100/register');
+ await page.getByLabel('Full name').fill('Nimbus Integration Demo');
+ await page.getByLabel('Email address').fill(email);
+ await page.getByLabel('Password',{exact:true}).fill(password);
+ await page.getByRole('button',{name:'Create account',exact:true}).click();
+ await page.waitForURL('**/dashboard');
+ await page.getByRole('heading',{level:1}).waitFor();
+ fs.writeFileSync('.runtime/browser-demo.json',JSON.stringify({email,password}));
+ await page.screenshot({path:'.runtime/dashboard-first.png',fullPage:true});
+ console.log((await page.locator('body').innerText()).slice(0,2500));
+ await page.goto('http://127.0.0.1:3100/files');
+ await page.getByRole('heading',{level:1}).waitFor();
+ console.log((await page.locator('body').innerText()).slice(0,1800));
+ console.log('Browser errors:',errors);
+ await browser.close();
+})().catch(e=>{console.error(e.message);process.exit(1)});

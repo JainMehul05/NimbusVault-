@@ -20,6 +20,7 @@ import shareLinkRoutes from '@modules/share-links/share-links.routes';
 import activityRoutes from '@modules/activity/activity.routes';
 import aiRoutes from '@modules/ai/ai.routes';
 import { getAiStatus } from '@modules/ai/ai.status';
+import path from 'path';
 
 /** Removes query strings and share-link tokens, both of which can grant access, from logged URLs. */
 export const safeUrl = (url: string) =>
@@ -146,6 +147,13 @@ app.use(`/api/${config.apiPrefix}/sharing`, sharingRoutes);
 app.use(`/api/${config.apiPrefix}/share-links`, shareLinkRoutes);
 app.use(`/api/${config.apiPrefix}/activity`, activityRoutes);
 app.use(`/api/${config.apiPrefix}/ai`, aiRoutes);
+
+// One same-origin browser URL; service and database ports remain loopback-only.
+if (process.env.SERVE_FRONTEND === 'true') {
+  const frontend = path.resolve(__dirname, '../../frontend/dist');
+  app.use(express.static(frontend));
+  app.get('*', (req, res, next) => req.path.startsWith('/api/') ? next() : res.sendFile(path.join(frontend, 'index.html')));
+}
 
 app.use((req, res) => {
   res.status(404).json(errorResponse('Route not found', 'NOT_FOUND', undefined, req.requestId));

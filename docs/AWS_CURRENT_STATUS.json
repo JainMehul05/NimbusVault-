@@ -1,0 +1,92 @@
+{
+  "checked_at": "2026-11-26T14:50:57.195685+00:00",
+  "profile": "default",
+  "region": "ap-southeast-2",
+  "mutations": [],
+  "services": {
+    "S3": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:01.135609+00:00",
+      "public_access_blocked": true,
+      "encryption_configured": true
+    },
+    "DynamoDB": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:04.474354+00:00",
+      "table_status": "ACTIVE"
+    },
+    "Lambda": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:06.083716+00:00",
+      "state": "Active",
+      "memory_mb": 256,
+      "timeout_seconds": 30,
+      "consumer_state": "Disabled",
+      "batch_size": 1,
+      "maximum_concurrency": 2
+    },
+    "EventBridge": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:10.504059+00:00",
+      "state": "DISABLED"
+    },
+    "SQS": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:13.121114+00:00",
+      "attributes": {
+        "ApproximateNumberOfMessages": "0",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "VisibilityTimeout": "180"
+      }
+    },
+    "SQS DLQ": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:15.771287+00:00",
+      "attributes": {
+        "ApproximateNumberOfMessages": "1",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "VisibilityTimeout": "30"
+      }
+    },
+    "Step Functions": {
+      "status": "ACTIVE",
+      "observed_at": "2026-11-26T14:51:18.431218+00:00"
+    },
+    "CloudFormation": {
+      "status": "UPDATE_COMPLETE",
+      "observed_at": "2026-11-26T14:51:21.135009+00:00"
+    },
+    "S3 Vectors": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:23.891744+00:00",
+      "dimension": 384
+    },
+    "CloudWatch": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:26.063058+00:00",
+      "invocation_datapoints": [],
+      "log_retention_days": 3
+    },
+    "API Gateway": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:30.028364+00:00",
+      "routes_use_iam": true
+    },
+    "Parameter Store": {
+      "status": "verified_read_only",
+      "observed_at": "2026-11-26T14:51:32.261567+00:00",
+      "standard_parameters_read": 3
+    }
+  },
+  "identity": {
+    "account_suffix": "5388",
+    "type": "assumed-role"
+  },
+  "guard": {
+    "allowed": true,
+    "plan": "FREE",
+    "status": "ACTIVE",
+    "credits_usd": 139.998445,
+    "expires_at": "2027-05-24 10:27:24.967000+00:00"
+  }
+}

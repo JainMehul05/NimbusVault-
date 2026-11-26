@@ -1,4 +1,6 @@
 import { config } from '@config/index';
+import { intelligenceEnabled } from '@common/intelligence';
+import { localIntelligence } from './local-intelligence';
 import { AppError, ErrorCodes } from '@common/errors';
 import { authorizationService } from '@common/authorization';
 import { AiProviderError, getEmbeddingProvider, getGenerationProvider } from './providers';
@@ -122,6 +124,7 @@ export class RagService {
   }
 
   async search(userId: string, query: string, options: { limit: number; fileIds?: string[] }): Promise<{ results: SearchResult[]; model: string }> {
+    if (intelligenceEnabled()) return localIntelligence.search(userId,query,options);
     const embedder = this.requireEmbedder();
     const hits = await this.retrieve(userId, query, options.limit, options.fileIds);
     return { results: hits.map((h) => this.toResult(h, query)), model: embedder.model };
@@ -133,6 +136,7 @@ export class RagService {
    * model is not called at all (no cost, no chance to hallucinate).
    */
   async ask(userId: string, question: string, options: { fileIds?: string[]; topK: number }): Promise<AnswerResult> {
+    if (intelligenceEnabled()) return localIntelligence.ask(userId,question,options);
     const generator = getGenerationProvider();
     if (!generator) {
       throw AppError.serviceUnavailable('AI question answering is not configured on this server', ErrorCodes.AI_PROVIDER_UNAVAILABLE);

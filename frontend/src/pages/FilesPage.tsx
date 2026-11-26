@@ -335,7 +335,7 @@ export function FilesPage() {
                   <EmptyState
                     icon={UploadCloud}
                     title={currentFolderId ? 'This folder is empty' : 'Your vault is ready'}
-                    description={<>Drag files anywhere on this page, or use Upload. Files up to 100 MB each.</>}
+                    description={<>Drag files anywhere on this page, or use Upload. Files up to 25 MB each.</>}
                     action={
                       <>
                         <Button onClick={() => uploadInput.current?.click()}><Upload className="h-4 w-4" /> Upload files</Button>
@@ -384,7 +384,7 @@ export function FilesPage() {
           <div className="flex flex-col items-center border-2 border-dashed border-primary bg-surface/95 px-12 py-10 text-center shadow-brand">
             <UploadCloud className="h-9 w-9 text-primary" />
             <p className="mt-3 text-md font-semibold text-foreground">Drop to upload to {target}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Up to 100 MB per file</p>
+            <p className="mt-1 text-sm text-muted-foreground">Up to 25 MB per file</p>
           </div>
         </div>
       )}

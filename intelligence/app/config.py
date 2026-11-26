@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
     aws_region: str = "ap-southeast-2"
     aws_profile: str = "default"
-    s3_bucket: str = "cloudvault-d0c2b49b4347"
+    s3_bucket: str = ""
     s3_object_prefix: str = "cloudvault/files/"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     max_upload_mb: int = 25
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     evidence_threshold: float = 0.28
     context_chars: int = 10000
     data_dir: Path = ROOT / "data"
+    embedding_cache_dir: Path | None = None
 
     def model_post_init(self, context):
         if self.llm_url != "http://127.0.0.1:11434":

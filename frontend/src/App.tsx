@@ -15,6 +15,7 @@ const SharedWithMePage = lazy(() => import('@pages/SharedWithMePage').then((m) =
 const SharedFolderPage = lazy(() => import('@pages/SharedFolderPage').then((m) => ({ default: m.SharedFolderPage })));
 const ActivityPage = lazy(() => import('@pages/ActivityPage').then((m) => ({ default: m.ActivityPage })));
 const AskPage = lazy(() => import('@pages/AskPage').then((m) => ({ default: m.AskPage })));
+const CloudPage = lazy(() => import('@pages/CloudPage').then((m) => ({ default: m.CloudPage })));
 const TrashPage = lazy(() => import('@pages/TrashPage').then((m) => ({ default: m.TrashPage })));
 const AccountPage = lazy(() => import('@pages/AccountPage').then((m) => ({ default: m.AccountPage })));
 const PublicSharePage = lazy(() => import('@pages/PublicSharePage').then((m) => ({ default: m.PublicSharePage })));
@@ -40,6 +41,7 @@ const App: React.FC = () => {
                 <Route path="/shared-with-me" element={protect(<SharedWithMePage />)} />
                 <Route path="/shared-with-me/folders/:folderId" element={protect(<SharedFolderPage />)} />
                 <Route path="/ask" element={protect(<AskPage />)} />
+                <Route path="/cloud" element={protect(<CloudPage />)} />
                 <Route path="/activity" element={protect(<ActivityPage />)} />
                 <Route path="/trash" element={protect(<TrashPage />)} />
                 <Route path="/account" element={protect(<AccountPage />)} />

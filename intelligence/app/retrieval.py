@@ -59,8 +59,13 @@ def snapshot():
         return _cache[1], _cache[2]
 
 
-def retrieve(question, file_ids=None, limit=7):
+def retrieve(question, file_ids=None, limit=7, mode='hybrid'):
     rows, matrix = snapshot()
+    # None is the legacy single-user contract; an explicit empty trusted scope denies all.
+    if file_ids is not None:
+        selected_indices = [i for i,r in enumerate(rows) if r['file_id'] in set(file_ids)]
+        matrix = matrix[selected_indices]
+        rows = [rows[i] for i in selected_indices]
     if not rows:
         return [], {"indexed_files": 0, "candidate_chunks": 0}
     allowed = set(file_ids or [])
@@ -77,16 +82,18 @@ def retrieve(question, file_ids=None, limit=7):
     dense = sorted(zip(indices, scores), key=lambda p: float(p[1]), reverse=True)[:40]
     lexical = []
     tokens = list(dict.fromkeys(terms(question)))[:24]
-    if tokens:
+    if tokens and mode != 'semantic':
         expression = " OR ".join('"' + t.replace('"', '""') + '"' for t in tokens)
         with connect() as db:
             lexical = [
                 r["rowid"]
                 for r in db.execute(
-                    "SELECT rowid FROM chunk_fts WHERE chunk_fts MATCH ? ORDER BY bm25(chunk_fts) LIMIT 60",
+                    "SELECT rowid FROM chunk_fts WHERE chunk_fts MATCH ? ORDER BY bm25(chunk_fts)",
                     (expression,),
                 )
             ]
+    scoped_chunk_ids = {r['id'] for r in rows}
+    lexical = [key for key in lexical if key in scoped_chunk_ids][:60]
     lexical_rank = {key: rank for rank, key in enumerate(lexical, 1)}
     # Lexical candidates can rescue exact terminology outside the dense top 40.
     dense_indices = {i for i, _ in dense}

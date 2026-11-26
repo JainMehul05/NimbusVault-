@@ -13,6 +13,7 @@ const NAV = [
   { to: '/files', label: 'My Files', icon: FolderClosed, end: false },
   { to: '/shared-with-me', label: 'Shared', icon: Users, end: false },
   { to: '/ask', label: 'Ask NimbusVault', icon: Sparkles, end: true },
+  { to: '/cloud', label: 'Cloud Infrastructure', icon: LayoutGrid, end: true },
   { to: '/activity', label: 'Activity', icon: Activity, end: true },
   { to: '/trash', label: 'Trash', icon: Trash2, end: true },
 ]

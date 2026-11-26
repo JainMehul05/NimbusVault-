@@ -79,6 +79,18 @@ export function AskPage() {
   const [search, setSearch] = useState<{ state: 'idle' | 'loading' | 'done' | 'error'; results: SearchResult[]; error?: string; query?: string }>({ state: 'idle', results: [] })
   const [insights, setInsights] = useState<InsightsTarget | null>(null)
   const seq = useRef(0)
+  const request = useRef<string | null>(null)
+  const [conversationId, setConversationId] = useState<string>()
+  const [history, setHistory] = useState<Array<{id:string;title:string}>>([])
+  const [mode, setMode] = useState('hybrid')
+  const continueConversation = async (id: string) => {
+    setConversationId(id || undefined)
+    if (!id) { setTurns([]); return }
+    try {
+      const detail = await aiApi.conversation(id)
+      setTurns(detail.exchanges.map(e => ({id:++seq.current,question:e.question,state:'done' as const,result:e.response})).reverse())
+    } catch { setTurns([]); setCapsError('This history is unavailable or access to its documents has changed.') }
+  }
 
   const loadCaps = () => {
     setCapsError(null)
@@ -98,14 +110,17 @@ export function AskPage() {
     setTurns((prev) => [{ id, question: q, state: 'loading' as const }, ...prev].slice(0, 20))
     setQuestion('')
     try {
-      const result = await aiApi.ask(q)
+      const requestId = crypto.randomUUID()
+      request.current = requestId
+      const result = await aiApi.ask(q, { conversationId, requestId })
+      setConversationId(result.conversationId)
       setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'done', result } : t)))
     } catch (err) {
       const msg = errorCode(err) === 'RATE_LIMIT_EXCEEDED' || errorCode(err) === 'AI_BUSY'
         ? getErrorMessage(err, 'Too many questions — please wait a moment.')
         : getErrorMessage(err, 'The assistant couldn’t answer right now.')
       setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'error', error: msg } : t)))
-    }
+    } finally { request.current = null }
   }
 
   const submitSearch = async (e: FormEvent) => {
@@ -114,7 +129,7 @@ export function AskPage() {
     if (q.length < 2) return
     setSearch({ state: 'loading', results: [], query: q })
     try {
-      const { results } = await aiApi.search(q, { limit: 10 })
+      const { results } = await aiApi.search(q, { limit: 10, mode })
       setSearch({ state: 'done', results, query: q })
     } catch (err) {
       setSearch({ state: 'error', results: [], error: getErrorMessage(err, 'Search failed.'), query: q })
@@ -144,6 +159,12 @@ export function AskPage() {
         </div>
       ) : (
         <>
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <Badge tone="brand">Local retrieval</Badge><span>MiniLM · Qwen2.5 3B · no hosted AI</span>
+            <Button variant="secondary" onClick={() => { setConversationId(undefined); setTurns([]) }}>New conversation</Button>
+            <Button variant="secondary" onClick={() => aiApi.conversations().then(setHistory).catch(() => setCapsError('Conversation history is unavailable.'))}>History</Button>
+            {history.length > 0 && <select aria-label="Continue conversation" value={conversationId ?? ''} onChange={(e) => { void continueConversation(e.target.value) }} className="max-w-full border border-border bg-surface p-2"><option value="">New conversation</option>{history.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}</select>}
+          </div>
           <div role="tablist" aria-label="AI tools" className="mb-5 flex border-b border-border">
             {tabs.map((t) => (
               <button
@@ -186,6 +207,7 @@ export function AskPage() {
                       <Button type="submit" disabled={question.trim().length < 3 || turns.some((t) => t.state === 'loading')}>
                         <Sparkles className="h-4 w-4" /> Ask
                       </Button>
+                      {turns.some(t => t.state === 'loading') && <Button type="button" variant="secondary" onClick={() => { if(request.current) void aiApi.cancel(request.current) }}>Stop</Button>}
                     </div>
                   </form>
 
@@ -230,7 +252,8 @@ export function AskPage() {
                                   <ul className="space-y-2">{t.result!.citations.map((c) => <SourceCard key={c.ref} r={c} label={c.ref} onOpen={() => open(c)} />)}</ul>
                                 </>
                               )}
-                              <p className="mt-3 text-2xs text-subtle">AI-generated from your documents{t.result!.model ? ` · ${t.result!.model}` : ''}. Check cited passages for important decisions.</p>
+                              {t.result!.warning && <p className="mt-3 text-xs text-warning">{t.result!.warning}</p>}
+                              <p className="mt-3 text-2xs text-subtle">{t.result!.mode === 'extractive' ? 'Cited excerpts · extractive fallback' : 'AI-generated from your documents'}{t.result!.model ? ` · ${t.result!.model}` : ''}. Check cited passages for important decisions.</p>
                             </>
                           )}
                         </div>
@@ -243,6 +266,7 @@ export function AskPage() {
           ) : (
             <section id="ai-panel-search" role="tabpanel" aria-labelledby="ai-tab-search">
               <form onSubmit={submitSearch} className="flex flex-col gap-2 sm:flex-row">
+                <select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)} className="border border-border bg-surface p-2 text-sm text-foreground"><option value="hybrid">Hybrid</option><option value="semantic">Semantic</option><option value="exact">Exact content</option><option value="filename">Filename</option></select>
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden="true" />
                   <Input value={query} onChange={(e) => setQuery(e.target.value)} maxLength={500} placeholder="Describe what you’re looking for, in your own words" aria-label="Semantic search query" className="pl-9" />

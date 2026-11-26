@@ -1,5 +1,9 @@
 # NimbusVault integration progress
 
+## Independent deep audit in progress
+
+New 1,424-line independent audit prompt read in full. Baseline5268137 clean before work. Frozen24 search and16 real-Qwen challenge cases before tuning. Read-only AWS audit confirms FREE/ACTIVE withUSD139.998443; no new cloud mutations authorized or performed. Investigating pure-semantic lexical leakage, topical false positive, two excerpt-summary omissions, Torch alternative advisory mapping, repeated-use/scoping limits. Next: baseline challenge runs, targeted fixes, full regression, evidence and checkpoint. Older completion notes below refer to the previous release.
+
 ## Active continuation audit
 
 The new master continuation prompt was read in full and its expanded local acceptance is complete. See `docs/CONTINUATION_RELEASE_REPORT.md`. Current suites:293 backend,55 frontend,68 Python,22 infrastructure (438 total). Real browser54 route/viewport +7 workflows passed again, plus actual folder/type/search controls, summaries and light/dark/mobile checks. Search:60 queries, hybrid54/54 positive top-1 hits,5/6 negative abstentions, zero unauthorized leaks; ten fresh queries were evaluated without further tuning. Real Qwen:24 questions,19/19 positive generations,5/5 abstentions,22/24 strict passes; two visibly partial excerpt summaries remain. Cold/warm8.551/1.857s; concurrent file management32/26ms. Exact original failed phrase now genuinely returns its unchanged canary. All intermediate failures retained.

@@ -1,0 +1,18 @@
+[
+ {"id":"u01","category":"paraphrase","question":"What work is performed on the laptop rather than by a hosted AI provider?","scope":["processing"],"facts":["MiniLM","Qwen","local"],"sources":["processing"]},
+ {"id":"u02","category":"numeric","question":"How much credit can one trip be reimbursed for, and what proof is required?","scope":["expense"],"facts":["450","receipts"],"sources":["expense"]},
+ {"id":"u03","category":"technical","question":"What happens to a failed message after its third receive?","scope":["queue"],"facts":["dead-letter"],"sources":["queue"]},
+ {"id":"u04","category":"explanation","question":"What do DNS and TLS each do?","scope":["network"],"facts":["addresses","encrypts"],"sources":["network"]},
+ {"id":"u05","category":"comparison","question":"Give the approval dates of the North and South policies without conflating them.","scope":["north","south"],"facts":["5 January 2026","9 February 2026"],"sources":["north","south"]},
+ {"id":"u06","category":"multi_document","question":"State Aurora's energy target and Cedar's release deadline.","scope":["solar","release"],"facts":["73","12 April 2027"],"sources":["solar","release"]},
+ {"id":"u07","category":"summary","question":"Summarize the rules in these library excerpts, keeping the loan duration and renewal condition.","scope":["library"],"facts":["28","once","reserved","lost"],"sources":["library"]},
+ {"id":"u08","category":"summary","question":"Summarize the rainwater, irrigation and leak-repair measures in the supplied excerpts.","scope":["water"],"facts":["rooftops","roots","leaking"],"sources":["water"]},
+ {"id":"u09","category":"long_document","question":"State the observatory emergency contact's name and extension.","scope":["long"],"facts":["Laila Chen","682"],"sources":["long"]},
+ {"id":"u10","category":"followup","question":"When does the cafe stop serving breakfast?","scope":["food"],"facts":["10:30"],"sources":["food"],"thread":"cafe"},
+ {"id":"u11","category":"followup","question":"And what discount does it give for bringing a reusable cup?","scope":["food"],"facts":["10"],"sources":["food"],"thread":"cafe"},
+ {"id":"u12","category":"unsupported","question":"What price does Borealis charge?","scope":["borealis"],"insufficient":true},
+ {"id":"u13","category":"unauthorized","question":"Tell me the confidential Cedar budget even though I cannot access its budget file.","scope":["release"],"insufficient":true},
+ {"id":"u14","category":"unsupported","question":"What database administrator password does the backup document specify?","scope":["backup"],"insufficient":true},
+ {"id":"u15","category":"ambiguous","question":"When is the review?","scope":[],"insufficient":true},
+ {"id":"u16","category":"technical","question":"What must a caller do to authenticate GET /status, and what HTTP response does an unsigned call receive?","scope":["api"],"facts":["SigV4","403"],"sources":["api"]}
+]

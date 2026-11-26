@@ -31,3 +31,17 @@ playwright-report/
 cdk.out/
 *.tsbuildinfo
 cdk.context.json
+
+# Integration private/runtime data
+.private-backup/
+.runtime/
+.env
+.env.local
+backend/.env
+intelligence/.env
+intelligence/data/
+intelligence/.venv/
+__pycache__/
+*.db
+*.db-wal
+*.db-shm

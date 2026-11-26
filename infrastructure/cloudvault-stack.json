@@ -1,0 +1,557 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Approved private CloudVault lab processing; no original bucket ownership; triggers initially paused",
+  "Parameters": {
+    "OriginalBucket": {
+      "Type": "String"
+    },
+    "MetadataTable": {
+      "Type": "String"
+    },
+    "VectorIndex": {
+      "Type": "String"
+    },
+    "FixtureSha": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "WorkerLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/cloudvault-v3-dev-worker",
+        "RetentionInDays": 3
+      }
+    },
+    "DeadLetterQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "cloudvault-v3-dev-dlq",
+        "MessageRetentionPeriod": 345600,
+        "SqsManagedSseEnabled": true
+      }
+    },
+    "IngestionQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "cloudvault-v3-dev-ingestion",
+        "VisibilityTimeout": 180,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "MessageRetentionPeriod": 86400,
+        "SqsManagedSseEnabled": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "DeadLetterQueue",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        }
+      }
+    },
+    "WorkerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "cloudvault-v3-dev-worker-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "scoped-document-processing",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:s3:::${OriginalBucket}/cloudvault/files/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:s3:::${OriginalBucket}/cloudvault/derived/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${MetadataTable}"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "IngestionQueue",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:cloudvault-v3-dev-workflow"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cloudvault-v3-dev-worker"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cloudvault-v3-dev-worker:*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WorkerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": "WorkerLogs",
+      "Properties": {
+        "FunctionName": "cloudvault-v3-dev-worker",
+        "Runtime": "python3.13",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkerRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 30,
+        "MemorySize": 256,
+        "Architectures": [
+          "x86_64"
+        ],
+        "Code": {
+          "ZipFile": "\"\"\"AWS-managed Python runtime handler. No model, credentials or private text logging.\"\"\"\nimport datetime\nimport hashlib\nimport json\nimport os\nimport time\nimport urllib.parse\nfrom uuid import UUID\nimport boto3\nfrom botocore.exceptions import ClientError\n\nS3 = boto3.client('s3')\nDDB = boto3.client('dynamodb')\nSFN = boto3.client('stepfunctions')\nBUCKET = os.environ['ORIGINAL_BUCKET']\nTABLE = os.environ['METADATA_TABLE']\nPREFIX = 'cloudvault/files/'\nDERIVED = 'cloudvault/derived/'\nWORKFLOW = os.environ['WORKFLOW_ARN']\nFIXTURE_SHAS = set(os.environ['APPROVED_FIXTURE_SHA256'].split(','))\n\n\ndef stamp():\n    return datetime.datetime.now(datetime.timezone.utc).isoformat()\n\n\ndef save_job(job, state):\n    payload = {k: v for k, v in job.items() if k not in ('failure', 'text')}\n    payload.update(state=state, updated_at=stamp())\n    payload['history'] = [*job.get('history', []), {'stage': state, 'at': payload['updated_at']}][-8:]\n    DDB.put_item(TableName=TABLE, Item={'pk': {'S': 'WORKSPACE#default'}, 'sk': {'S': job['job_key']}, 'file_id': {'S': job['file_id']}, 'state': {'S': state}, 'payload': {'S': json.dumps(payload)}})\n    return {**payload}\n\n\ndef validate_key(bucket, key):\n    if bucket != BUCKET or not key.startswith(PREFIX) or '\\x00' in key or len(key) > 1024:\n        raise ValueError('UnmanagedObject')\n    parts = key[len(PREFIX):].split('/')\n    if len(parts) != 2 or not parts[1]:\n        raise ValueError('InvalidManagedKey')\n    UUID(parts[0])\n    return parts[0]\n\n\ndef dispatch(message):\n    if message.get('Event') == 's3:TestEvent':\n        return\n    detail = message.get('detail', {})\n    bucket = detail.get('bucket', {}).get('name')\n    obj = detail.get('object', {})\n    key = obj.get('key', '')  # EventBridge keys are raw; S3 notification keys below are encoded.\n    if 'Records' in message:\n        source = message['Records'][0]['s3']\n        bucket = source['bucket']['name']; obj = source['object']\n        key = urllib.parse.unquote_plus(obj['key'])\n    file_id = validate_key(bucket, key)\n    revision = str(obj.get('sequencer') or obj.get('etag') or obj.get('eTag') or message.get('id'))\n    name = 'cv-' + hashlib.sha256((key+revision).encode()).hexdigest()[:60]\n    job = {'file_id': file_id, 'bucket': bucket, 'key': key, 'event_revision': revision, 'event_etag': obj.get('etag') or obj.get('eTag'), 'job_key': 'JOB#'+name, 'correlation_id': name, 'created_at': stamp()}\n    try:\n        SFN.start_execution(stateMachineArn=WORKFLOW, name=name, input=json.dumps(job, sort_keys=True))\n    except ClientError as error:\n        if error.response['Error']['Code'] != 'ExecutionAlreadyExists':\n            raise\n\n\ndef stage(action, job):\n    validate_key(job['bucket'], job['key'])\n    if action == 'validate':\n        head = S3.head_object(Bucket=BUCKET, Key=job['key'])\n        if job.get('event_etag') and head['ETag'].strip('\"') != job['event_etag'].strip('\"'):\n            raise ValueError('StaleEvent')\n        job.update(size=head['ContentLength'], mime=head.get('ContentType', 'application/octet-stream'))\n        return save_job(job, 'validated')\n    if action == 'extract':\n        if job['size'] > 1024*1024:\n            job.update(cloud_extraction='local_required_size_limit')\n        else:\n            result = S3.get_object(Bucket=BUCKET, Key=job['key'])\n            try:\n                raw = result['Body'].read(1024*1024+1)\n            finally:\n                result['Body'].close()\n            if len(raw) != job['size']:\n                raise ValueError('ObjectSizeMismatch')\n            digest = hashlib.sha256(raw).hexdigest();job['sha256'] = digest\n            # Only the explicitly approved non-sensitive fixture may persist cloud text.\n            if digest in FIXTURE_SHAS and len(raw) <= 256*1024:\n                text = raw.decode('utf-8-sig')\n                artifact = DERIVED + job['file_id']+'/'+digest+'/text.json'\n                try:\n                    S3.put_object(Bucket=BUCKET, Key=artifact, Body=json.dumps({'file_id': job['file_id'], 'sha256': digest, 'sections': [{'section': 'Content', 'text': text}]}).encode(), ContentType='application/json', ServerSideEncryption='AES256', IfNoneMatch='*')\n                except ClientError as error:\n                    if error.response['Error']['Code'] not in {'PreconditionFailed', '412'}:\n                        raise\n                job.update(artifact_key=artifact, cloud_extraction='approved_plain_text')\n            else:\n                job.update(cloud_extraction='local_required_privacy_scope')\n        return save_job(job, 'cloud_extracted_or_classified')\n    if action == 'persist':\n        return save_job(job, 'cloud_stage_complete')\n    if action == 'await_embedding':\n        return save_job(job, 'awaiting_local_embedding')\n    if action == 'fail':\n        job['error_code'] = 'CloudStageFailed'\n        return save_job(job, 'failed')\n    raise ValueError('UnknownStage')\n\n\ndef api(event):\n    path = event.get('rawPath', '')\n    if path == '/status':\n        body = {'status': 'ok', 'service': 'CloudVault cloud metadata', 'at': stamp()}\n    else:\n        prefix = 'JOB#' if path == '/jobs' else 'FILE#'\n        result = DDB.query(TableName=TABLE, KeyConditionExpression='pk=:pk AND begins_with(sk,:prefix)', ExpressionAttributeValues={':pk': {'S': 'WORKSPACE#default'}, ':prefix': {'S': prefix}}, ConsistentRead=True, Limit=100)\n        body = {'items': [json.loads(r['payload']['S']) for r in result['Items']], 'truncated': bool(result.get('LastEvaluatedKey')), 'source': 'dynamodb_via_iam_api'}\n    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}, 'body': json.dumps(body)}\n\n\ndef handler(event, context):\n    started = time.perf_counter()\n    correlation = event.get('job', {}).get('correlation_id', 'dispatch')\n    try:\n        if 'requestContext' in event:\n            return api(event)\n        if event.get('stage'):\n            return stage(event['stage'], event['job'])\n        failures = []\n        for record in event.get('Records', []):\n            try:\n                dispatch(json.loads(record['body']))\n            except Exception:\n                failures.append({'itemIdentifier': record['messageId']})\n        return {'batchItemFailures': failures}\n    finally:\n        print(json.dumps({'correlation_id': correlation, 'stage': event.get('stage', 'dispatch_or_api'), 'duration_ms': round((time.perf_counter()-started)*1000, 2), 'request_id': context.aws_request_id}))\n"
+        },
+        "Environment": {
+          "Variables": {
+            "ORIGINAL_BUCKET": {
+              "Ref": "OriginalBucket"
+            },
+            "METADATA_TABLE": {
+              "Ref": "MetadataTable"
+            },
+            "WORKFLOW_ARN": {
+              "Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:cloudvault-v3-dev-workflow"
+            },
+            "APPROVED_FIXTURE_SHA256": {
+              "Ref": "FixtureSha"
+            }
+          }
+        }
+      }
+    },
+    "WorkflowRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "cloudvault-v3-dev-workflow-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "invoke-worker-only",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "WorkerFunction",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "DocumentWorkflow": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "StateMachineName": "cloudvault-v3-dev-workflow",
+        "StateMachineType": "STANDARD",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "WorkflowRole",
+            "Arn"
+          ]
+        },
+        "DefinitionString": {
+          "Fn::Sub": "{\"StartAt\": \"ValidateObject\", \"TimeoutSeconds\": 120, \"States\": {\"ValidateObject\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:states:::lambda:invoke\", \"Parameters\": {\"FunctionName\": \"${WorkerFunction.Arn}\", \"Payload\": {\"stage\": \"validate\", \"job.$\": \"$\"}}, \"OutputPath\": \"$.Payload\", \"TimeoutSeconds\": 35, \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.TooManyRequestsException\"], \"IntervalSeconds\": 1, \"MaxAttempts\": 2, \"BackoffRate\": 2}], \"Catch\": [{\"ErrorEquals\": [\"States.ALL\"], \"ResultPath\": \"$.failure\", \"Next\": \"RecordFailure\"}], \"Next\": \"ExtractOrClassify\"}, \"ExtractOrClassify\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:states:::lambda:invoke\", \"Parameters\": {\"FunctionName\": \"${WorkerFunction.Arn}\", \"Payload\": {\"stage\": \"extract\", \"job.$\": \"$\"}}, \"OutputPath\": \"$.Payload\", \"TimeoutSeconds\": 35, \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.TooManyRequestsException\"], \"IntervalSeconds\": 1, \"MaxAttempts\": 2, \"BackoffRate\": 2}], \"Catch\": [{\"ErrorEquals\": [\"States.ALL\"], \"ResultPath\": \"$.failure\", \"Next\": \"RecordFailure\"}], \"Next\": \"PersistManifest\"}, \"PersistManifest\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:states:::lambda:invoke\", \"Parameters\": {\"FunctionName\": \"${WorkerFunction.Arn}\", \"Payload\": {\"stage\": \"persist\", \"job.$\": \"$\"}}, \"OutputPath\": \"$.Payload\", \"TimeoutSeconds\": 35, \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.TooManyRequestsException\"], \"IntervalSeconds\": 1, \"MaxAttempts\": 2, \"BackoffRate\": 2}], \"Catch\": [{\"ErrorEquals\": [\"States.ALL\"], \"ResultPath\": \"$.failure\", \"Next\": \"RecordFailure\"}], \"Next\": \"AwaitLocalEmbedding\"}, \"AwaitLocalEmbedding\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:states:::lambda:invoke\", \"Parameters\": {\"FunctionName\": \"${WorkerFunction.Arn}\", \"Payload\": {\"stage\": \"await_embedding\", \"job.$\": \"$\"}}, \"OutputPath\": \"$.Payload\", \"TimeoutSeconds\": 35, \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.TooManyRequestsException\"], \"IntervalSeconds\": 1, \"MaxAttempts\": 2, \"BackoffRate\": 2}], \"Catch\": [{\"ErrorEquals\": [\"States.ALL\"], \"ResultPath\": \"$.failure\", \"Next\": \"RecordFailure\"}], \"End\": true}, \"RecordFailure\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:states:::lambda:invoke\", \"Parameters\": {\"FunctionName\": \"${WorkerFunction.Arn}\", \"Payload\": {\"stage\": \"fail\", \"job.$\": \"$\"}}, \"Next\": \"Failed\"}, \"Failed\": {\"Type\": \"Fail\", \"Error\": \"CloudStageFailed\"}}}"
+        }
+      }
+    },
+    "QueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "IngestionQueue"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "IngestionQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/cloudvault-v3-dev-uploads"
+                  }
+                },
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "UploadRule": {
+      "Type": "AWS::Events::Rule",
+      "DependsOn": "QueuePolicy",
+      "Properties": {
+        "Name": "cloudvault-v3-dev-uploads",
+        "State": "DISABLED",
+        "EventPattern": {
+          "source": [
+            "aws.s3"
+          ],
+          "detail-type": [
+            "Object Created"
+          ],
+          "detail": {
+            "bucket": {
+              "name": [
+                {
+                  "Ref": "OriginalBucket"
+                }
+              ]
+            },
+            "object": {
+              "key": [
+                {
+                  "prefix": "cloudvault/files/"
+                }
+              ]
+            }
+          }
+        },
+        "Targets": [
+          {
+            "Id": "Ingestion",
+            "Arn": {
+              "Fn::GetAtt": [
+                "IngestionQueue",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "QueueMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "WorkerFunction"
+        },
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "IngestionQueue",
+            "Arn"
+          ]
+        },
+        "BatchSize": 1,
+        "Enabled": false,
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures"
+        ],
+        "ScalingConfig": {
+          "MaximumConcurrency": 2
+        }
+      }
+    },
+    "MetadataApi": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "cloudvault-v3-dev-metadata",
+        "ProtocolType": "HTTP",
+        "RouteSelectionExpression": "$request.method $request.path"
+      }
+    },
+    "ApiIntegration": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "MetadataApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "WorkerFunction",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 10000
+      }
+    },
+    "ApiStage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "MetadataApi"
+        },
+        "StageName": "$default",
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "ThrottlingBurstLimit": 2,
+          "ThrottlingRateLimit": 1
+        }
+      }
+    },
+    "ApiPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "WorkerFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MetadataApi}/*/GET/*"
+        }
+      }
+    },
+    "TableParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/cloudvault/v3/dev/table",
+        "Type": "String",
+        "Tier": "Standard",
+        "Value": {
+          "Ref": "MetadataTable"
+        }
+      }
+    },
+    "VectorParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/cloudvault/v3/dev/vector-index",
+        "Type": "String",
+        "Tier": "Standard",
+        "Value": {
+          "Ref": "VectorIndex"
+        }
+      }
+    },
+    "WorkflowParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/cloudvault/v3/dev/workflow",
+        "Type": "String",
+        "Tier": "Standard",
+        "Value": "cloudvault-v3-dev-workflow"
+      }
+    },
+    "FilesRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "MetadataApi"
+        },
+        "RouteKey": "GET /files",
+        "AuthorizationType": "AWS_IAM",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "ApiIntegration"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "JobsRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "MetadataApi"
+        },
+        "RouteKey": "GET /jobs",
+        "AuthorizationType": "AWS_IAM",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "ApiIntegration"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "StatusRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "MetadataApi"
+        },
+        "RouteKey": "GET /status",
+        "AuthorizationType": "AWS_IAM",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "ApiIntegration"
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "FunctionName": {
+      "Value": {
+        "Ref": "WorkerFunction"
+      }
+    },
+    "WorkflowArn": {
+      "Value": {
+        "Ref": "DocumentWorkflow"
+      }
+    },
+    "QueueUrl": {
+      "Value": {
+        "Ref": "IngestionQueue"
+      }
+    },
+    "QueueArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "IngestionQueue",
+          "Arn"
+        ]
+      }
+    },
+    "DlqUrl": {
+      "Value": {
+        "Ref": "DeadLetterQueue"
+      }
+    },
+    "MappingId": {
+      "Value": {
+        "Ref": "QueueMapping"
+      }
+    },
+    "ApiId": {
+      "Value": {
+        "Ref": "MetadataApi"
+      }
+    },
+    "ApiEndpoint": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MetadataApi",
+          "ApiEndpoint"
+        ]
+      }
+    }
+  }
+}

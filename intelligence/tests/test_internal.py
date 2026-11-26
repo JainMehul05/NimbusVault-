@@ -479,3 +479,102 @@ def test_exact_technical_identifier_can_rescue_hybrid_but_not_escape_scope(priva
         "/api/ai/search", headers=scoped, json={"query": "NV-999", "mode": "exact"}
     )
     assert denied.json()["sources"] == []
+
+
+def test_query_facet_separates_a_named_topic_from_requested_property():
+    from app.retrieval import query_facet
+
+    assert "budget" in query_facet(
+        "What is the confidential Juniper budget?", "Release Juniper is due in April."
+    )
+    assert "address" in query_facet(
+        "What is Project Orion's mailing address?", "Project Orion uses solar power."
+    )
+    assert query_facet("solar electricity", "Panels generate electricity.") is None
+
+
+def test_ask_scope_contract_matches_header_limit():
+    from app.rag import Ask
+
+    assert (
+        len(
+            Ask(question="What is supported?", file_ids=[str(uuid4()) for _ in range(250)]).file_ids
+        )
+        == 250
+    )
+    with pytest.raises(ValueError):
+        Ask(question="What is supported?", file_ids=[str(uuid4()) for _ in range(251)])
+
+
+def test_bm25_works_without_loading_or_querying_the_embedding_model(private, monkeypatch):
+    client, h = private
+    key = add(client, h, "Runbook identifier TX-713 means journal recovery.", "runbook.txt")
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("BM25 must not require dense embeddings")
+
+    monkeypatch.setattr(engine, "encode", forbidden)
+    monkeypatch.setattr(engine, "load", forbidden)
+    response = client.post(
+        "/api/ai/search",
+        headers={**h, "x-file-scope": json.dumps([key])},
+        json={"query": "TX-713", "mode": "lexical"},
+    )
+    assert response.status_code == 200
+    assert {s["file_id"] for s in response.json()["sources"]} == {key}
+    assert response.json()["sources"][0]["score_kind"] == "lexical"
+
+
+def test_pure_semantic_does_not_accept_a_lexical_rescue(private, monkeypatch):
+    import numpy as np
+    from app import retrieval
+
+    client, h = private
+    key = add(client, h, "Quasar astrolabe wheels copper measurements.", "measurements.txt")
+    other = add(client, h, "Binary files rest on a shelf.", "other.txt")
+    monkeypatch.setattr(
+        retrieval,
+        "dense_scores",
+        lambda rows, matrix, vector, scope: (
+            np.full(len(rows), 0.25),
+            {"provider": "local", "aws_calls": 0},
+        ),
+    )
+    scope = {**h, "x-file-scope": json.dumps([key, other])}
+    semantic = client.post(
+        "/api/ai/search",
+        headers=scope,
+        json={"query": "Quasar astrolabe wheels copper", "mode": "semantic"},
+    )
+    hybrid = client.post(
+        "/api/ai/search",
+        headers=scope,
+        json={"query": "Quasar astrolabe wheels copper", "mode": "hybrid"},
+    )
+    assert semantic.json()["sources"] == []
+    assert {s["file_id"] for s in hybrid.json()["sources"]} == {key}
+
+
+def test_matching_number_does_not_validate_the_wrong_named_policy(private):
+    from app.rag import validate_claims
+    from app.llm import GroundedAnswer
+
+    sources = [
+        {"citation": 1, "passage": "Policy North retains audit logs for 30 days."},
+        {"citation": 2, "passage": "Policy South retains audit logs for 90 days."},
+    ]
+    answer = GroundedAnswer.model_validate(
+        {
+            "insufficient": False,
+            "claims": [
+                {
+                    "text": "Policy North retains audit logs for 90 days.",
+                    "sources": [2],
+                    "quotes": [sources[1]["passage"]],
+                }
+            ],
+        }
+    )
+    assert validate_claims(answer, sources) == []
+    answer.claims[0].text = "Policy South retains audit logs for 90 days."
+    assert len(validate_claims(answer, sources)) == 1

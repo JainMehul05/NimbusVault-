@@ -11,6 +11,7 @@ import { successResponse } from '@common/response';
 import { AppError } from '@common/errors';
 import { allowedScope, localHistory, requestStop } from './local-intelligence';
 import prisma from '@database/prisma';
+import { authorizationService } from '@common/authorization';
 import { aiController } from './ai.controller';
 import { aiAskSchema, aiChunkParamsSchema, aiFileParamsSchema, aiSearchSchema, aiTextQuerySchema } from './ai.validation';
 
@@ -60,6 +61,7 @@ router.post('/cloud/complete',queryLimiter,asyncHandler(async(req,res)=>{
   if(user?.role!=='admin') throw AppError.forbidden('Administrator required');
   const fileId=String(req.body.fileId||'');
   if(!(await allowedScope(userId,[fileId])).includes(fileId)) throw AppError.notFound('Indexed file missing');
+    await authorizationService.authorizeFileAccess({userId,isAuthenticated:true},fileId,'write');
   res.json(successResponse(await intelligence('/cloud/complete',{file_id:fileId}),'Bounded reconciliation',req.requestId));
 }));
 router.post('/cloud/probe',queryLimiter,asyncHandler(async(req,res)=>{

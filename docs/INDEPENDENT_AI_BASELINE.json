@@ -1,0 +1,1677 @@
+{
+  "started_at": "2026-11-26T17:59:41.572176+00:00",
+  "cases_sha256": "e1d3038eeb95500884b197e25180b51e51e1e9b5f8b39c60dfd8a86873e6afda",
+  "actual_model": "qwen2.5:3b",
+  "isolated_local_only": true,
+  "aws_calls": 0,
+  "cases": [
+    {
+      "id": "u01",
+      "category": "paraphrase",
+      "question": "What work is performed on the laptop rather than by a hosted AI provider?",
+      "scope": [
+        "processing"
+      ],
+      "facts": [
+        "MiniLM",
+        "Qwen",
+        "local"
+      ],
+      "sources": [
+        "processing"
+      ],
+      "answer": {
+        "mode": "insufficient",
+        "answer": "The indexed documents do not contain enough relevant evidence to answer this question.",
+        "claims": [],
+        "sources": [],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 0,
+          "context_characters": 0,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "What work is performed on the laptop rather than by a hosted AI provider?",
+        "retrieval_query": "What work is performed on the laptop rather than by a hosted AI provider?",
+        "model": null,
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 33.44,
+          "total_ms": 33.44
+        },
+        "conversation_id": "95d11e7e-e81c-4c92-be77-c7421d60d06e",
+        "benchmark_raw_model_outputs": []
+      },
+      "latency_ms": 55.13,
+      "facts_covered": [],
+      "fact_coverage": 0.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": false,
+      "acceptance_pass": false
+    },
+    {
+      "id": "u02",
+      "category": "numeric",
+      "question": "How much credit can one trip be reimbursed for, and what proof is required?",
+      "scope": [
+        "expense"
+      ],
+      "facts": [
+        "450",
+        "receipts"
+      ],
+      "sources": [
+        "expense"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "The reimbursement limit for each trip is 450 credits. [1]\n\nItemized receipts are required for each claim. [1]",
+        "claims": [
+          {
+            "text": "The reimbursement limit for each trip is 450 credits.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "The reimbursement limit is 450 credits per journey."
+            ]
+          },
+          {
+            "text": "Itemized receipts are required for each claim.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Each claim must include itemized receipts."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "dcf9e0f2-6a8e-51bd-a1ad-a006d80dd933",
+            "chunk_id": 7,
+            "filename": "travel-expenses.txt",
+            "original_name": "travel-expenses.txt",
+            "section": "Content",
+            "passage": "Employees must submit travel expense claims within 14 days of returning. Each claim must include itemized receipts. The reimbursement limit is 450 credits per journey.",
+            "similarity": 0.6694434285163879,
+            "rrf": 0.01639344262295082
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 167,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "How much credit can one trip be reimbursed for, and what proof is required?",
+        "retrieval_query": "How much credit can one trip be reimbursed for, and what proof is required?",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 60.94,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 8624785200,
+            "load_duration": 6785105800,
+            "prompt_eval_count": 877,
+            "prompt_eval_duration": 471164000,
+            "eval_count": 101,
+            "eval_duration": 1332711000
+          },
+          "total_ms": 8855.28
+        },
+        "conversation_id": "6d3809d1-b584-46b3-95c6-9e67de0b2842",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "The reimbursement limit for each trip is 450 credits.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "The reimbursement limit is 450 credits per journey."
+                ]
+              },
+              {
+                "text": "Itemized receipts are required for each claim.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Each claim must include itemized receipts."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 8878.82,
+      "facts_covered": [
+        "450",
+        "receipts"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u03",
+      "category": "technical",
+      "question": "What happens to a failed message after its third receive?",
+      "scope": [
+        "queue"
+      ],
+      "facts": [
+        "dead-letter"
+      ],
+      "sources": [
+        "queue"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "Failed messages move to the dead-letter queue after three receives. [1]\n\nOperators inspect failed messages before any approved replay. [1]",
+        "claims": [
+          {
+            "text": "Failed messages move to the dead-letter queue after three receives.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Failed messages move to the dead-letter queue after three receives."
+            ]
+          },
+          {
+            "text": "Operators inspect failed messages before any approved replay.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Operators inspect failed messages before any approved replay."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "7f5137e3-6dbd-5311-90fb-918bbb42c202",
+            "chunk_id": 10,
+            "filename": "queue-recovery.txt",
+            "original_name": "queue-recovery.txt",
+            "section": "Content",
+            "passage": "The ingestion queue visibility timeout is 180 seconds. Failed messages move to the dead-letter queue after three receives. Operators inspect failed messages before any approved replay. Never purge unknown messages.",
+            "similarity": 0.4880366325378418,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 214,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "What happens to a failed message after its third receive?",
+        "retrieval_query": "What happens to a failed message after its third receive?",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 19.62,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 1448656100,
+            "load_duration": 5555400,
+            "prompt_eval_count": 874,
+            "prompt_eval_duration": 52328000,
+            "eval_count": 101,
+            "eval_duration": 1378527000
+          },
+          "total_ms": 1716.12
+        },
+        "conversation_id": "16a8014b-e1ab-4169-9f0e-4370ee8521fd",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Failed messages move to the dead-letter queue after three receives.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Failed messages move to the dead-letter queue after three receives."
+                ]
+              },
+              {
+                "text": "Operators inspect failed messages before any approved replay.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Operators inspect failed messages before any approved replay."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 1744.76,
+      "facts_covered": [
+        "dead-letter"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u04",
+      "category": "explanation",
+      "question": "What do DNS and TLS each do?",
+      "scope": [
+        "network"
+      ],
+      "facts": [
+        "addresses",
+        "encrypts"
+      ],
+      "sources": [
+        "network"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "DNS translates domain names into IP addresses. [1]\n\nTLS encrypts data in transit. [1]",
+        "claims": [
+          {
+            "text": "DNS translates domain names into IP addresses.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "DNS translates domain names into IP addresses."
+            ]
+          },
+          {
+            "text": "TLS encrypts data in transit.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "TLS encrypts data in transit."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "91c0a1d5-495b-5e49-ae4c-46519cac2fe8",
+            "chunk_id": 14,
+            "filename": "network-guide.txt",
+            "original_name": "network-guide.txt",
+            "section": "Content",
+            "passage": "DNS translates domain names into IP addresses. TLS encrypts data in transit. An HTTP 429 response means the client exceeded the request rate limit.",
+            "similarity": 0.6475174427032471,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 147,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "What do DNS and TLS each do?",
+        "retrieval_query": "What do DNS and TLS each do?",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 46.52,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 1437179200,
+            "load_duration": 7371000,
+            "prompt_eval_count": 861,
+            "prompt_eval_duration": 45137000,
+            "eval_count": 89,
+            "eval_duration": 1371060000
+          },
+          "total_ms": 1826.32
+        },
+        "conversation_id": "94d6c309-111c-40b2-9d24-873644fd8868",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "DNS translates domain names into IP addresses.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "DNS translates domain names into IP addresses."
+                ]
+              },
+              {
+                "text": "TLS encrypts data in transit.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "TLS encrypts data in transit."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 1856.03,
+      "facts_covered": [
+        "addresses",
+        "encrypts"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u05",
+      "category": "comparison",
+      "question": "Give the approval dates of the North and South policies without conflating them.",
+      "scope": [
+        "north",
+        "south"
+      ],
+      "facts": [
+        "5 January 2026",
+        "9 February 2026"
+      ],
+      "sources": [
+        "north",
+        "south"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "The North retention policy was approved on 5 January 2026. [1]\n\nThe South retention policy was approved on 9 February 2026. [2]",
+        "claims": [
+          {
+            "text": "The North retention policy was approved on 5 January 2026.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "The North retention policy was approved on 5 January 2026."
+            ]
+          },
+          {
+            "text": "The South retention policy was approved on 9 February 2026.",
+            "citations": [
+              2
+            ],
+            "quotes": [
+              "The South retention policy was approved on 9 February 2026."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "38b522d4-1d97-58ee-85a6-4941c460ac36",
+            "chunk_id": 3,
+            "filename": "north-retention.txt",
+            "original_name": "north-retention.txt",
+            "section": "Content",
+            "passage": "Policy North retains audit logs for 30 days. North requires two reviewers before publishing a release. The North retention policy was approved on 5 January 2026.",
+            "similarity": 0.44350922107696533,
+            "rrf": 0.03278688524590164
+          },
+          {
+            "citation": 2,
+            "file_id": "13011655-f8ea-5f3e-a059-6ef0ad16675e",
+            "chunk_id": 4,
+            "filename": "south-retention.txt",
+            "original_name": "south-retention.txt",
+            "section": "Content",
+            "passage": "Policy South retains audit logs for 90 days. South requires three reviewers before publishing a release. The South retention policy was approved on 9 February 2026.",
+            "similarity": 0.36256512999534607,
+            "rrf": 0.03225806451612903
+          }
+        ],
+        "coverage": {
+          "indexed_files": 2,
+          "candidate_chunks": 2,
+          "selected_chunks": 2,
+          "context_characters": 325,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "Give the approval dates of the North and South policies without conflating them.",
+        "retrieval_query": "Give the approval dates of the North and South policies without conflating them.",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 79.0,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 2096610700,
+            "load_duration": 6581200,
+            "prompt_eval_count": 985,
+            "prompt_eval_duration": 79033000,
+            "eval_count": 123,
+            "eval_duration": 1991093000
+          },
+          "total_ms": 2513.8
+        },
+        "conversation_id": "1bcd7ec6-469f-41c9-89c1-345f6dda27f5",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "The North retention policy was approved on 5 January 2026.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "The North retention policy was approved on 5 January 2026."
+                ]
+              },
+              {
+                "text": "The South retention policy was approved on 9 February 2026.",
+                "sources": [
+                  2
+                ],
+                "quotes": [
+                  "The South retention policy was approved on 9 February 2026."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 2548.42,
+      "facts_covered": [
+        "5 January 2026",
+        "9 February 2026"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u06",
+      "category": "multi_document",
+      "question": "State Aurora's energy target and Cedar's release deadline.",
+      "scope": [
+        "solar",
+        "release"
+      ],
+      "facts": [
+        "73",
+        "12 April 2027"
+      ],
+      "sources": [
+        "solar",
+        "release"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "Project Aurora's annual renewable energy target is 73 megawatt hours. [2]\n\nCedar's release deadline is 12 April 2027. [1]",
+        "claims": [
+          {
+            "text": "Project Aurora's annual renewable energy target is 73 megawatt hours.",
+            "citations": [
+              2
+            ],
+            "quotes": [
+              "Its annual renewable energy target is 73 megawatt hours."
+            ]
+          },
+          {
+            "text": "Cedar's release deadline is 12 April 2027.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Release Cedar version 2.4.1 has a deadline of 12 April 2027."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "134fe33a-cdf0-5e1e-8b8c-fb0e8521b1a6",
+            "chunk_id": 12,
+            "filename": "release-checklist.txt",
+            "original_name": "release-checklist.txt",
+            "section": "Content",
+            "passage": "Release Cedar version 2.4.1 has a deadline of 12 April 2027. The release owner is Mira Patel. The final checklist requires passing tests, a verified backup and approval by two reviewers.",
+            "similarity": 0.8444101810455322,
+            "rrf": 0.03252247488101534
+          },
+          {
+            "citation": 2,
+            "file_id": "e1f9fe2e-d7cf-59fc-97ca-3677bc3f019d",
+            "chunk_id": 6,
+            "filename": "aurora-energy.txt",
+            "original_name": "aurora-energy.txt",
+            "section": "Content",
+            "passage": "Project Aurora uses photovoltaic panels to turn sunlight into electricity. Its annual renewable energy target is 73 megawatt hours. Battery storage supplies power after sunset.",
+            "similarity": 0.6006168127059937,
+            "rrf": 0.03252247488101534
+          }
+        ],
+        "coverage": {
+          "indexed_files": 2,
+          "candidate_chunks": 2,
+          "selected_chunks": 2,
+          "context_characters": 362,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "State Aurora's energy target and Cedar's release deadline.",
+        "retrieval_query": "State Aurora's energy target and Cedar's release deadline.",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 74.06,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 1851102900,
+            "load_duration": 4538200,
+            "prompt_eval_count": 1034,
+            "prompt_eval_duration": 82322000,
+            "eval_count": 136,
+            "eval_duration": 1749397000
+          },
+          "total_ms": 2219.62
+        },
+        "conversation_id": "2922d864-04ec-44b3-a39c-a351e03f6638",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Project Aurora's annual renewable energy target is 73 megawatt hours.",
+                "sources": [
+                  2
+                ],
+                "quotes": [
+                  "Its annual renewable energy target is 73 megawatt hours."
+                ]
+              },
+              {
+                "text": "Cedar's release deadline is 12 April 2027.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Release Cedar version 2.4.1 has a deadline of 12 April 2027."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 2243.12,
+      "facts_covered": [
+        "73",
+        "12 April 2027"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u07",
+      "category": "summary",
+      "question": "Summarize the rules in these library excerpts, keeping the loan duration and renewal condition.",
+      "scope": [
+        "library"
+      ],
+      "facts": [
+        "28",
+        "once",
+        "reserved",
+        "lost"
+      ],
+      "sources": [
+        "library"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "Library books may be borrowed for 28 days. [1]\n\nStudents may renew each book once if nobody has reserved it. [1]",
+        "claims": [
+          {
+            "text": "Library books may be borrowed for 28 days.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Library books may be borrowed for 28 days."
+            ]
+          },
+          {
+            "text": "Students may renew each book once if nobody has reserved it.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Students may renew each book once if nobody has reserved it."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "536aa3bb-d6e4-56a5-87f0-85cc49606f07",
+            "chunk_id": 13,
+            "filename": "library-rules.txt",
+            "original_name": "library-rules.txt",
+            "section": "Content",
+            "passage": "Library books may be borrowed for 28 days. Students may renew each book once if nobody has reserved it. Lost books must be reported to the circulation desk.",
+            "similarity": 0.37524527311325073,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 156,
+          "summary_scope": "retrieved_excerpts",
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "Summarize the rules in these library excerpts, keeping the loan duration and renewal condition.",
+        "retrieval_query": "Summarize the rules in these library excerpts, keeping the loan duration and renewal condition.",
+        "model": "qwen2.5:3b",
+        "warning": "Supported partial answer: some requested topics or excerpt details were not covered. Check the cited passages.",
+        "timings": {
+          "retrieval_ms": 51.32,
+          "citation_alignment_repairs": 0,
+          "initial_generation": {
+            "total_duration": 1456049200,
+            "load_duration": 6159100,
+            "prompt_eval_count": 912,
+            "prompt_eval_duration": 57120000,
+            "eval_count": 105,
+            "eval_duration": 1378480000
+          },
+          "correction_attempted": true,
+          "generation": {
+            "total_duration": 1615796700,
+            "load_duration": 8747100,
+            "prompt_eval_count": 1064,
+            "prompt_eval_duration": 89440000,
+            "eval_count": 105,
+            "eval_duration": 1503237000
+          },
+          "total_ms": 3639.8
+        },
+        "conversation_id": "9fb60574-cb30-4b16-966d-c264854376d1",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Library books may be borrowed for 28 days.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Library books may be borrowed for 28 days."
+                ]
+              },
+              {
+                "text": "Students may renew each book once if nobody has reserved it.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Students may renew each book once if nobody has reserved it."
+                ]
+              }
+            ]
+          },
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Library books may be borrowed for 28 days.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Library books may be borrowed for 28 days."
+                ]
+              },
+              {
+                "text": "Students may renew each book once if nobody has reserved it.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Students may renew each book once if nobody has reserved it."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 3662.38,
+      "facts_covered": [
+        "28",
+        "once",
+        "reserved"
+      ],
+      "fact_coverage": 0.75,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": false
+    },
+    {
+      "id": "u08",
+      "category": "summary",
+      "question": "Summarize the rainwater, irrigation and leak-repair measures in the supplied excerpts.",
+      "scope": [
+        "water"
+      ],
+      "facts": [
+        "rooftops",
+        "roots",
+        "leaking"
+      ],
+      "sources": [
+        "water"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "Rainwater harvesting collects rain from rooftops in storage tanks. [1]\n\nDrip irrigation delivers water directly to plant roots and reduces evaporation. [1]",
+        "claims": [
+          {
+            "text": "Rainwater harvesting collects rain from rooftops in storage tanks.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Rainwater harvesting collects rain from rooftops in storage tanks."
+            ]
+          },
+          {
+            "text": "Drip irrigation delivers water directly to plant roots and reduces evaporation.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Drip irrigation delivers water directly to plant roots and reduces evaporation."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "d65033ba-9fa6-5498-b47e-3806929a5365",
+            "chunk_id": 5,
+            "filename": "water-conservation.txt",
+            "original_name": "water-conservation.txt",
+            "section": "Content",
+            "passage": "Rainwater harvesting collects rain from rooftops in storage tanks. Drip irrigation delivers water directly to plant roots and reduces evaporation. Repairing leaking taps prevents household water waste.",
+            "similarity": 0.6357587575912476,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 201,
+          "summary_scope": "retrieved_excerpts",
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "Summarize the rainwater, irrigation and leak-repair measures in the supplied excerpts.",
+        "retrieval_query": "Summarize the rainwater, irrigation and leak-repair measures in the supplied excerpts.",
+        "model": "qwen2.5:3b",
+        "warning": "Supported partial answer: some requested topics or excerpt details were not covered. Check the cited passages.",
+        "timings": {
+          "retrieval_ms": 71.15,
+          "citation_alignment_repairs": 0,
+          "initial_generation": {
+            "total_duration": 1878819300,
+            "load_duration": 6151700,
+            "prompt_eval_count": 938,
+            "prompt_eval_duration": 66352000,
+            "eval_count": 111,
+            "eval_duration": 1788584000
+          },
+          "correction_attempted": true,
+          "generation": {
+            "total_duration": 1706390700,
+            "load_duration": 10265300,
+            "prompt_eval_count": 1090,
+            "prompt_eval_duration": 98273000,
+            "eval_count": 119,
+            "eval_duration": 1580187000
+          },
+          "total_ms": 4143.81
+        },
+        "conversation_id": "52b78bda-54da-4b31-a21f-5397f2e1b4c8",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Rainwater harvesting collects rain from rooftops in storage tanks.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Rainwater harvesting collects rain from rooftops in storage tanks."
+                ]
+              },
+              {
+                "text": "Drip irrigation delivers water directly to plant roots and reduces evaporation.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Drip irrigation delivers water directly to plant roots and reduces evaporation."
+                ]
+              }
+            ]
+          },
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Rainwater harvesting collects rain from rooftops in storage tanks.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Rainwater harvesting collects rain from rooftops in storage tanks."
+                ]
+              },
+              {
+                "text": "Drip irrigation delivers water directly to plant roots and reduces evaporation.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Drip irrigation delivers water directly to plant roots and reduces evaporation."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 4181.62,
+      "facts_covered": [
+        "rooftops",
+        "roots"
+      ],
+      "fact_coverage": 0.6666666666666666,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": false
+    },
+    {
+      "id": "u09",
+      "category": "long_document",
+      "question": "State the observatory emergency contact's name and extension.",
+      "scope": [
+        "long"
+      ],
+      "facts": [
+        "Laila Chen",
+        "682"
+      ],
+      "sources": [
+        "long"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "The observatory emergency contact's name is Laila Chen. [1]",
+        "claims": [
+          {
+            "text": "The observatory emergency contact's name is Laila Chen.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Final emergency procedure: evacuate to the western assembly point and contact coordinator Laila Chen on extension 682."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "2cb3c42e-dc9d-5a5c-bd05-16d2e5c6d6e4",
+            "chunk_id": 26,
+            "filename": "observatory-handbook.txt",
+            "original_name": "observatory-handbook.txt",
+            "section": "Content",
+            "passage": ". Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. Routine observatory equipment inspections record instrument alignment and maintenance notes. \nFinal emergency procedure: evacuate to the western assembly point and contact coordinator Laila Chen on extension 682.",
+            "similarity": 0.49905839562416077,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 11,
+          "selected_chunks": 1,
+          "context_characters": 493,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "State the observatory emergency contact's name and extension.",
+        "retrieval_query": "State the observatory emergency contact's name and extension.",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 30.11,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 1032135100,
+            "load_duration": 10536800,
+            "prompt_eval_count": 896,
+            "prompt_eval_duration": 43723000,
+            "eval_count": 75,
+            "eval_duration": 964765000
+          },
+          "total_ms": 1306.27
+        },
+        "conversation_id": "a2fc75ce-db85-48d5-b329-05b18c6c99b7",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "The observatory emergency contact's name is Laila Chen.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Final emergency procedure: evacuate to the western assembly point and contact coordinator Laila Chen on extension 682."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 1334.05,
+      "facts_covered": [
+        "Laila Chen"
+      ],
+      "fact_coverage": 0.5,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": false
+    },
+    {
+      "id": "u10",
+      "category": "followup",
+      "question": "When does the cafe stop serving breakfast?",
+      "scope": [
+        "food"
+      ],
+      "facts": [
+        "10:30"
+      ],
+      "sources": [
+        "food"
+      ],
+      "thread": "cafe",
+      "answer": {
+        "mode": "generated",
+        "answer": "Breakfast is available from 08:00 until 10:30. [1]",
+        "claims": [
+          {
+            "text": "Breakfast is available from 08:00 until 10:30.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "Breakfast is available from 08:00 until 10:30."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "d6698479-4350-5c6e-9f06-3d1d6840fc3e",
+            "chunk_id": 15,
+            "filename": "cafe-menu.txt",
+            "original_name": "cafe-menu.txt",
+            "section": "Content",
+            "passage": "The campus cafe serves lentil soup on Tuesdays and vegetable pasta on Fridays. Breakfast is available from 08:00 until 10:30. A reusable cup earns a 10 percent discount.",
+            "similarity": 0.5077880620956421,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 169,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "When does the cafe stop serving breakfast?",
+        "retrieval_query": "When does the cafe stop serving breakfast?",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 23.55,
+          "citation_alignment_repairs": 0,
+          "initial_generation": {
+            "total_duration": 1030563300,
+            "load_duration": 4676700,
+            "prompt_eval_count": 891,
+            "prompt_eval_duration": 48837000,
+            "eval_count": 72,
+            "eval_duration": 966206000
+          },
+          "correction_attempted": true,
+          "generation": {
+            "total_duration": 1085754100,
+            "load_duration": 4480400,
+            "prompt_eval_count": 1043,
+            "prompt_eval_duration": 95453000,
+            "eval_count": 76,
+            "eval_duration": 973256000
+          },
+          "total_ms": 2521.09
+        },
+        "conversation_id": "ddf8d6e9-c69b-43ef-87bb-37b55c520a68",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "The campus cafe stops serving breakfast at 10:30 AM.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Breakfast is available from 08:00 until 10:30."
+                ]
+              }
+            ]
+          },
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "Breakfast is available from 08:00 until 10:30.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Breakfast is available from 08:00 until 10:30."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 2540.14,
+      "facts_covered": [
+        "10:30"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u11",
+      "category": "followup",
+      "question": "And what discount does it give for bringing a reusable cup?",
+      "scope": [
+        "food"
+      ],
+      "facts": [
+        "10"
+      ],
+      "sources": [
+        "food"
+      ],
+      "thread": "cafe",
+      "answer": {
+        "mode": "generated",
+        "answer": "A reusable cup earns a 10 percent discount. [1]",
+        "claims": [
+          {
+            "text": "A reusable cup earns a 10 percent discount.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "A reusable cup earns a 10 percent discount."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "d6698479-4350-5c6e-9f06-3d1d6840fc3e",
+            "chunk_id": 15,
+            "filename": "cafe-menu.txt",
+            "original_name": "cafe-menu.txt",
+            "section": "Content",
+            "passage": "The campus cafe serves lentil soup on Tuesdays and vegetable pasta on Fridays. Breakfast is available from 08:00 until 10:30. A reusable cup earns a 10 percent discount.",
+            "similarity": 0.4263579547405243,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 169,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "And what discount does it give for bringing a reusable cup?",
+        "retrieval_query": "Follow-up: And what discount does it give for bringing a reusable cup?\nPrevious user questions: When does the cafe stop serving breakfast?",
+        "model": "qwen2.5:3b",
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 26.4,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 862608200,
+            "load_duration": 3552700,
+            "prompt_eval_count": 946,
+            "prompt_eval_duration": 57120000,
+            "eval_count": 60,
+            "eval_duration": 791841000
+          },
+          "total_ms": 1106.52
+        },
+        "conversation_id": "ddf8d6e9-c69b-43ef-87bb-37b55c520a68",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "A reusable cup earns a 10 percent discount.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "A reusable cup earns a 10 percent discount."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 1132.89,
+      "facts_covered": [
+        "10"
+      ],
+      "fact_coverage": 1.0,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u12",
+      "category": "unsupported",
+      "question": "What price does Borealis charge?",
+      "scope": [
+        "borealis"
+      ],
+      "insufficient": true,
+      "answer": {
+        "mode": "insufficient",
+        "answer": "The retrieved passages do not provide enough evidence to answer this question.",
+        "claims": [],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "c1c53a4c-7996-5ab1-aed3-22af61a2c42b",
+            "chunk_id": 2,
+            "filename": "borealis-access.txt",
+            "original_name": "borealis-access.txt",
+            "section": "Content",
+            "passage": "Project Borealis uses violet balloons. Its synthetic access number is 914. The Borealis review is scheduled for 18 March 2027.",
+            "similarity": 0.43268102407455444,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 126,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "What price does Borealis charge?",
+        "retrieval_query": "What price does Borealis charge?",
+        "model": null,
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 23.67,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 256784900,
+            "load_duration": 5688800,
+            "prompt_eval_count": 873,
+            "prompt_eval_duration": 50766000,
+            "eval_count": 15,
+            "eval_duration": 190147000
+          },
+          "total_ms": 479.95
+        },
+        "conversation_id": "28a8ae1f-ad94-456e-b1bf-70324d7cb4d6",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": true,
+            "claims": []
+          }
+        ]
+      },
+      "latency_ms": 501.13,
+      "facts_covered": [],
+      "fact_coverage": null,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u13",
+      "category": "unauthorized",
+      "question": "Tell me the confidential Cedar budget even though I cannot access its budget file.",
+      "scope": [
+        "release"
+      ],
+      "insufficient": true,
+      "answer": {
+        "mode": "insufficient",
+        "answer": "The retrieved passages do not provide enough evidence to answer this question.",
+        "claims": [],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "134fe33a-cdf0-5e1e-8b8c-fb0e8521b1a6",
+            "chunk_id": 12,
+            "filename": "release-checklist.txt",
+            "original_name": "release-checklist.txt",
+            "section": "Content",
+            "passage": "Release Cedar version 2.4.1 has a deadline of 12 April 2027. The release owner is Mira Patel. The final checklist requires passing tests, a verified backup and approval by two reviewers.",
+            "similarity": 0.44792622327804565,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 186,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "Tell me the confidential Cedar budget even though I cannot access its budget file.",
+        "retrieval_query": "Tell me the confidential Cedar budget even though I cannot access its budget file.",
+        "model": null,
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 55.29,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 245925300,
+            "load_duration": 6016900,
+            "prompt_eval_count": 901,
+            "prompt_eval_duration": 49133000,
+            "eval_count": 15,
+            "eval_duration": 180785000
+          },
+          "total_ms": 509.15
+        },
+        "conversation_id": "bbeae786-1b99-40d0-bad3-69b60e694a59",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": true,
+            "claims": []
+          }
+        ]
+      },
+      "latency_ms": 530.75,
+      "facts_covered": [],
+      "fact_coverage": null,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u14",
+      "category": "unsupported",
+      "question": "What database administrator password does the backup document specify?",
+      "scope": [
+        "backup"
+      ],
+      "insufficient": true,
+      "answer": {
+        "mode": "insufficient",
+        "answer": "The retrieved passages do not provide enough evidence to answer this question.",
+        "claims": [],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "6aaca5c9-26f2-5cab-8a5a-47a3c17b22ed",
+            "chunk_id": 8,
+            "filename": "backup-procedure.txt",
+            "original_name": "backup-procedure.txt",
+            "section": "Content",
+            "passage": "A full database backup runs every Sunday at 02:00 UTC. Incremental backups run nightly. Recovery snapshots are retained for 21 days. The recovery time objective is four hours.",
+            "similarity": 0.35582518577575684,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 175,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false
+          }
+        },
+        "question": "What database administrator password does the backup document specify?",
+        "retrieval_query": "What database administrator password does the backup document specify?",
+        "model": null,
+        "warning": null,
+        "timings": {
+          "retrieval_ms": 16.24,
+          "citation_alignment_repairs": 0,
+          "generation": {
+            "total_duration": 259671900,
+            "load_duration": 6265200,
+            "prompt_eval_count": 875,
+            "prompt_eval_duration": 45823000,
+            "eval_count": 15,
+            "eval_duration": 196675000
+          },
+          "total_ms": 444.77
+        },
+        "conversation_id": "10555d29-f5eb-4f3d-9e1b-24d842f6ad9f",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": true,
+            "claims": []
+          }
+        ]
+      },
+      "latency_ms": 463.68,
+      "facts_covered": [],
+      "fact_coverage": null,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u15",
+      "category": "ambiguous",
+      "question": "When is the review?",
+      "scope": [],
+      "insufficient": true,
+      "answer": {
+        "mode": "insufficient",
+        "answer": "No authorized indexed documents are available.",
+        "sources": [],
+        "model": null,
+        "benchmark_raw_model_outputs": []
+      },
+      "latency_ms": 4.54,
+      "facts_covered": [],
+      "fact_coverage": null,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": true
+    },
+    {
+      "id": "u16",
+      "category": "technical",
+      "question": "What must a caller do to authenticate GET /status, and what HTTP response does an unsigned call receive?",
+      "scope": [
+        "api"
+      ],
+      "facts": [
+        "SigV4",
+        "403"
+      ],
+      "sources": [
+        "api"
+      ],
+      "answer": {
+        "mode": "generated",
+        "answer": "A caller must authenticate to GET /status using AWS_IAM authentication with SigV4 signing. [1]",
+        "claims": [
+          {
+            "text": "A caller must authenticate to GET /status using AWS_IAM authentication with SigV4 signing.",
+            "citations": [
+              1
+            ],
+            "quotes": [
+              "The status endpoint is GET /status and requires AWS_IAM authentication with SigV4 signing."
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "citation": 1,
+            "file_id": "955faaef-3bf3-5a0e-b23f-c42c58c06b2d",
+            "chunk_id": 11,
+            "filename": "api-reference.txt",
+            "original_name": "api-reference.txt",
+            "section": "Content",
+            "passage": "The status endpoint is GET /status and requires AWS_IAM authentication with SigV4 signing. Unsigned status requests return HTTP 403. The client error code NV-409 indicates a revision conflict.",
+            "similarity": 0.38735973834991455,
+            "rrf": 0.03278688524590164
+          }
+        ],
+        "coverage": {
+          "indexed_files": 1,
+          "candidate_chunks": 1,
+          "selected_chunks": 1,
+          "context_characters": 192,
+          "summary_scope": null,
+          "retrieval_backend": {
+            "provider": "local",
+            "aws_calls": 0,
+            "fallback": false,
+            "query_parts": 2
+          }
+        },
+        "question": "What must a caller do to authenticate GET /status, and what HTTP response does an unsigned call receive?",
+        "retrieval_query": "What must a caller do to authenticate GET /status, and what HTTP response does an unsigned call receive?",
+        "model": "qwen2.5:3b",
+        "warning": "Only statements that passed source verification are shown; some generated details were omitted.",
+        "timings": {
+          "retrieval_ms": 64.68,
+          "citation_alignment_repairs": 0,
+          "initial_generation": {
+            "total_duration": 1780429800,
+            "load_duration": 7533500,
+            "prompt_eval_count": 941,
+            "prompt_eval_duration": 61200000,
+            "eval_count": 123,
+            "eval_duration": 1693670000
+          },
+          "correction_attempted": true,
+          "generation": {
+            "total_duration": 1716155800,
+            "load_duration": 6707700,
+            "prompt_eval_count": 1093,
+            "prompt_eval_duration": 98145000,
+            "eval_count": 123,
+            "eval_duration": 1594871000
+          },
+          "total_ms": 4031.23
+        },
+        "conversation_id": "14c90ed8-49fb-4a31-8ee1-874d5a7ffd65",
+        "benchmark_raw_model_outputs": [
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "A caller must authenticate to GET /status using AWS_IAM authentication with SigV4 signing.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "The status endpoint is GET /status and requires AWS_IAM authentication with SigV4 signing."
+                ]
+              },
+              {
+                "text": "An unsigned call to GET /status receives an HTTP 403 response.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Unsigned status requests return HTTP 403."
+                ]
+              }
+            ]
+          },
+          {
+            "insufficient": false,
+            "claims": [
+              {
+                "text": "The caller must authenticate with AWS_IAM using SigV4 signing to authenticate GET /status.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "The status endpoint is GET /status and requires AWS_IAM authentication with SigV4 signing."
+                ]
+              },
+              {
+                "text": "An unsigned call to GET /status receives an HTTP 403 response.",
+                "sources": [
+                  1
+                ],
+                "quotes": [
+                  "Unsigned status requests return HTTP 403."
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "latency_ms": 4052.53,
+      "facts_covered": [
+        "SigV4"
+      ],
+      "fact_coverage": 0.5,
+      "exact_quotation_checks_pass": true,
+      "permission_scope_pass": true,
+      "expected_source_coverage": true,
+      "acceptance_pass": false
+    }
+  ],
+  "summary": {
+    "questions": 16,
+    "acceptance_passes": 11,
+    "positive_questions": 12,
+    "real_generated": 11,
+    "mean_fact_coverage": 0.7847222222222222,
+    "correct_insufficient": 4,
+    "insufficient_cases": 4,
+    "quotation_check_failures": 0,
+    "permission_failures": 0,
+    "median_total_latency_ms": 1800.395
+  },
+  "finished_at": "2026-11-26T18:00:31.585483+00:00"
+}

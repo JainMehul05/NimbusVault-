@@ -1,23 +1,23 @@
 {
-  "checked_at": "2026-11-26T16:59:41.767118+00:00",
+  "checked_at": "2026-11-26T17:57:22.408300+00:00",
   "profile": "default",
   "region": "ap-southeast-2",
   "mutations": [],
   "services": {
     "S3": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T16:59:49.196310+00:00",
+      "observed_at": "2026-11-26T17:57:30.233972+00:00",
       "public_access_blocked": true,
       "encryption_configured": true
     },
     "DynamoDB": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T16:59:53.093315+00:00",
+      "observed_at": "2026-11-26T17:57:33.334694+00:00",
       "table_status": "ACTIVE"
     },
     "Lambda": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T16:59:55.395625+00:00",
+      "observed_at": "2026-11-26T17:57:35.107738+00:00",
       "state": "Active",
       "memory_mb": 256,
       "timeout_seconds": 30,
@@ -27,12 +27,12 @@
     },
     "EventBridge": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T16:59:59.242038+00:00",
+      "observed_at": "2026-11-26T17:57:38.802717+00:00",
       "state": "DISABLED"
     },
     "SQS": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:02.589953+00:00",
+      "observed_at": "2026-11-26T17:57:40.020577+00:00",
       "attributes": {
         "ApproximateNumberOfMessages": "0",
         "ApproximateNumberOfMessagesNotVisible": "0",
@@ -41,7 +41,7 @@
     },
     "SQS DLQ": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:05.451511+00:00",
+      "observed_at": "2026-11-26T17:57:41.169524+00:00",
       "attributes": {
         "ApproximateNumberOfMessages": "1",
         "ApproximateNumberOfMessagesNotVisible": "0",
@@ -49,32 +49,32 @@
       }
     },
     "Step Functions": {
-      "status": "ACTIVE",
-      "observed_at": "2026-11-26T17:00:07.084984+00:00"
+      "status": "blocked",
+      "error": "ReadTimeoutError"
     },
     "CloudFormation": {
       "status": "UPDATE_COMPLETE",
-      "observed_at": "2026-11-26T17:00:10.662016+00:00"
+      "observed_at": "2026-11-26T17:57:47.139451+00:00"
     },
     "S3 Vectors": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:13.324026+00:00",
+      "observed_at": "2026-11-26T17:57:48.677714+00:00",
       "dimension": 384
     },
     "CloudWatch": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:16.848309+00:00",
+      "observed_at": "2026-11-26T17:57:51.191433+00:00",
       "invocation_datapoints": [],
       "log_retention_days": 3
     },
     "API Gateway": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:19.856649+00:00",
+      "observed_at": "2026-11-26T17:57:57.757480+00:00",
       "routes_use_iam": true
     },
     "Parameter Store": {
       "status": "verified_read_only",
-      "observed_at": "2026-11-26T17:00:22.282117+00:00",
+      "observed_at": "2026-11-26T17:57:59.176763+00:00",
       "standard_parameters_read": 3
     }
   },
@@ -86,7 +86,7 @@
     "allowed": true,
     "plan": "FREE",
     "status": "ACTIVE",
-    "credits_usd": 139.998445,
+    "credits_usd": 139.998443,
     "expires_at": "2027-05-24 10:27:24.967000+00:00"
   }
 }

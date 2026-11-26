@@ -23,10 +23,14 @@ const fs=require('fs');
  if(!originalHistory)throw new Error('No original rehearsal history reference');
  const history=await fetch(base+'/ai/conversations/'+originalHistory,{headers});
  if(!history.ok||(await history.json()).data.exchanges.length<1)throw new Error('Original conversation did not survive restart');
+ const repeatIndex=process.argv.indexOf('--repeat');
+ const repeat=repeatIndex<0?1:Number(process.argv[repeatIndex+1]);
+ if(!Number.isInteger(repeat)||repeat<1||repeat>3)throw new Error('Use one to three bounded performance pairs');
  const unload=await fetch('http://127.0.0.1:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen2.5:3b',keep_alive:0})});
  if(!unload.ok)throw new Error('Owned local model unload failed');
  const report={observed_at:new Date().toISOString(),indexed_fixture_persisted:true,original_conversation_persisted:true,account_persisted:true,aws_calls:0,runs:[]};
- for(const phase of ['cold_model','warm_model']){
+ for(let pair=1;pair<=repeat;pair++) for(const phase of ['cold_model','warm_model']){
+  if(phase==='cold_model'&&pair>1){const reset=await fetch('http://127.0.0.1:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen2.5:3b',keep_alive:0})});if(!reset.ok)throw new Error('Owned model reset failed')}
   const start=performance.now();
   const pending=fetch(base+'/ai/ask',{method:'POST',headers,body:JSON.stringify({question:'Where do MiniLM embeddings and Qwen answer generation run?',fileIds:[id]})});
   await new Promise(resolve=>setTimeout(resolve,200));
@@ -37,9 +41,10 @@ const fs=require('fs');
   const response=await pending;
   const data=(await response.json()).data;
   if(!response.ok||data.mode!=='generated'||!data.citations.length)throw new Error('Real local generation failed');
-  report.runs.push({phase,total_ms:Math.round(performance.now()-start),file_management_during_generation_ms:Math.round(managementMs),mode:data.mode,timings:data.timings});
+  report.runs.push({pair,phase,total_ms:Math.round(performance.now()-start),file_management_during_generation_ms:Math.round(managementMs),mode:data.mode,timings:data.timings});
  }
  report.result='passed';
- fs.writeFileSync('docs/RUNTIME_PERFORMANCE_ACCEPTANCE.json',JSON.stringify(report,null,2));
+ report.summary=Object.fromEntries(['cold_model','warm_model'].map(phase=>{const values=report.runs.filter(r=>r.phase===phase).map(r=>r.total_ms).sort((a,b)=>a-b);return[phase,{runs:values.length,median_ms:values[Math.floor(values.length/2)],slowest_ms:Math.max(...values)}]}));
+ fs.writeFileSync(repeat>1?'docs/INDEPENDENT_RUNTIME_PERFORMANCE.json':'docs/RUNTIME_PERFORMANCE_ACCEPTANCE.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify(report));
 })().catch(e=>{console.error(e.message);process.exit(1)});

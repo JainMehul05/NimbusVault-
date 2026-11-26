@@ -24,7 +24,7 @@ export const aiSearchSchema = z.object({
   body: z.object({
     query: z.string().trim().min(2, 'Query is too short').max(500, 'Query is too long'),
     limit: z.coerce.number().int().min(1).max(20).default(8),
-    mode: z.enum(['filename','exact','semantic','hybrid']).default('hybrid'),
+    mode: z.enum(['filename','exact','semantic','hybrid','lexical']).default('hybrid'),
     folderId: z.string().uuid().optional(),
     category: z.enum(['pdf','document','image','video','other']).optional(),
     fileIds: fileIdList,

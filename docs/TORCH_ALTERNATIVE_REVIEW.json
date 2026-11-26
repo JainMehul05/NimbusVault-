@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-11-26T18:05:31.001250+00:00",
+  "installed_version": "2.15.0+cpu",
+  "upstream_version_for_advisories": "2.15.0",
+  "installer": "uv",
+  "direct_url_available": false,
+  "mutations": [],
+  "record_verified": 12357,
+  "record_mismatches": [],
+  "record_unhashed": 1,
+  "osv_base_version_advisories": [],
+  "pypi_base_version_status": 200,
+  "official_cpu_index_status": 200,
+  "installed_version_listed_in_cpu_index": true,
+  "limitations": [
+    "RECORD verifies installed-file consistency, not a signed provenance attestation.",
+    "Base-version advisory matching does not audit CPU-build-specific changes. No package was upgraded."
+  ]
+}

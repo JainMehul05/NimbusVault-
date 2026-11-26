@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-11-26T18:21:18.077610+00:00",
+  "read_only": true,
+  "sample_limit": 5,
+  "sampled_events": 5,
+  "structured_events": 1,
+  "structured_field_names": [
+    "correlation_id",
+    "duration_ms",
+    "request_id",
+    "stage"
+  ],
+  "sensitive_field_or_key_findings": 0,
+  "contents_exported": false,
+  "scope": "Latest bounded sample only; source logging reviewed separately, not a complete log-content audit."
+}

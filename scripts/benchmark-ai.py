@@ -1,6 +1,7 @@
 """Real Qwen acceptance, isolated synthetic scope; no uploads or AWS operations."""
 
 import base64
+import argparse
 import hashlib
 import json
 import os
@@ -13,6 +14,10 @@ from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 root = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser()
+parser.add_argument("--cases", default="benchmarks/ai-cases.json")
+parser.add_argument("--output", default="docs/AI_QUALITY_BENCHMARK.json")
+args = parser.parse_args()
 sys.path.insert(0, str(root / "intelligence"))
 os.environ["AWS_OPERATIONS_ENABLED"] = "false"
 os.environ["AWS_WRITES_ENABLED"] = "false"
@@ -36,7 +41,7 @@ async def traced_generate(question, sources):
 llm.generate = traced_generate
 
 corpus = json.loads((root / "benchmarks/corpus.json").read_text())
-cases_path = root / "benchmarks/ai-cases.json"
+cases_path = root / args.cases
 cases = json.loads(cases_path.read_text())
 ids = {k: str(uuid5(NAMESPACE_URL, "nimbus-synthetic-benchmark/" + k)) for k in corpus["documents"]}
 reverse = {v: k for k, v in ids.items()}
@@ -52,7 +57,7 @@ report = {
     "aws_calls": 0,
     "cases": [],
 }
-output = root / "docs/AI_QUALITY_BENCHMARK.json"
+output = root / args.output
 threads = {}
 with tempfile.TemporaryDirectory(prefix="nimbus-ai-benchmark-") as temporary:
     settings.data_dir = Path(temporary)

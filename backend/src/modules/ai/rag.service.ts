@@ -16,6 +16,7 @@ import {
 } from './prompts';
 
 export interface SearchResult {
+  scoreKind?: 'cosine' | 'lexical' | 'literal';
   chunkId: string;
   fileId: string;
   filename: string;

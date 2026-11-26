@@ -6,6 +6,7 @@ import { localIntelligence, requestStop } from '@modules/ai/local-intelligence';
 import request from 'supertest';
 import app from '@app';
 import { auth } from './helpers';
+import { authorizationService } from '@common/authorization';
 
 jest.mock('@common/intelligence', () => ({
   ...jest.requireActual('@common/intelligence'),
@@ -17,6 +18,7 @@ let a:Awaited<ReturnType<typeof createUser>>;
 let b:Awaited<ReturnType<typeof createUser>>;
 let fileId:string;
 const source=()=>({file_id:fileId,chunk_id:1,passage:'Aurora produces 73 megawatt hours.',similarity:0.9,citation:1});
+afterEach(()=>jest.restoreAllMocks());
 beforeEach(async()=>{
   await cleanupUsers(emails);
   a=await createUser(emails[0]);b=await createUser(emails[1]);fileId=randomUUID();
@@ -91,4 +93,22 @@ it('applies document category filters before retrieval and groups file results',
   expect(call.mock.calls[0][3]).toEqual([]);
   call.mockResolvedValue({sources:[source(),{...source(),chunk_id:2}]});
   expect((await localIntelligence.search(a.id,'Aurora',{limit:8})).resultCount).toBe(1);
+});
+it('does not hide database failures as empty source results',async()=>{
+  call.mockResolvedValue({sources:[source()]});
+  jest.spyOn(authorizationService,'authorizeFileAccess').mockRejectedValue(new Error('database unavailable'));
+  await expect(localIntelligence.search(a.id,'Aurora',{limit:8})).rejects.toThrow('database unavailable');
+});
+it('requires document write permission even for administrator cloud reconciliation',async()=>{
+  await prisma.user.update({where:{id:b.id},data:{role:'admin'}});
+  await share(a,'FILE',fileId,b,'VIEWER');
+  call.mockResolvedValue({completed:1});
+  const result=await request(app).post('/api/v1/ai/cloud/complete').set(auth(b)).send({fileId});
+  expect(result.status).toBe(403);
+  expect(call).not.toHaveBeenCalled();
+});
+it('rejects oversized all-document scopes before the private HTTP header is built',async()=>{
+  await prisma.file.createMany({data:Array.from({length:250},()=>({id:randomUUID(),filename:'limit.txt',ownerId:a.id,sizeBytes:1n,mimeType:'text/plain',category:'document' as const,s3Key:`test/${randomUUID()}`,status:'READY' as const,aiStatus:'INDEXED' as const}))});
+  await expect(localIntelligence.search(a.id,'policy',{limit:8})).rejects.toMatchObject({statusCode:400});
+  expect(call).not.toHaveBeenCalled();
 });

@@ -21,6 +21,48 @@ def terms(text):
     return [t for t in re.findall(r"[\w-]+", text.casefold()) if len(t) > 1 and t not in STOP]
 
 
+def query_facet(question, passage, comparison_topics=()):
+    """Remove a matched named topic, retaining the property being requested.
+
+    Topic affinity alone (a project's name) is not evidence about every property.
+    Names are discovered from the supplied text, never a benchmark-specific list.
+    """
+    masked = question
+    if comparison_topics and re.search(
+        r"\b(?:compare|comparison|contrast|between|conflating)\b", question, re.I
+    ):
+        for kind, name in comparison_topics:
+            masked = re.sub(
+                r"\b(?:" + re.escape(kind) + r"\s+)?" + re.escape(name) + r"(?:['’]s)?\b",
+                " ",
+                masked,
+                flags=re.I,
+            )
+        return masked.strip() if masked != question and terms(masked) else None
+    for kind, name in re.findall(r"\b(Project|Policy|Release|Product)\s+([A-Z][\w-]+)", passage):
+        if re.search(r"\b" + re.escape(name) + r"\b", masked, re.I):
+            parts = re.split(r"\s+(?:and|versus|vs\.?)\s+|;\s*", question, flags=re.I)
+            if len(parts) > 1:
+                masked = next(
+                    (
+                        part
+                        for part in parts
+                        if re.search(r"\b" + re.escape(name) + r"\b", part, re.I)
+                    ),
+                    question,
+                )
+            masked = re.sub(
+                r"\b(?:" + re.escape(kind) + r"\s+)?" + re.escape(name) + r"(?:['’]s)?\b",
+                " ",
+                masked,
+                flags=re.I,
+            )
+    if masked != question and terms(masked):
+        return masked.strip()
+    attribute = re.match(r"^(?:what|which)\s+(?:is|are)\s+(?:the\s+)?(.+?)\s+of\s+", question, re.I)
+    return attribute.group(1) if attribute and len(terms(attribute.group(1))) >= 2 else None
+
+
 @lru_cache(maxsize=96)
 def _query(model, text):
     return engine.encode([text])[0]
@@ -60,7 +102,69 @@ def snapshot():
         return _cache[1], _cache[2]
 
 
+def lexical_retrieve(question, file_ids, limit):
+    tokens = list(dict.fromkeys(terms(question)))[:24]
+    if not tokens or file_ids == []:
+        return [], {
+            "candidate_chunks": 0,
+            "retrieval_backend": {"provider": "local", "aws_calls": 0},
+        }
+    expression = " OR ".join('"' + token.replace('"', '""') + '"' for token in tokens)
+    clause = ""
+    parameters = [expression]
+    if file_ids is not None:
+        clause = " AND c.file_id IN (" + ",".join("?" for _ in file_ids) + ")"
+        parameters.extend(file_ids)
+    with connect() as db:
+        rows = [
+            dict(row)
+            for row in db.execute(
+                "SELECT c.id,c.file_id,c.text,c.section,f.name,f.original_name,bm25(chunk_fts) AS rank_score FROM chunk_fts JOIN chunks c ON c.id=chunk_fts.rowid JOIN files f ON f.id=c.file_id WHERE chunk_fts MATCH ? AND f.status='indexed'"
+                + clause
+                + " ORDER BY rank_score LIMIT 60",
+                parameters,
+            )
+        ]
+    sources = []
+    counts = {}
+    seen = set()
+    budget = 0
+    for row in rows:
+        text = " ".join(row["text"].casefold().split())
+        if (
+            text in seen
+            or counts.get(row["file_id"], 0) >= 2
+            or budget + len(row["text"]) > settings.context_chars
+        ):
+            continue
+        sources.append(
+            {
+                "citation": len(sources) + 1,
+                "file_id": row["file_id"],
+                "chunk_id": row["id"],
+                "filename": row["name"],
+                "original_name": row["original_name"],
+                "section": row["section"],
+                "passage": row["text"],
+                "similarity": row["rank_score"],
+                "score_kind": "lexical",
+            }
+        )
+        counts[row["file_id"]] = counts.get(row["file_id"], 0) + 1
+        budget += len(row["text"])
+        seen.add(text)
+        if len(sources) >= limit:
+            break
+    return sources, {
+        "candidate_chunks": len(rows),
+        "selected_chunks": len(sources),
+        "retrieval_backend": {"provider": "local", "aws_calls": 0},
+    }
+
+
 def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
+    if mode == "lexical":
+        return lexical_retrieve(question, file_ids, limit)
     rows, matrix = snapshot()
     # None is the legacy single-user contract; an explicit empty trusted scope denies all.
     if file_ids is not None:
@@ -89,6 +193,9 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
             for part in re.split(r"\s+(?:and|versus|vs\.?)[ ]+|;[ ]*", question, flags=re.I)
             if len(terms(part)) >= 2
         ][:3]
+        contrast = re.split(r"\s+(?:rather than|instead of)\s+", question, flags=re.I)
+        if len(contrast) > 1 and len(terms(contrast[0])) >= 2:
+            parts = [question, contrast[0]]
         if len(parts) > 1:
             for part in parts:
                 if len(engine.load().tokenizer.encode(part)) > engine.load().max_seq_length:
@@ -141,9 +248,27 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
         if i not in dense_indices and rows[i]["id"] in lexical_rank
     )
     ranking = []
-    relative_floor = max(settings.evidence_threshold, float(scores.max()) * 0.70)
+    topics = set(
+        pair
+        for row in rows
+        for pair in re.findall(r"\b(Project|Policy|Release|Product)\s+([A-Z][\w-]+)", row["text"])
+        if re.search(r"\b" + re.escape(pair[1]) + r"\b", question, re.I)
+    )
+    # A deliberately selected single document has no cross-document competition.
+    # Permit moderate dense matches there; absent-facet and identifier checks
+    # remain mandatory. Global discovery keeps its original relevance floor.
+    minimum = 0.20 if file_ids is not None and len(file_ids) == 1 else settings.evidence_threshold
+    relative_floor = max(minimum, float(scores.max()) * 0.70)
     for rank, (i, score) in enumerate(dense, 1):
         row = rows[i]
+        if identifier_anchors and not all(
+            re.search(r"(?<!\w)" + re.escape(identifier) + r"(?!\w)", row["text"].casefold())
+            for identifier in identifier_anchors
+        ):
+            continue
+        facet = query_facet(question, row["text"], topics if len(topics) > 1 else ())
+        if facet and float(matrix[i] @ _query(settings.embedding_model, facet)) < 0.20:
+            continue
         overlap = len(set(tokens) & set(terms(row["text"])))
         # Compact keyword queries often embed poorly despite several exact rare
         # anchors (for example model names). Full lexical coverage is its own
@@ -165,12 +290,22 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
                 for identifier in identifier_anchors
             )
         )
+        named_complement = (
+            len(topics) > 1
+            and float(score) >= 0.18
+            and any(re.search(r"\b" + re.escape(name) + r"\b", row["text"]) for _, name in topics)
+        )
         if (
             i not in intent_eligible
             and not anchored_keywords
             and not exact_identifier
+            and not (mode == "hybrid" and named_complement)
             and float(score) < relative_floor
-            and not (overlap >= 2 and float(score) >= max(0.18, relative_floor - 0.05))
+            and not (
+                mode == "hybrid"
+                and overlap >= 2
+                and float(score) >= max(0.18, relative_floor - 0.05)
+            )
         ):
             continue
         rrf = 1 / (60 + rank) + (
@@ -233,6 +368,7 @@ def retrieve(question, file_ids=None, limit=7, mode="hybrid"):
             "passage": r["text"],
             "similarity": r["similarity"],
             "rrf": r["rrf"],
+            "score_kind": "lexical" if mode == "lexical" else "cosine",
         }
         for i, r in enumerate(selected, 1)
     ]

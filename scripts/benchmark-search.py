@@ -25,11 +25,15 @@ from app.internal import app  # noqa: E402
 parser = argparse.ArgumentParser()
 parser.add_argument("--label", required=True)
 parser.add_argument("--fresh-held-out", action="store_true")
+parser.add_argument("--independent", action="store_true")
+parser.add_argument("--modes", nargs="+", default=["semantic", "hybrid"])
 args = parser.parse_args()
 corpus_path = root / "benchmarks/corpus.json"
 corpus = json.loads(corpus_path.read_text())
 if args.fresh_held_out:
     corpus["search"].extend(json.loads((root / "benchmarks/fresh-held-out.json").read_text()))
+if args.independent:
+    corpus["search"].extend(json.loads((root / "benchmarks/independent-search.json").read_text()))
 ids = {
     key: str(uuid5(NAMESPACE_URL, "nimbus-synthetic-benchmark/" + key))
     for key in corpus["documents"]
@@ -71,7 +75,7 @@ with tempfile.TemporaryDirectory(prefix="nimbus-benchmark-") as temporary:
             scope = case.get("scope") or [
                 k for k, v in corpus["documents"].items() if v["authorized"]
             ]
-            for mode in ["semantic", "hybrid"]:
+            for mode in args.modes:
                 started = time.perf_counter()
                 response = client.post(
                     "/api/ai/search",
@@ -102,11 +106,12 @@ with tempfile.TemporaryDirectory(prefix="nimbus-benchmark-") as temporary:
                 )
                 output.write_text(json.dumps(report, indent=2))
         report["summary"] = {}
-        for mode in ["semantic", "hybrid"]:
+        for mode in args.modes:
             for split in [
                 "tuning",
                 "held_out",
                 *(["fresh_held_out"] if args.fresh_held_out else []),
+                *(["independent"] if args.independent else []),
                 "all",
             ]:
                 cases = [

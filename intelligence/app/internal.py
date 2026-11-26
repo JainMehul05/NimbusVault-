@@ -54,7 +54,7 @@ async def authenticate(request: Request, call_next):
         try:
             UUID(actor)
             scope = json.loads(request.headers.get("x-file-scope", "[]"))
-            if not isinstance(scope, list) or len(scope) > 10000:
+            if not isinstance(scope, list) or len(scope) > 250:
                 raise ValueError()
             for key in scope:
                 UUID(key)
@@ -266,7 +266,7 @@ async def search(request: Request):
     if not scope:
         return {"sources": [], "retrieval_backend": {"provider": "local", "aws_calls": 0}}
     mode = payload.get("mode", "hybrid")
-    if mode not in {"filename", "exact", "semantic", "hybrid"}:
+    if mode not in {"filename", "exact", "semantic", "hybrid", "lexical"}:
         raise HTTPException(400, "Invalid search mode")
     if mode in {"filename", "exact"}:
         names = payload.get("filenames", {}) if mode == "filename" else {}
@@ -295,6 +295,7 @@ async def search(request: Request):
                 "passage": r["text"],
                 "section": r["section"],
                 "similarity": 1.0,
+                "score_kind": "literal",
             }
             for r in rows[:20]
         ]

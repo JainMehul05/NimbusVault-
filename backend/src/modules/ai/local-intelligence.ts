@@ -16,7 +16,7 @@ export async function requestStop(userId:string,requestId:string) {
   pendingStops.set(`${userId}:${requestId}`,Date.now()+30000);
   return {cancellation_requested:true};
 }
-interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number }
+interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number;score_kind?:string }
 interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown> }
 
 export async function allowedScope(userId: string, selected?: string[], filters?:{folderId?:string;category?:FileCategory}) {
@@ -28,6 +28,7 @@ export async function allowedScope(userId: string, selected?: string[], filters?
     folderIds=descendants.map(f=>f.id);
   }
   const files = await prisma.file.findMany({where:{id:{in:ids},status:'READY',aiStatus:'INDEXED',deletedAt:null,...(folderIds?{folderId:{in:folderIds}}:{}),...(filters?.category?{category:filters.category}: {})}});
+  if(files.length>250) throw AppError.badRequest('Select a folder or a smaller document set; one intelligence request supports at most 250 indexed files.');
   return files.map(f=>f.id);
 }
 async function mapSources(userId:string,sources:EvidenceSource[]):Promise<SearchResult[]> {
@@ -37,8 +38,11 @@ async function mapSources(userId:string,sources:EvidenceSource[]):Promise<Search
       const access=await authorizationService.authorizeFileAccess({userId,isAuthenticated:true},s.file_id,'read');
       const file=access.file!;
       if(file.aiStatus!=='INDEXED'||file.status!=='READY') continue;
-      result.push({chunkId:String(s.chunk_id),fileId:file.id,filename:file.filename,mimeType:file.mimeType,folderId:access.isOwner?file.folderId:null,chunkIndex:Number(s.chunk_id),pageStart:null,pageEnd:null,snippet:s.passage,score:s.similarity,permission:access.effectiveLevel});
-    } catch { /* A revoked/deleted source is withheld. */ }
+      result.push({chunkId:String(s.chunk_id),fileId:file.id,filename:file.filename,mimeType:file.mimeType,folderId:access.isOwner?file.folderId:null,chunkIndex:Number(s.chunk_id),pageStart:null,pageEnd:null,snippet:s.passage,score:s.similarity,scoreKind:s.score_kind==='lexical'?'lexical':s.score_kind==='literal'?'literal':'cosine',permission:access.effectiveLevel});
+    } catch(error) {
+      if(error instanceof AppError && (error.statusCode===403 || error.statusCode===404)) continue;
+      throw error;
+    }
   }
   return result;
 }

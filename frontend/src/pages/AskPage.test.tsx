@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
+import { MemoryRouter, Link } from 'react-router-dom';
 import { vi } from 'vitest';
 import { AuthProvider } from '@context/AuthContext';
 import { AskPage } from '@pages/AskPage';
@@ -51,6 +51,37 @@ describe('AskPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.getItem = vi.fn().mockReturnValue(null);
+  });
+
+  it('keeps conversation controls stable while generation is pending',async()=>{
+    mockApi(caps());
+    let resolveAsk!:(value:unknown)=>void;
+    vi.mocked(api.post).mockImplementation(()=>new Promise(resolve=>{resolveAsk=resolve}) as never);
+    renderPage();
+    fireEvent.change(await screen.findByLabelText(/your question/i),{target:{value:'What is the hotel cap?'}});
+    fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
+    expect(screen.getByRole('button',{name:'New conversation'})).toBeDisabled();
+    expect(screen.getByRole('button',{name:'History'})).toBeDisabled();
+    expect(screen.getByLabelText('Document folder scope')).toBeDisabled();
+    await act(async()=>{resolveAsk({data:{success:true,data:{status:'insufficient_evidence',answer:null,citations:[],sourcesConsidered:0,model:null}}})});
+    await waitFor(()=>expect(screen.getByRole('button',{name:'New conversation'})).toBeEnabled());
+  });
+
+  it('does not attach a late answer or conversation to a changed document scope',async()=>{
+    mockApi(caps());
+    let resolveAsk!:(value:unknown)=>void;
+    vi.mocked(api.post).mockImplementation(()=>new Promise(resolve=>{resolveAsk=resolve}) as never);
+    render(<MemoryRouter><AuthProvider><Link to="/ask?fileId=f2">Next document</Link><AskPage /></AuthProvider></MemoryRouter>);
+    fireEvent.change(await screen.findByLabelText(/your question/i),{target:{value:'Original question'}});
+    fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
+    fireEvent.click(screen.getByRole('link',{name:'Next document'}));
+    await screen.findByText('Selected document only');
+    await act(async()=>{resolveAsk({data:{success:true,data:{status:'answered',answer:'Late answer from the old scope.',citations:[],conversationId:'old-conversation',sourcesConsidered:0,model:'local'}}})});
+    expect(screen.queryByText(/Late answer from the old scope/)).not.toBeInTheDocument();
+    vi.mocked(api.post).mockImplementation(()=>ok({status:'insufficient_evidence',answer:null,citations:[],sourcesConsidered:0,model:null}) as never);
+    fireEvent.change(screen.getByLabelText(/your question/i),{target:{value:'New scope question'}});
+    fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
+    await waitFor(()=>expect(api.post).toHaveBeenLastCalledWith('/ai/ask',expect.objectContaining({question:'New scope question',conversationId:undefined,fileIds:['f2']})));
   });
 
   it('explains when AI is not configured instead of showing fake results', async () => {

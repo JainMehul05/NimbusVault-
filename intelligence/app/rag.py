@@ -31,7 +31,7 @@ async def cancel(payload: Cancellation):
 class Ask(BaseModel):
     request_id: str | None = Field(default=None, pattern=r"^[0-9a-fA-F-]{36}$")
     question: str = Field(min_length=2, max_length=1500)
-    file_ids: list[str] = Field(default_factory=list, max_length=30)
+    file_ids: list[str] = Field(default_factory=list, max_length=250)
     conversation_id: str | None = None
     extractive: bool = False
 
@@ -123,6 +123,13 @@ def merge_verified_claims(primary, previous):
 
 def validate_claims(answer, sources):
     available = {s["citation"]: s for s in sources}
+    named_entities = {
+        name
+        for source in sources
+        for name in re.findall(
+            r"\b(?:Project|Policy|Release|Product)\s+([A-Z][\w-]+)", source["passage"]
+        )
+    }
     accepted = []
     for claim in answer.claims:
         if not claim.sources or len(claim.sources) != len(claim.quotes):
@@ -175,6 +182,13 @@ def validate_claims(answer, sources):
             ):
                 valid = False
                 break
+            if any(
+                re.search(r"\b" + re.escape(name) + r"\b", claim.text, re.I)
+                and not re.search(r"\b" + re.escape(name) + r"\b", source["passage"], re.I)
+                for name in named_entities
+            ):
+                valid = False
+                break
             # Embedding similarity alone can accept plausible outside knowledge.
             # Require most content words to be anchored in the exact quotation.
             # This is deliberately conservative; a rejected paraphrase gets one
@@ -208,7 +222,7 @@ def missing_requested_coverage(question, sources, claims):
     parts = [
         part
         for part in re.split(r"\s+(?:and|versus|vs\.?)\s+|;\s*", question, flags=re.I)
-        if len(terms(part)) >= 2
+        if len(terms(part)) >= 1
     ][:3]
     labels = set()
     if len(parts) > 1:
@@ -216,8 +230,12 @@ def missing_requested_coverage(question, sources, claims):
             matches = [(len(set(terms(part)) & set(terms(s["passage"]))), s) for s in sources]
             if matches:
                 overlap, source = max(matches, key=lambda pair: pair[0])
-                if overlap >= 2:
+                if overlap >= 1:
                     labels.add(source["citation"])
+                    answered = support_terms(" ".join(c["text"] for c in claims))
+                    requested = support_terms(part)
+                    if not (answered & requested):
+                        return True
     used = {label for claim in claims for label in claim["citations"]}
     distinct = {s["file_id"] for s in sources if s["citation"] in labels}
     if len(distinct) > 1 and not labels.issubset(used):
@@ -359,7 +377,7 @@ async def ask(payload: Ask, request: Request):
                             result["timings"]["correction_attempted"] = True
                             correction = (
                                 retrieval_query
-                                + "\nCitation correction: Produce fewer strictly supported claims. Each claim must cite exactly one supplied source and copy one short exact relevant quote. Do not add numbers absent from that quotation. Answer the original question; abstain if evidence is insufficient."
+                                + "\nCitation correction: Select the complete evidence sentences that answer EVERY requested part. For this correction, copy each selected sentence exactly into both text and its supporting quote, with its one correct source ID. Do not paraphrase, add words, infer purposes, or omit a requested value. Abstain if no source answers the question."
                                 + " Use the same subject and technical words as the quoted source sentence. Return one supported claim for each requested topic when evidence answers it. Match source labels to exact quotations."
                                 + " Set insufficient=false when returning supported claims; use insufficient=true only with an empty claims array. Quotes can start midway through a sentence but cannot omit or insert words inside them."
                                 + " Cover EVERY explicitly requested topic using its relevant source. For a short excerpt summary cover each distinct stated control; avoid repeating one control instead of covering another. Copy complete supported sentences when useful."

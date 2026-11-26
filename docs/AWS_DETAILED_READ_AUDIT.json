@@ -1,12 +1,12 @@
 {
-  "observed_at": "2026-11-26T17:17:55.307938+00:00",
+  "observed_at": "2026-11-26T18:02:54.849967+00:00",
   "read_only": true,
   "mutations": [],
   "guard": {
-    "checked_at": "2026-11-26T17:17:55.307453+00:00",
+    "checked_at": "2026-11-26T18:02:54.849598+00:00",
     "plan": "FREE",
     "status": "ACTIVE",
-    "credits_usd": 139.998445,
+    "credits_usd": 139.998443,
     "expires_at": "2027-05-24 10:27:24.967000+00:00",
     "allowed": true,
     "minimum_credit_reserve_usd": 1,
@@ -161,7 +161,7 @@
       "Errors": {
         "datapoints": [
           {
-            "Timestamp": "2026-11-26 19:48:00+05:30",
+            "Timestamp": "2026-11-26 20:33:00+05:30",
             "Sum": 0.0,
             "Unit": "Count"
           }
@@ -172,8 +172,8 @@
       "Duration": {
         "datapoints": [
           {
-            "Timestamp": "2026-11-26 19:48:00+05:30",
-            "Average": 83.2075,
+            "Timestamp": "2026-11-26 20:33:00+05:30",
+            "Average": 2.0,
             "Unit": "Milliseconds"
           }
         ],

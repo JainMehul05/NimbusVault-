@@ -1,0 +1,141 @@
+{
+  "backup_directory": "20261127T035611Z-070ef032",
+  "restore_database": "nimbusvault_restore_final_20261127",
+  "restore_succeeded": true,
+  "tables": {
+    "_prisma_migrations": {
+      "current": {
+        "rows": 3,
+        "sha256": "a742cab958c489ed0cdc37446671cdacf2bc3351986554cf6aea67a9c24b05cf"
+      },
+      "restored": {
+        "rows": 3,
+        "sha256": "a742cab958c489ed0cdc37446671cdacf2bc3351986554cf6aea67a9c24b05cf"
+      },
+      "identical": true
+    },
+    "activity_logs": {
+      "current": {
+        "rows": 175,
+        "sha256": "5c6bb1b203e75944d063d1fee779b08ea4f3cbda9612b340406a7db77607eb00"
+      },
+      "restored": {
+        "rows": 175,
+        "sha256": "5c6bb1b203e75944d063d1fee779b08ea4f3cbda9612b340406a7db77607eb00"
+      },
+      "identical": true
+    },
+    "ai_jobs": {
+      "current": {
+        "rows": 5,
+        "sha256": "f52fdc4b41ec27e5d1170e18db355ba9475de56f8dfdd8ba08a01721358371c9"
+      },
+      "restored": {
+        "rows": 5,
+        "sha256": "f52fdc4b41ec27e5d1170e18db355ba9475de56f8dfdd8ba08a01721358371c9"
+      },
+      "identical": true
+    },
+    "document_chunks": {
+      "current": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "restored": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "identical": true
+    },
+    "document_indexes": {
+      "current": {
+        "rows": 3,
+        "sha256": "e8ccf7182a50183bf3dee0fa8c8feee10a90198a4a699369326a84ee2ade6d2b"
+      },
+      "restored": {
+        "rows": 3,
+        "sha256": "e8ccf7182a50183bf3dee0fa8c8feee10a90198a4a699369326a84ee2ade6d2b"
+      },
+      "identical": true
+    },
+    "files": {
+      "current": {
+        "rows": 4,
+        "sha256": "cd504e12887e0939973957dc0e0464ec33cf377fe47c30a5ef228da65ac1e17c"
+      },
+      "restored": {
+        "rows": 4,
+        "sha256": "cd504e12887e0939973957dc0e0464ec33cf377fe47c30a5ef228da65ac1e17c"
+      },
+      "identical": true
+    },
+    "folders": {
+      "current": {
+        "rows": 7,
+        "sha256": "b81e9de31113c19fbc22b3f8d8e3cdf1dea014b86bc75e2d61a95c804b5c28ce"
+      },
+      "restored": {
+        "rows": 7,
+        "sha256": "b81e9de31113c19fbc22b3f8d8e3cdf1dea014b86bc75e2d61a95c804b5c28ce"
+      },
+      "identical": true
+    },
+    "permissions": {
+      "current": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "restored": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "identical": true
+    },
+    "refresh_tokens": {
+      "current": {
+        "rows": 453,
+        "sha256": "68f0117e46edca2c72fa337789dc5ce2845d5f8117827f7bc57adc7122cdb454"
+      },
+      "restored": {
+        "rows": 453,
+        "sha256": "68f0117e46edca2c72fa337789dc5ce2845d5f8117827f7bc57adc7122cdb454"
+      },
+      "identical": true
+    },
+    "share_links": {
+      "current": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "restored": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "identical": true
+    },
+    "user_sessions": {
+      "current": {
+        "rows": 65,
+        "sha256": "33937847345722f723f93398f3845e48246ce45e78d2dba7284b833e1caa42bf"
+      },
+      "restored": {
+        "rows": 65,
+        "sha256": "33937847345722f723f93398f3845e48246ce45e78d2dba7284b833e1caa42bf"
+      },
+      "identical": true
+    },
+    "users": {
+      "current": {
+        "rows": 4,
+        "sha256": "9b47bdf9c7c52ac2bb07bff7d212ddf98c9fe4ad5a6ed2538ed36ec4f6cd7ed4"
+      },
+      "restored": {
+        "rows": 4,
+        "sha256": "9b47bdf9c7c52ac2bb07bff7d212ddf98c9fe4ad5a6ed2538ed36ec4f6cd7ed4"
+      },
+      "identical": true
+    }
+  },
+  "all_tables_identical": true,
+  "sqlite_all_tables_identical": true
+}

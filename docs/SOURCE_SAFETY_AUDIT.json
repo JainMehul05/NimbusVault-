@@ -1,6 +1,6 @@
 {
-  "observed_at": "2026-11-26T18:46:41.529238+00:00",
-  "files_scanned": 504,
+  "observed_at": "2026-11-27T04:01:29.772737+00:00",
+  "files_scanned": 515,
   "secret_matching_paths": [],
   "private_runtime_ignored": {
     ".env": true,

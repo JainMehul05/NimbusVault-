@@ -7,6 +7,12 @@
 **/.env.*
 !**/.env.example
 .git
+.runtime
+.private-backup
+data
+intelligence/data
+intelligence/.venv
+**/__pycache__
 .github
 docs
 assets

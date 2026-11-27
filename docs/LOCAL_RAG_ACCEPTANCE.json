@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-26T18:36:29.068Z",
+  "started_at": "2026-11-27T03:57:16.177Z",
   "checks": {
     "actual_multi_document_Qwen": true,
     "actual_followup": true,
@@ -50,25 +50,25 @@
     "model": "qwen2.5:3b",
     "mode": "generated",
     "warning": null,
-    "conversationId": "a1d08fed-4ee3-4ffa-8dfa-cf6680178d6f",
+    "conversationId": "8a5303db-42ae-45b6-b15e-154c5284460b",
     "timings": {
-      "retrieval_ms": 53659.12,
+      "retrieval_ms": 13211.92,
       "citation_alignment_repairs": 0,
       "generation": {
-        "total_duration": 11682098500,
-        "load_duration": 9824534800,
+        "total_duration": 1666450500,
+        "load_duration": 4343900,
         "prompt_eval_count": 1020,
-        "prompt_eval_duration": 451073000,
-        "eval_count": 108,
-        "eval_duration": 1382473000
+        "prompt_eval_duration": 89284000,
+        "eval_count": 116,
+        "eval_duration": 1562818000
       },
-      "total_ms": 65785.25
+      "total_ms": 15222.36
     },
     "retrievalBackend": "local"
   },
   "followup": {
     "status": "answered",
-    "answer": "Its synthetic access number is 914. [S1]\n\nProject Borealis uses violet balloons. [S1]\n\nThis document belongs only to the second rehearsal account. [S1]",
+    "answer": "Project Borealis uses violet balloons. [S1]\n\nIts synthetic access number is 914. [S1]\n\nThis document belongs only to the second rehearsal account. [S1]",
     "citations": [
       {
         "chunkId": "2",
@@ -90,28 +90,28 @@
     "model": "qwen2.5:3b",
     "mode": "generated",
     "warning": null,
-    "conversationId": "a1d08fed-4ee3-4ffa-8dfa-cf6680178d6f",
+    "conversationId": "8a5303db-42ae-45b6-b15e-154c5284460b",
     "timings": {
-      "retrieval_ms": 26.31,
+      "retrieval_ms": 44.21,
       "citation_alignment_repairs": 0,
       "initial_generation": {
-        "total_duration": 1301298500,
-        "load_duration": 4280100,
+        "total_duration": 1350688300,
+        "load_duration": 7432900,
         "prompt_eval_count": 861,
-        "prompt_eval_duration": 35514000,
+        "prompt_eval_duration": 36116000,
         "eval_count": 100,
-        "eval_duration": 1251966000
+        "eval_duration": 1295455000
       },
       "correction_attempted": true,
       "generation": {
-        "total_duration": 1857130200,
-        "load_duration": 4628200,
+        "total_duration": 1873015300,
+        "load_duration": 6862500,
         "prompt_eval_count": 467,
-        "prompt_eval_duration": 136022000,
+        "prompt_eval_duration": 137495000,
         "eval_count": 127,
-        "eval_duration": 1692273000
+        "eval_duration": 1701218000
       },
-      "total_ms": 3568.98
+      "total_ms": 3637.92
     },
     "retrievalBackend": "local"
   },
@@ -123,10 +123,10 @@
     "model": "Extractive fallback",
     "mode": "insufficient",
     "warning": null,
-    "conversationId": "6b723d2b-943b-4af3-91fd-34e62dfe7c76",
+    "conversationId": "1001ed70-2416-4bb0-bc19-21ee5a26f1e2",
     "timings": {
-      "retrieval_ms": 21.35,
-      "total_ms": 21.36
+      "retrieval_ms": 49.05,
+      "total_ms": 49.06
     },
     "retrievalBackend": "local"
   },
@@ -140,11 +140,11 @@
         "code": "AI_CANCELLED"
       },
       "meta": {
-        "requestId": "f0cedea8-551f-4eb7-8aac-86b88b56e58d",
-        "timestamp": "2026-11-26T18:37:39.610Z"
+        "requestId": "47937879-5ada-47f4-9f63-7cf33ae0baaa",
+        "timestamp": "2026-11-27T03:57:36.320Z"
       }
     }
   },
   "result": "passed",
-  "finished_at": "2026-11-26T18:37:43.675Z"
+  "finished_at": "2026-11-27T03:57:40.505Z"
 }

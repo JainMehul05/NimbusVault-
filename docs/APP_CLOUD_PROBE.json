@@ -1,15 +1,9 @@
 {
-  "observed_at": "2026-11-26T15:24:38.179216+00:00",
+  "observed_at": "2026-11-27T03:57:49.734512+00:00",
   "api_signed_ok": true,
   "api_unsigned_status": 403,
   "standard_parameters_read": 3,
-  "lambda_invocation_datapoints": [
-    {
-      "Timestamp": "2026-11-26T20:24:00+05:30",
-      "Sum": 11,
-      "Unit": "Count"
-    }
-  ],
+  "lambda_invocation_datapoints": [],
   "native_log_event_count": 5,
-  "latest_log_timestamp": 1795706667559
+  "latest_log_timestamp": 1795751857192
 }

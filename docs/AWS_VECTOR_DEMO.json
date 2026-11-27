@@ -4,7 +4,7 @@
   "matched": true,
   "cosine_similarity": 0.30029958486557007,
   "aws_calls": 1,
-  "observed_at": "2026-11-26T15:24:25.332875+00:00",
+  "observed_at": "2026-11-27T03:57:34.188494+00:00",
   "default_retrieval": "local",
   "does_not_grant_legacy_document_access": true
 }

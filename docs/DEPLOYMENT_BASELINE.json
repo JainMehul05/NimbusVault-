@@ -1,0 +1,14 @@
+{
+  "baseline_tag": "nimbusvault-standalone-baseline-20261127",
+  "source_directory": "nimbus vault final",
+  "only_required_application_source": true,
+  "legacy_source_required": false,
+  "local_windows_verified": true,
+  "linux_ec2_verified": false,
+  "linux_plan": "docs/LINUX_STANDALONE_BASELINE.md",
+  "verification_report": "docs/STANDALONE_VERIFICATION_REPORT.md",
+  "private_assets_tracked_in_git": false,
+  "aws_mutations_performed": false,
+  "aws_account_upgraded": false,
+  "original_recovery_backup": "C:/Users/hp/Downloads/cloudvault-recovery-20261127-005510"
+}

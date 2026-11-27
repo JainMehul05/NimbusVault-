@@ -1,0 +1,80 @@
+{
+  "ollama": {
+    "source_files": 75,
+    "destination_files": 75,
+    "identical": true
+  },
+  "qwen": {
+    "source_files": 9,
+    "destination_files": 9,
+    "identical": true
+  },
+  "minilm": {
+    "source_files": 19,
+    "destination_files": 19,
+    "identical": true
+  },
+  "qwen_blob_integrity": true,
+  "project_reparse_points": [],
+  "recovery_backup": {
+    "path": "C:\\Users\\hp\\Downloads\\cloudvault-recovery-20261127-005510",
+    "files": 873,
+    "non_database_hashes_match": true,
+    "sqlite": {
+      "CloudVault\\data\\cloudvault.db": {
+        "integrity": "ok",
+        "all_rows_match": true,
+        "tables": 10
+      },
+      "CloudVault\\data\\backups\\schema-before-v2.db": {
+        "integrity": "ok",
+        "all_rows_match": true,
+        "tables": 2
+      },
+      "CloudVault\\data\\backups\\schema-before-v3.db": {
+        "integrity": "ok",
+        "all_rows_match": true,
+        "tables": 9
+      },
+      "CloudVault\\data\\backups\\pre-v2\\cloudvault.db": {
+        "integrity": "ok",
+        "all_rows_match": true,
+        "tables": 2
+      },
+      "CloudVault\\data\\backups\\pre-v3\\cloudvault.db": {
+        "integrity": "ok",
+        "all_rows_match": true,
+        "tables": 9
+      }
+    },
+    "all_git_tracked_source_bytes_match": true
+  },
+  "private_environment_files": {
+    ".env": {
+      "external_donor_path_keys": []
+    },
+    "backend/.env": {
+      "external_donor_path_keys": []
+    },
+    "intelligence/.env": {
+      "external_donor_path_keys": []
+    }
+  },
+  "model_manifest_sha256": "7ca7dc8044e777548baa44d3f564762db7b3999cdfedfe4f15352d119a32855e",
+  "active_sqlite": {
+    "integrity": "ok",
+    "counts": {
+      "files": 4,
+      "chunks": 44,
+      "conversations": 54,
+      "exchanges": 62
+    }
+  },
+  "original_sqlite_counts": {
+    "files": 12,
+    "chunks": 61,
+    "conversations": 21,
+    "exchanges": 32
+  },
+  "qwen_manifest_blobs_verified": 6
+}

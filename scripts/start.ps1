@@ -22,9 +22,12 @@ function Launch($exe,$arguments,$directory,$name){
   ConvertTo-Json -InputObject @($script:owned) | Set-Content '.runtime/processes.json'
 }
 try {
+  . "$PSScriptRoot/local-ai-paths.ps1"
+  Assert-LocalAIServer $root
   try {$null=Invoke-RestMethod 'http://127.0.0.1:11434/api/tags' -TimeoutSec 2} catch {
     if(Test-Path '.runtime/local-ai.json'){
-      $ai=Get-Content '.runtime/local-ai.json' | ConvertFrom-Json
+      . "$PSScriptRoot/local-ai-paths.ps1"
+      $ai=Resolve-LocalAI $root
       $env:OLLAMA_MODELS=$ai.models;$env:OLLAMA_HOST='127.0.0.1:11434';$env:OLLAMA_NO_CLOUD='1';$env:OLLAMA_NUM_PARALLEL='1';$env:OLLAMA_MAX_LOADED_MODELS='1'
       Launch $ai.binary @('serve') $root 'ollama'
     }else{Write-Warning 'Ollama unavailable; cited extractive fallback remains enabled.'}

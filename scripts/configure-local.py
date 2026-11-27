@@ -27,9 +27,18 @@ if not env.exists():
         'AWS_PROFILE':'default','AWS_REGION':'ap-southeast-2','AWS_OPERATIONS_ENABLED':'false','AWS_WRITES_ENABLED':'false',
         'NIMBUS_LOCAL_RETRIEVAL':'true',
     }
-    if args.embedding_cache: values['EMBEDDING_CACHE_DIR']=args.embedding_cache
+    values['EMBEDDING_CACHE_DIR']='.runtime/standalone-ai/embedding-cache'
     env.write_text('\n'.join(f'{k}={v}' for k,v in values.items())+'\n')
+# Reject external AI directories even when setup is explicitly passed old donor paths.
+for value in [args.embedding_cache, args.ollama_binary, args.ollama_models]:
+    if value and not (root / value).resolve().is_relative_to(root):
+        raise SystemExit('AI runtime/model/cache paths must be inside this project')
+lines = env.read_text().splitlines()
+lines = [line for line in lines if not line.startswith('EMBEDDING_CACHE_DIR=')]
+lines.append('EMBEDDING_CACHE_DIR=.runtime/standalone-ai/embedding-cache')
+env.write_text('\n'.join(lines)+'\n')
 for destination in ['backend/.env','intelligence/.env']:
+
     shutil.copy2(env,root/destination)
 if args.ollama_binary and args.ollama_models:
     (root/'.runtime/local-ai.json').write_text(json.dumps({'binary':args.ollama_binary,'models':args.ollama_models}))

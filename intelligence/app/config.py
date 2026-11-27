@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path | None = None
 
     def model_post_init(self, context):
+        project = ROOT
+        if not self.data_dir.is_absolute():
+            self.data_dir = (project / self.data_dir).resolve()
+        if self.embedding_cache_dir is None:
+            self.embedding_cache_dir = project / '.runtime/standalone-ai/embedding-cache'
+        elif not self.embedding_cache_dir.is_absolute():
+            self.embedding_cache_dir = (project / self.embedding_cache_dir).resolve()
+        if not self.embedding_cache_dir.resolve().is_relative_to(project.resolve()):
+            raise ValueError('Embedding cache must be inside the standalone project')
         if self.llm_url != "http://127.0.0.1:11434":
             raise ValueError("Generation must use the approved loopback runtime")
         if self.llm_model != "qwen2.5:3b":

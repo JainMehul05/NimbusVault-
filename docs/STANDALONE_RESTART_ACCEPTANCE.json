@@ -1,0 +1,18 @@
+{
+  "all_owned_ports_closed_after_stop": true,
+  "restart_ready": true,
+  "before": {
+    "files": 4,
+    "chunks": 44,
+    "conversations": 48,
+    "exchanges": 56
+  },
+  "after": {
+    "files": 4,
+    "chunks": 44,
+    "conversations": 48,
+    "exchanges": 56
+  },
+  "data_preserved": true,
+  "sqlite_integrity": "ok"
+}

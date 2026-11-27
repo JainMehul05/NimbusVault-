@@ -4,3 +4,15 @@
 *.ico binary
 *.pdf binary
 *.o binary
+
+# Historical academic submissions and sample journals must retain exact original bytes.
+"project-proposal/NimbusVault_Project_Proposal.pdf" -text whitespace=cr-at-eol
+"project-proposal/main (3).tex" -text whitespace=cr-at-eol
+"project-report-prototype-stage/NimbusVault_Project_report.pdf" -text whitespace=cr-at-eol
+"project-report-prototype-stage/NimbusVault_Project_report.tex" -text whitespace=cr-at-eol
+"project-proposal/revisions/2026-10-13/NimbusVault_Project_Proposal (1).pdf" -text whitespace=cr-at-eol
+"project-proposal/revisions/2026-10-13/NimbusVault_Project_Proposal.tex" -text whitespace=cr-at-eol
+"journals/template-examples/1024030xxx-bhanurekha/index.md" -text whitespace=cr-at-eol
+"journals/template-examples/1024030xxx-bhanurekha/w1-ticket-resolution.md" -text whitespace=cr-at-eol
+"journals/template-examples/1024030xxx-vidya/index.md" -text whitespace=cr-at-eol
+"journals/template-examples/1024030xxx-vidya/w1-ticket-resolution.md" -text whitespace=cr-at-eol

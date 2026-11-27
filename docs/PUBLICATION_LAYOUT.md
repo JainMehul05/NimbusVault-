@@ -32,7 +32,7 @@ Use `Start NimbusVault.bat` / `Stop NimbusVault.bat` inside `code/`. For AWS, th
 
 ## Documentation
 
-From the repository root, `uv sync --locked --extra docs` installs a separate documentation environment. `uv run --locked --extra docs mkdocs build` builds the site; `make docs` serves it. The template's root assets and individual journals are copied virtually by `mkdocs-gen-files`, avoiding fragile Windows symlinks and committed duplicate directories. Academic PDF/LaTeX downloads are made available under the built site's `academic/` path. The original root report files remain directly visible on GitHub.
+From the repository root, `uv sync --locked --extra docs` installs a separate documentation environment. `uv run --locked --extra docs mkdocs build` builds the site; `make docs` serves it. Only Git-tracked root assets, individual journals and report assets are copied virtually by `mkdocs-gen-files`, avoiding fragile Windows symlinks and committed duplicate directories. Academic PDF/LaTeX downloads are made available under the built site's `academic/` path. The original root report files remain directly visible on GitHub.
 
 The GitHub Pages workflow builds on the actual default branch (`main`) and uses Pages artifacts rather than force-pushing a history branch. To deploy, configure repository Settings → Pages → Source: GitHub Actions and set `ENABLE_GITHUB_PAGES=true`. If these settings are unavailable, the owner must complete them; no paid service is enabled by this preparation.
 

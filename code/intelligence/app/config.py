@@ -69,7 +69,7 @@ class Settings(BaseSettings):
         if self.llm_model != "qwen2.5:3b":
             raise ValueError("Use the validated local qwen2.5:3b model")
         if self.groq_api_key_file is None:
-            self.groq_api_key_file = project.parent / '.runtime/secrets/groq-api-key'
+            self.groq_api_key_file = project / '.runtime/secrets/groq-api-key'
         import re as _re
         if not _re.fullmatch(r'[a-z0-9][a-z0-9._/-]{2,80}', self.groq_model):
             raise ValueError('Invalid Groq model identifier')

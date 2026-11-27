@@ -184,4 +184,6 @@ def test_default_configuration_keeps_private_local_generation():
 def test_default_key_path_matches_windows_key_setup_helper():
     from app.config import Settings, ROOT
     configured = Settings(_env_file=None, groq_api_key_file=None)
-    assert configured.groq_api_key_file == ROOT.parent / ".runtime/secrets/groq-api-key"
+    helper = ROOT / "scripts/set-groq-key.ps1"
+    assert helper.is_file()
+    assert configured.groq_api_key_file == helper.parent.parent / ".runtime/secrets/groq-api-key"

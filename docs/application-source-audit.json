@@ -151,7 +151,7 @@
     "code/scripts/smoke-test.sh"
   ],
   "publication_only_repairs": [
-    "Standalone Groq default key path matches Windows helper; regression assertion added",
+    "Regression verifies the existing standalone Groq key path against the actual Windows helper location; checkpoint configuration retained",
     "Historical executable modes restored for eight shell helpers",
     "Upgrade fixture baseline pinned before hardening so later consent migration does not invalidate legacy data fixtures"
   ]

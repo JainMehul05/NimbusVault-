@@ -210,9 +210,9 @@
       "checkpoint_path": "intelligence/app/config.py",
       "publication_path": "code/intelligence/app/config.py",
       "checkpoint_blob": "c3037f445ce8cf3de83fd5d5f09a1e2bc039d73c",
-      "publication_sha256": "90e469ce7886648fb1164275313aecf42cb9a2e07c8f89825422f44e418fc23b",
+      "publication_sha256": "9ab13d0932fececeb5f414f8e6a364b2748548f1de0ee16878e0e69fa5c52ca9",
       "exact_checkpoint_bytes": false,
-      "adaptation": "Fresh-clone key path matches Windows helper"
+      "adaptation": "Independent regression assertion checks key path against Windows helper location"
     },
     {
       "checkpoint_path": "intelligence/app/internal.py",
@@ -246,9 +246,9 @@
       "checkpoint_path": "intelligence/tests/test_groq_provider.py",
       "publication_path": "code/intelligence/tests/test_groq_provider.py",
       "checkpoint_blob": "1a738acd19ccb8ab2cb5f7bb8bbcd8dc0f64d31a",
-      "publication_sha256": "873ad07e881b87b7e2a3b0ff36cbff8bf8a67dbc7e5d995c547b1b9af63c7879",
+      "publication_sha256": "5c9a1743d54de1e538d809bc4b41b3c359b555fce1a90c99579d657a0b5f8cbd",
       "exact_checkpoint_bytes": false,
-      "adaptation": "Regression assertion for standalone key path"
+      "adaptation": "Independent regression assertion checks key path against Windows helper location"
     },
     {
       "checkpoint_path": "package.json",

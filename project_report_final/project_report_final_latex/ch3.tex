@@ -1,0 +1,485 @@
+\chapter{Implementation}
+\label{ch:impl}
+
+The implementation has three runtimes: the React frontend, the Express application server, and the private FastAPI intelligence service with its local Qwen model. Existing AWS resources provide object storage and an event-driven processing path. This chapter describes each module in turn.
+
+\section{Core Application and File Management}
+
+\subsection{API Endpoints}
+
+Table~\ref{tab:api} lists representative Express routes. All paths are relative to \fname{/api/v1}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{7.4cm}L@{}}
+\toprule
+\textbf{Method / route} & \textbf{Purpose}\\
+\midrule
+\texttt{POST /auth/register}, \texttt{/auth/login} & Create account or issue session\\
+\texttt{POST /auth/refresh}, \texttt{/auth/logout} & Rotate or revoke session\\
+\texttt{GET /auth/me}, \texttt{/auth/sessions} & Current account and owned sessions\\
+\texttt{POST /files}; \texttt{GET /files} & Upload / list authorised files\\
+\texttt{POST /files/presigned-upload} & Reserve staged upload\\
+\texttt{POST /files/:fileId/complete} & Validate and finalise reservation\\
+\texttt{GET /files/:fileId/download} & Check authority and transfer original\\
+\texttt{PATCH /files/:fileId/rename}, \texttt{/move} & Authorised file changes\\
+\texttt{DELETE /files/:fileId} & Move to trash\\
+\texttt{POST /ai/search}, \texttt{/ai/ask}, \texttt{/ai/cancel} & Scoped retrieval, RAG and cancellation\\
+\texttt{GET /ai/conversations}, \texttt{/:id} & Owned history with current scope check\\
+\texttt{GET /ai/cloud}; \texttt{POST /ai/cloud/vector-demo} & Admin diagnostics; guarded canary\\
+\bottomrule
+\end{tabularx}
+\caption{Representative API routes.}
+\label{tab:api}
+\end{table}
+
+\subsection{Authentication and Sessions}
+
+The application supports account creation, login, short-lived access tokens, persistent sessions, refresh rotation and logout. Cookie-authenticated refresh operations are protected by origin and CSRF checks. A user signs in to reach the dashboard, files, sharing, activity, account and Ask views. The login and registration screens are shown in Section~\ref{sec:running}.
+
+\subsection{File Organisation and Collaboration}
+
+The dashboard shows storage, file-type distribution, recent files and activity. The explorer supports nested folders, upload, filters, rename, move, trash and restore. Upload reservations prevent failed transfers from permanently consuming quota. Sharing supports inherited grants and links with expiry, revocation, password and download limits where configured.
+
+\emph{AI-ready} means the current file generation was indexed; it does not guarantee that every question is answerable.
+
+\subsection{Upload and Download}
+
+\textbf{Upload coordination.} An authenticated upload request establishes authority before object transfer. The guarded adapter creates the original; presigned mode reserves a staged transfer and validates completion. Size and checksum evidence support finalisation without overwriting originals. Current file metadata is recorded and indexing work is queued (Figure~\ref{fig:upseq}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \foreach \x/\n/\t in {0/b/Browser, 5/e/Express, 10/s/S3 / private adapter} {
+    \node[box, minimum width=3.2cm] (\n) at (\x,0) {\t};
+    \draw[life] (\x,-0.45) -- (\x,-8.4);
+  }
+  \foreach \y/\a/\c/\t in {
+    -1.0/0/5/Authenticated upload request,
+    -1.9/5/10/Guarded object creation / staging,
+    -2.8/10/5/Size and checksum evidence,
+    -3.7/5/0/Ready metadata or reservation,
+    -4.6/0/10/Direct transfer only in presigned mode,
+    -5.5/0/5/Complete reservation where applicable,
+    -6.4/5/10/Finalise without overwriting originals,
+    -7.3/5/0/{File state; indexing queued}} {
+    \draw[msg] (\a,\y) -- node[font=\scriptsize, above]{\t} (\c,\y);
+  }
+\end{tikzpicture}
+\caption{Upload sequence. Direct browser-to-S3 transfer applies only to presigned mode; the historical integration exercised the guarded adapter.}
+\label{fig:upseq}
+\end{figure}
+
+\textbf{Download authorisation.} Express resolves the current file state and ownership or inherited permission through PostgreSQL before allowing a guarded original read. The response contains bytes or a bounded signed URL; revoked or foreign access is denied (Figure~\ref{fig:downseq}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \foreach \x/\n/\t in {0/b/Browser, 4.2/e/Express, 8.4/p/PostgreSQL, 12.6/s/S3 adapter} {
+    \node[box, minimum width=2.6cm] (\n) at (\x,0) {\t};
+    \draw[life] (\x,-0.45) -- (\x,-6.0);
+  }
+  \foreach \y/\a/\c/\t in {
+    -1.0/0/4.2/Request file download,
+    -1.9/4.2/8.4/Check owner / inherited permission,
+    -2.8/8.4/4.2/Current file state and authority,
+    -3.7/4.2/12.6/Guarded original read,
+    -4.6/12.6/4.2/Bytes or bounded signed URL,
+    -5.5/4.2/0/{Authorised response; no access if revoked}} {
+    \draw[msg] (\a,\y) -- node[font=\scriptsize, above]{\t} (\c,\y);
+  }
+\end{tikzpicture}
+\caption{Download sequence showing the current permission check before the S3 read.}
+\label{fig:downseq}
+\end{figure}
+
+\section{Indexing Jobs and Consistency}
+
+PostgreSQL jobs carry a generation, lease owner, attempt count and run-after time. Claiming uses \texttt{SKIP LOCKED}, and completion is accepted only for the current generation. Bounded retry produces an explicit failure instead of an indefinitely running job (Figure~\ref{fig:jobs}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, node distance=0.9cm]
+  \node[box, minimum width=3.4cm] (q) {QUEUED /\\generation N};
+  \node[box, minimum width=3.4cm, right=of q] (c) {Claim with\\\texttt{SKIP LOCKED}};
+  \node[box, minimum width=3.4cm, right=of c] (r) {RUNNING;\\owned lease};
+  \node[box, minimum width=3.4cm, below=0.9cm of r] (x) {Extract / embed /\\persist};
+  \node[box, minimum width=3.4cm, left=of x] (ok) {SUCCEEDED if\\generation current};
+  \node[box, minimum width=3.4cm, left=of ok] (f) {Retry or FAILED\\after bound};
+  \draw[arr] (q) -- (c); \draw[arr] (c) -- (r); \draw[arr] (r) -- (x);
+  \draw[arr] (x) -- (ok); \draw[arr] (ok) -- (f);
+\end{tikzpicture}
+\caption{Generation-aware indexing job lifecycle.}
+\label{fig:jobs}
+\end{figure}
+
+S3 is authoritative for original bytes, while DynamoDB records cloud revisions and stages. Cross-store consistency is reconciled rather than assumed to be a distributed transaction. SQLite migrations create backups before changes.
+
+\section{AWS Infrastructure and Event-Driven Processing}
+
+\textbf{AWS services.} The platform reuses existing AWS resources for private object storage, event routing, validation, processing metadata and operational diagnostics. Heavy MiniLM and Qwen computation remains in the private service (Table~\ref{tab:aws}).
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{5.4cm}L@{}}
+\toprule
+\textbf{Service / capability} & \textbf{Implemented function and evidence}\\
+\midrule
+Amazon S3 \cite{AWSS3} & Private originals; public-access blocking and encryption reviewed; historical upload and readback\\
+S3 Vectors \cite{AWSS3V} & 384D cosine index; restricted synthetic canary only\\
+DynamoDB \cite{AWSDDB} & Revision-linked cloud files/jobs and stage history; not ownership authority\\
+EventBridge / SQS \cite{AWSEB,AWSSQS} & Final-object events routed to a bounded consumer; DLQ for repeated failure\\
+Lambda \cite{AWSLambda} & Validates event, key, UUID and metadata; 256 MiB, 30-second timeout\\
+Step Functions \cite{AWSSFN} & Standard workflow for bounded validation, classification and manifest stages\\
+CloudWatch \cite{AWSCW} & Logs (three-day retention) and invocation/duration metrics\\
+API Gateway \cite{AWSAPIGW} & IAM-protected operational routes; signed success and unsigned 403 observed\\
+SSM Parameter Store / CloudFormation \cite{AWSCFN,AWSSSMPS} & Shared configuration and actual stack definition; read-only review\\
+IAM / STS \cite{AWSIAM} & Service permissions, identity and policy inspection\\
+EC2 / EBS / Session Manager & Prepared single-host design only; actual cloud deployment pending\\
+\bottomrule
+\end{tabularx}
+\caption{AWS services reused by NimbusVault.}
+\label{tab:aws}
+\end{table}
+
+Historical native evidence is from the authorised November~26 rehearsal; the November~27 checks were read-only. The EventBridge rule and SQS consumer were restored to idle. No fresh EC2 provisioning or production-scale reliability claim is made.
+
+\textbf{Event-driven document processing.} Finalised S3 originals trigger EventBridge, which routes events to SQS. The Lambda consumer validates event structure, prefix, file/revision and metadata, then starts a Standard workflow with deterministic correlation. Staging and derived prefixes are excluded. The visibility timeout is 180 seconds, and redrive allows three receives before the dead-letter queue (four-day retention). Figure~\ref{fig:events} shows the flow and the separate private AI handoff.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, node distance=0.75cm]
+  \node[ext, minimum width=3.9cm] (a1) {Finalised original in S3};
+  \node[ext, minimum width=3.9cm, right=of a1] (a2) {EventBridge prefix rule};
+  \node[ext, minimum width=3.9cm, right=of a2] (a3) {SQS / bounded consumer};
+  \node[ext, minimum width=3.9cm, below=0.8cm of a3] (b3) {Lambda validates event};
+  \node[ext, minimum width=3.9cm, left=of b3] (b2) {Standard Step Functions};
+  \node[ext, minimum width=3.9cm, left=of b2] (b1) {DynamoDB processing state};
+  \node[ext, minimum width=3.9cm, below=0.8cm of b1] (c1) {Await-local marker\\ends cloud run};
+  \node[box, minimum width=3.9cm, right=of c1] (c2) {Private extraction\\+ MiniLM};
+  \node[box, minimum width=3.9cm, right=of c2] (c3) {Search / Qwen\\citations};
+  \draw[arr] (a1) -- (a2); \draw[arr] (a2) -- (a3); \draw[arr] (a3) -- (b3);
+  \draw[arr] (b3) -- (b2); \draw[arr] (b2) -- (b1); \draw[arr] (b1) -- (c1);
+  \draw[darr] (c1) -- (c2); \draw[arr] (c2) -- (c3);
+\end{tikzpicture}
+\caption{Native event-driven processing (orange) and the separate private AI handoff (blue).}
+\label{fig:events}
+\end{figure}
+
+\textbf{Private completion and idempotency.} The workflow runs Validate, ExtractOrClassify, PersistManifest and then AwaitLocalEmbedding (Figure~\ref{fig:sfn}). Only approved non-sensitive fixtures can produce bounded cloud text artifacts. The private service later verifies original bytes, extracts and embeds content, and reconciles cloud metadata through outbound requests. Revision-aware records and deterministic execution identity help prevent duplicates. The authorised rehearsal used 242-byte and 134-byte synthetic documents. It recorded original hashes, cloud transitions, private completion and Qwen citations. The historical DLQ evidence was not a new poison-message test.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=3.0cm] (v) at (0,0) {Validate};
+  \node[box, minimum width=3.0cm] (e) at (4.6,0) {ExtractOrClassify};
+  \node[box, minimum width=3.0cm] (p) at (9.2,0) {PersistManifest};
+  \node[box, minimum width=3.0cm] (w) at (9.2,-1.9) {AwaitLocalEmbedding\\Task ends execution};
+  \node[box, fill=red!8, minimum width=3.0cm] (rf) at (4.6,-3.8) {RecordFailure};
+  \node[box, fill=red!8, minimum width=3.0cm] (fl) at (9.2,-3.8) {Failed\\Fail state};
+  \draw[arr] (v) -- node[lbl, above]{Success} (e);
+  \draw[arr] (e) -- node[lbl, above]{Success} (p);
+  \draw[arr] (p) -- node[lbl]{Success} (w);
+  \draw[darr] (v) -- node[lbl]{Catch} (rf);
+  \draw[darr] (e) -- node[lbl]{Catch} (rf);
+  \draw[darr] (p.south west) -- node[lbl, pos=0.35]{Catch} (rf);
+  \draw[darr] (w.south west) -- node[lbl]{Catch} (rf.north east);
+  \draw[arr] (rf) -- (fl);
+\end{tikzpicture}
+\caption{Standard state-machine stages. Catch paths record failure, and the final task ends execution.}
+\label{fig:sfn}
+\end{figure}
+
+\textbf{Cloud diagnostics.} The administrator cloud page summarises observed AWS configuration and diagnostic results. A historical sampled window contained eleven Lambda invocations and five retrieved log events; these are timestamped observations, not continuous live health (Figures~\ref{fig:cloudov} and~\ref{fig:cloudmx}). Cloud operations are separated from user-owned file metadata, and normal search does not call S3 Vectors.
+
+\section{Document Intelligence and Hybrid Retrieval}
+
+\textbf{Extraction and chunking.} The extractor supports PDF, DOCX, spreadsheet, structured and plain-text formats. Encrypted PDFs, empty or unsupported files and bounded extraction failures remain explicit states. Production OCR is not guaranteed. Text is capped at 500,000 characters and 3,000 chunks; tokenizer-offset windows contain at most 220 tokens with a 32-token overlap (Figure~\ref{fig:extract}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, node distance=0.8cm]
+  \node[box, minimum width=3.8cm] (a) {Verified original bytes};
+  \node[box, minimum width=3.8cm, right=of a] (b) {Bounded text\\extraction};
+  \node[box, minimum width=3.8cm, right=of b] (c) {Token offsets;\\220-token windows};
+  \node[box, minimum width=3.8cm, below=0.8cm of c] (d) {32-token overlap};
+  \node[box, minimum width=3.8cm, left=of d] (e) {MiniLM CPU;\\normalised 384D};
+  \node[store, minimum width=3.8cm, left=of e] (f) {SQLite vectors\\+ FTS triggers};
+  \draw[arr] (a) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (d);
+  \draw[arr] (d) -- (e); \draw[arr] (e) -- (f);
+\end{tikzpicture}
+\caption{Extraction, token-aware chunking, MiniLM embeddings and SQLite persistence.}
+\label{fig:extract}
+\end{figure}
+
+\textbf{Sparse, dense and hybrid retrieval.} MiniLM encodes queries and passages as normalised 384-dimensional float32 vectors, so cosine similarity equals their dot product. BM25 uses lexical frequency and length normalisation through SQLite FTS5. Hybrid retrieval combines ranks, not raw score magnitudes \cite{RZ09,RG19,WWD20,STMiniLM,SQLiteFTS5}:
+\begin{equation}
+\mathrm{RRF}(c) = \frac{1}{60 + r_{\mathrm{dense}}(c)} + \frac{1}{60 + r_{\mathrm{lex}}(c)},
+\end{equation}
+where the lexical term is zero for absent lexical candidates (Figure~\ref{fig:hybrid}).
+
+The default dense evidence floor is 0.28 and the relative floor is 70\% of the best score; single-document selection allows 0.20. Sparse candidates are bounded to 60. Exact lexical anchors and complementary-intent rescue remain scoped, and ties use term coverage and then dense similarity. Filename, exact, BM25, semantic and hybrid modes are available.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=3.6cm] (q) at (0,0) {Query + trusted\\file scope};
+  \node[box, minimum width=3.6cm] (d) at (-2.6,-1.8) {Dense semantic ranking\\Cosine candidates};
+  \node[box, minimum width=3.6cm] (s) at (2.6,-1.8) {Sparse ranking\\SQLite FTS5 BM25};
+  \node[box, minimum width=3.6cm] (r) at (0,-3.6) {Reciprocal rank fusion\\$k = 60$; eligibility gates};
+  \node[box, minimum width=3.6cm] (t) at (0,-5.3) {Tie break: term coverage\\then dense similarity};
+  \draw[arr] (q) -- (d); \draw[arr] (q) -- (s);
+  \draw[arr] (d) -- (r); \draw[arr] (s) -- (r); \draw[arr] (r) -- (t);
+\end{tikzpicture}
+\caption{Hybrid dense and BM25 fusion with relevance gates and tie breaking.}
+\label{fig:hybrid}
+\end{figure}
+
+\section{Large Language Model and RAG}
+\label{sec:rag}
+
+Ollama runs Qwen2.5 3B with Q4\_K\_M quantisation on the tested native Linux CPU runtime. One parallel slot and a 6,144-token context are configured, and application evidence is capped at 10,000 characters. The observed loaded model used approximately 2.2~GiB and zero VRAM \cite{Qwen3B,Ollama}. Figure~\ref{fig:rag} shows the private RAG pipeline.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, node distance=0.75cm]
+  \node[box, minimum width=3.9cm] (a1) {JWT and resource\\authorisation};
+  \node[box, minimum width=3.9cm, right=of a1] (a2) {Private actor +\\scoped file IDs};
+  \node[box, minimum width=3.9cm, right=of a2] (a3) {Hybrid evidence\\retrieval};
+  \node[box, minimum width=3.9cm, below=0.8cm of a3] (b3) {Bounded context and\\instruction isolation};
+  \node[box, minimum width=3.9cm, left=of b3] (b2) {Genuine Qwen\\JSON claims};
+  \node[box, minimum width=3.9cm, left=of b2] (b1) {Exact quote /\\citation validation};
+  \node[box, minimum width=3.9cm, below=0.8cm of b1] (c1) {One bounded\\correction if needed};
+  \node[box, minimum width=3.9cm, right=of c1] (c2) {Generated / labelled\\fallback / abstain};
+  \node[store, minimum width=3.9cm, right=of c2] (c3) {Persist owned\\conversation};
+  \draw[arr] (a1) -- (a2); \draw[arr] (a2) -- (a3); \draw[arr] (a3) -- (b3);
+  \draw[arr] (b3) -- (b2); \draw[arr] (b2) -- (b1); \draw[arr] (b1) -- (c1);
+  \draw[arr] (c1) -- (c2); \draw[arr] (c2) -- (c3);
+\end{tikzpicture}
+\caption{Private RAG pipeline: trusted scope, retrieval, structured generation, validation and owned history.}
+\label{fig:rag}
+\end{figure}
+
+\textbf{Evidence grounding and fallback.} The model receives labelled passages as untrusted data and returns structured claims, source IDs and exact quotations. The application verifies IDs against the supplied evidence and checks quotations after controlled case and whitespace normalisation. Invalid output can undergo one bounded source-faithful correction, with a 90-second budget on Linux (Figure~\ref{fig:cite}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[decision] (ev) at (0,0) {Evidence\\sufficient?};
+  \node[box, minimum width=3.6cm] (gen) at (0,-2.2) {Generate structured\\claims};
+  \node[decision] (qx) at (0,-4.5) {Quotes exact;\\IDs in scope?};
+  \node[box, minimum width=3.6cm] (cor) at (6,-4.5) {One source-faithful\\correction};
+  \node[box, fill=green!8, minimum width=3.6cm] (acc) at (0,-7.0) {Accept supported claims};
+  \node[box, fill=red!8, minimum width=3.6cm] (lab) at (6,-7.0) {Label fallback\\or abstain};
+  \draw[arr] (ev) -- node[lbl]{Yes} (gen);
+  \draw[arr] (gen) -- (qx);
+  \draw[arr] (qx) -- node[lbl, above]{Invalid} (cor);
+  \draw[arr] (qx) -- node[lbl]{Valid} (acc);
+  \draw[arr] (cor) -- node[lbl]{Valid repair} (acc.north east);
+  \draw[arr] (cor) -- node[lbl]{Still invalid /\\timeout} (lab);
+  \draw[darr] (ev.east) -- (8.6,0) node[lbl, pos=0.5, above]{No evidence} |- (lab.east);
+\end{tikzpicture}
+\caption{Citation validation, bounded correction and explicit abstention.}
+\label{fig:cite}
+\end{figure}
+
+Generated, extractive and insufficient modes remain distinct. Insufficient evidence causes abstention; an extractive fallback is labelled and never counted as genuine generation. Exact quotation does not prove semantic entailment for every claim.
+
+\textbf{AI answers and citation evidence.} Ask allows document selection, scoped retrieval, conversation history and source inspection. A real Qwen response in the historical application rehearsal drew on synthetic local-AI evidence. The Linux multi-document test combined that evidence with a separate synthetic Borealis document, and both source references were exposed (Figures~\ref{fig:qwen}--\ref{fig:wincite}). Saved conversation access is checked against ownership and current file scope. The Linux seeded metadata is not evidence of a new S3 upload.
+
+\section{Security, Privacy and Access Control}
+
+Passwords use bcrypt. JWT access tokens identify callers, while persistent refresh families and sessions support rotation and revocation. Origin and CSRF checks protect cookie refresh. File operations resolve current resource authority; private intelligence receives only readable IDs, and Express revalidates source metadata. Model text cannot execute tools or browse the AWS account (Figure~\ref{fig:trust}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, fill=red!8, minimum width=4.8cm] (u) at (0,0) {Untrusted browser /\\document text};
+  \node[box, minimum width=4.8cm] (x) at (0,-2.0) {Express identity boundary\\JWT + resource policy};
+  \node[box, minimum width=4.8cm] (p) at (0,-4.0) {Private intelligence boundary\\Service token + trusted scope};
+  \node[box, minimum width=4.2cm] (m) at (-4.0,-6.6) {Internal model boundary\\No tool or public\\model endpoint};
+  \node[ext, minimum width=4.2cm] (a) at (4.0,-6.6) {AWS boundary\\Pinned identity\\+ guarded SDK};
+  \draw[arr] (u) -- node[lbl]{Validate input} (x);
+  \draw[arr] (x) -- node[lbl]{No user-chosen service host} (p);
+  \draw[arr] (p.south) -- node[font=\scriptsize, above left, align=right]{Evidence-only\\prompt} (m.north);
+  \draw[darr] (p.south) -- node[font=\scriptsize, above right, align=left]{Role design\\pending EC2} (a.north);
+\end{tikzpicture}
+\caption{Security trust boundaries across browser, private service, model and guarded cloud access.}
+\label{fig:trust}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{5.0cm}L@{}}
+\toprule
+\textbf{Threat / risk} & \textbf{Mitigation / boundary}\\
+\midrule
+Foreign or revoked access & Current ownership, inherited permissions and scoped citations/history\\
+Token leakage / replay & Internal host validation, refresh rotation, cookie guards and separate runtime secrets\\
+Document injection / invalid claims & Untrusted context, structured claims, quote checks and bounded repair\\
+Image vulnerabilities & Stable updates, reduced tooling, non-root execution and network isolation\\
+\bottomrule
+\end{tabularx}
+\caption{Threats and mitigations.}
+\label{tab:threats}
+\end{table}
+
+Trivy snapshots retained 23 distinct HIGH/CRITICAL CVE identifiers across four images, including a scanner-critical PostgreSQL libxml2 issue with no stable fix \cite{DebCVE}. This is not a security certification. Actual EC2 role, IMDSv2/firewall and encrypted-disk enforcement remain pending \cite{OWASP,AWSIMDS,AWSSM}.
+
+\section{Deployment and DevOps}
+
+\textbf{Standalone Windows and Linux rehearsal.} Project-local Node and Python, PostgreSQL, SQLite, MiniLM and copied Qwen assets remove any dependency on the donor project. Integrity checks covered 75 Windows runtime files, 19 MiniLM cache files and six Qwen content-addressed blobs. A recovery directory retained 873 files, and five SQLite copies passed integrity and row comparison.
+
+Docker Compose separates PostgreSQL, Express, FastAPI and native CPU Ollama. Only Express publishes a loopback host port; internal networks isolate storage and inference. Persistent database volumes and read-only model assets support restart and reproducibility. Images are pinned by digest and package locks \cite{Docker}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=4.0cm] (h) at (0,0) {Local Linux rehearsal host\\Docker Desktop; not EC2};
+  \node[box, minimum width=4.0cm] (e) at (0,-2.1) {Express + React\\Loopback host port};
+  \node[store, minimum width=3.2cm] (pg) at (-4.9,-4.1) {PostgreSQL volume};
+  \node[store, minimum width=3.2cm] (fa) at (0,-4.1) {FastAPI +\\SQLite volume};
+  \node[box, minimum width=3.2cm] (ol) at (5.3,-4.1) {Native Linux Ollama\\Read-only model assets};
+  \draw[arr] (e.west) -| node[font=\scriptsize, pos=0.3, above]{Internal network} (pg.north);
+  \draw[arr] (e) -- node[lbl]{Private token} (fa);
+  \draw[arr] (fa) -- node[font=\scriptsize, above, align=center]{Internal model\\network} (ol);
+  \begin{scope}[on background layer]
+    \node[draw=black!50, dashed, rounded corners=4pt, inner sep=8pt, fit=(e)(pg)(fa)(ol)] (stack) {};
+  \end{scope}
+  \node[font=\scriptsize, anchor=north east] at (stack.north east) {Docker Compose stack};
+  \draw[arr] (h) -- (stack.north -| h);
+  \node[ext, minimum width=4.0cm] (ec2) at (0,-6.9) {Proposed Ubuntu EC2 host\\Same runtime;\\SSM private access};
+  \draw[darr] (stack.south -| ec2) -- node[lbl]{Not yet deployed} (ec2);
+\end{tikzpicture}
+\caption{Verified local Linux topology and prospective EC2 transition; not a deployed EC2 instance.}
+\label{fig:topology}
+\end{figure}
+
+\textbf{Lifecycle and proposed host.} Active-generation shutdown returned HTTP 499 and exit code 0, with no OOM, and took about 11.03 seconds to stop. Restart retained identity, counts, history and hybrid retrieval. Restored PostgreSQL rows matched all twelve public tables, and SQLite integrity passed. The proposed host is Ubuntu 24.04 x86-64 on an m7i-flex.large instance in Sydney, with an encrypted 30~GiB gp3 disk and private SSM forwarding (Figure~\ref{fig:topology}). Provisioning, fresh cloud inference, role enforcement, persistence and final stopped-state acceptance require approval \cite{AWSSM,AWSEC2}.
+
+\section{Cloud Cost and Safeguards}
+
+The financial objective is zero out-of-pocket cost within the Free account plan and finite promotional credits, not unlimited free usage. The report records a point-in-time remaining credit snapshot of USD 139.997874 with expiry on May 24, 2027. Sydney pricing evidence was USD 0.1197 per compute hour, USD 0.005 per in-use IPv4 hour and USD 0.096 per GiB-month for gp3 \cite{AWSFT,AWSEC2P,AWSEBSP,AWSVPCP}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Usage scenario} & \textbf{Hours/month} & \textbf{Gross USD/month}\\
+\midrule
+Stopped & 0 & 2.88\\
+1 hour/day & 30.42 & 6.67\\
+2 hours/day & 60.83 & 10.47\\
+4 hours/day & 121.67 & 18.05\\
+Continuous & 730 & 93.91\\
+\bottomrule
+\end{tabular}
+\caption{Estimated monthly cost of the proposed EC2 host.}
+\label{tab:cost}
+\end{table}
+
+A retained 30~GiB disk costs USD 2.88 per month even while compute is stopped. Estimates exclude unrelated account activity, request charges and artifact storage. Local inference avoids paid model APIs, normal retrieval avoids cloud-vector queries, and diagnostics run on demand.
+
+Proposed limits are a four-hour initial session, USD 10 of credit consumption and a USD 10 reserve. A boot timer (225 minutes), an external deadline schedule (230 minutes) and a credit and authorisation watchdog are planned stop paths (Figure~\ref{fig:stop}). Credit and billing delay and other account activity prevent a hard cost guarantee. No paid-plan upgrade is authorised.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=4.4cm] (v) at (0,0) {Verify identity, Free plan credits\\and absolute deadline};
+  \node[box, minimum width=4.4cm] (s) at (0,-1.9) {Bounded approved\\host session};
+  \node[box, minimum width=3.6cm] (b) at (-4.6,-3.9) {Boot timer\\225 minutes};
+  \node[box, minimum width=3.6cm] (w) at (0,-3.9) {Credit / authorisation\\watchdog};
+  \node[box, minimum width=3.6cm] (x) at (4.6,-3.9) {External scheduler\\230-minute deadline};
+  \node[box, fill=red!8, minimum width=4.4cm] (d) at (0,-6.1) {Drain / cancel generation\\Stop EC2; retain disk};
+  \draw[arr] (v) -- node[lbl]{Only after approval} (s);
+  \draw[darr] (s) -- node[lbl]{Arm} (b);
+  \draw[darr] (s) -- node[lbl]{Poll} (w);
+  \draw[darr] (s) -- node[lbl]{Separate control} (x);
+  \draw[darr] (b) -- (d);
+  \draw[darr] (w) -- node[lbl]{Failure / limit} (d);
+  \draw[darr] (x) -- (d);
+\end{tikzpicture}
+\caption{Prepared independent financial stop paths; actual EC2 enforcement awaits approval.}
+\label{fig:stop}
+\end{figure}
+
+\section{Running the Project}
+\label{sec:running}
+
+From the project root the local workflow uses \texttt{npm run setup}, \texttt{npm start}, \texttt{npm run warmup}, \texttt{npm run stop} and \texttt{npm run backup}. Setup uses project-local AI assets. Prepared cloud operator aliases (\texttt{aws:start}, \texttt{aws:connect}, \texttt{aws:status}, \texttt{aws:warmup}, \texttt{aws:stop}, \texttt{aws:backup}) require a valid approved-instance manifest; their presence is not evidence of deployment.
+
+The screenshots in Figures~\ref{fig:landing}--\ref{fig:wincite} are original captures of the compiled frontend. Backend behaviour is verified separately by the tests in Chapter~\ref{ch:results}. Interface rendering alone is not evidence of EC2 hosting.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.72\textwidth]{fig/landing.png}
+\caption{Landing page.}
+\label{fig:landing}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig/login.png}
+\caption{Login screen.}
+\label{fig:login}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig/register.png}
+\caption{Registration screen; no account was created for the capture.}
+\label{fig:register}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.72\textwidth]{fig/dashboard.png}
+\caption{Windows dashboard after the native AWS rehearsal, with synthetic workload counts.}
+\label{fig:dashboard}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig/explorer.png}
+\caption{File explorer with a nested synthetic evidence folder and an AI-ready document.}
+\label{fig:explorer}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{fig/cloud_overview.png}
+\caption{Historical cloud diagnostic overview. This is an application dashboard, not an AWS console screenshot.}
+\label{fig:cloudov}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{fig/cloud_matrix.png}
+\caption{Historical AWS service matrix showing diagnostic evidence and limitations.}
+\label{fig:cloudmx}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig/qwen_answer.png}
+\caption{Genuine Qwen answer in Ask NimbusVault, from the historical application rehearsal.}
+\label{fig:qwen}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig/linux_multidoc.png}
+\caption{Linux multi-document conversation with a supporting passage open.}
+\label{fig:linuxmd}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig/win_citation.png}
+\caption{Windows citation dialog showing an actual source passage.}
+\label{fig:wincite}
+\end{minipage}
+\end{figure}

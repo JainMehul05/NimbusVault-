@@ -1,0 +1,200 @@
+\chapter{Results and Testing}
+\label{ch:results}
+
+\section{Testing Strategy}
+
+Verification distinguishes deterministic unit tests, API and database integration, genuine Qwen acceptance, browser behaviour, the historical AWS rehearsal and read-only configuration checks. Pass counts refer to separate suite runs, not one combined execution or measured code coverage.
+
+\begin{itemize}
+  \item \textbf{Unit testing.} Deterministic suites for the backend (Jest, 298 passes), frontend (Vitest, 57), Python intelligence service (pytest, 83) and infrastructure definitions (Vitest, 22): 460 passes in total.
+  \item \textbf{Integration testing.} API and database integration tests, genuine Qwen acceptance runs, the authorised historical AWS rehearsal and read-only AWS configuration checks.
+  \item \textbf{Performance testing.} An 84-query retrieval regression corpus, a 40-case Linux CPU AI evaluation, and measured MiniLM startup and encoding phases.
+  \item \textbf{User testing.} No formal user study is recorded. Interface behaviour was checked with 54 Playwright responsive checks (9 routes $\times$ 6 widths). These are route/viewport observations, not 54 independent authenticated reloads.
+\end{itemize}
+
+\section{Automated Test Results}
+
+Table~\ref{tab:suites} and Figure~\ref{fig:suites} summarise the recorded test passes.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{4.2cm}rL@{}}
+\toprule
+\textbf{Suite} & \textbf{Passes} & \textbf{Scope}\\
+\midrule
+Backend (Jest) & 298 & Auth, storage, sharing, jobs, AI boundaries\\
+Frontend (Vitest) & 57 & Components, state and session\\
+Python (pytest) & 83 & Extraction, retrieval, guards and Qwen\\
+Infrastructure (Vitest) & 22 & Definitions and constraints\\
+\midrule
+\textbf{Total} & \textbf{460} & Separate suite executions\\
+\midrule
+Browser (Playwright) & 54 & 9 routes $\times$ 6 widths\\
+\bottomrule
+\end{tabularx}
+\caption{Recorded local test passes by suite.}
+\label{tab:suites}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.75\textwidth, height=6cm, bar width=26pt,
+  symbolic x coords={Backend,Frontend,Python,Infrastructure},
+  xtick=data, ymin=0, ymax=340,
+  ylabel={Passed tests}, nodes near coords,
+  every node near coord/.append style={font=\small},
+  tick label style={font=\small}, label style={font=\small},
+  axis lines*=left, ymajorgrids, grid style={black!12},
+  enlarge x limits=0.18]
+\addplot[fill=barA, draw=black!70] coordinates {(Backend,298) (Frontend,57) (Python,83) (Infrastructure,22)};
+\end{axis}
+\end{tikzpicture}
+\caption{Distribution of recorded local test passes (separate suite executions).}
+\label{fig:suites}
+\end{figure}
+
+The first Linux AI suite accepted 38 of 40 cases; correction-timeout changes then allowed the unchanged suite to pass 40 of 40. Key retained evidence records include \nolinkurl{AWS_REHEARSAL.json}, \nolinkurl{AWS_ACCEPTANCE_MATRIX.md}, \nolinkurl{linux-search-84-final.json}, \nolinkurl{linux-ai-40-final.json}, \nolinkurl{linux-lifecycle.json}, \nolinkurl{linux-backup.json} and \nolinkurl{security_summary.json}. This report does not independently rerun those records.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{6.0cm}L@{}}
+\toprule
+\textbf{Representative case} & \textbf{Observed result}\\
+\midrule
+Wrong password / foreign history & 401 / scoped 404\\
+Untrusted intelligence host & Rejected before private-token fetch\\
+Active SIGTERM / restart & 499; exit 0; retained state\\
+Backup restoration & Twelve public tables matched; SQLite integrity passed\\
+\bottomrule
+\end{tabularx}
+\caption{Representative test cases and observed results.}
+\label{tab:cases}
+\end{table}
+
+\section{Retrieval Evaluation}
+
+The local Linux regression corpus comprised 84 synthetic queries (69 positive and 15 negative). Each mode used the same scoped cases and a temporary index. Top-1 and Top-3 hit rate measure whether a relevant file appears within the first $k$ results; Recall@3 measures the fraction of relevant files recovered; MRR averages the reciprocal rank of the first relevant result. Negative rejection measures correctly unanswered unrelated queries (Table~\ref{tab:retrieval}).
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Dense} & \textbf{BM25} & \textbf{Hybrid}\\
+\midrule
+Relevant top-1 & 65/69 & 64/69 & 69/69\\
+Top-1 accuracy & 94.20\% & 92.75\% & 100.00\%\\
+Top-3 hit rate & 95.65\% & 95.65\% & 100.00\%\\
+Mean Recall@3 & 94.20\% & 95.65\% & 98.55\%\\
+MRR & 0.9493 & 0.9396 & 1.0000\\
+Negative rejection & 15/15 & 8/15 & 15/15\\
+Tested scope leaks & 0 & 0 & 0\\
+Median latency (ms) & 19.58 & 5.19 & 9.09\\
+P95 latency (ms) & 37.03 & 7.44 & 12.59\\
+\bottomrule
+\end{tabular}
+\caption{Retrieval results on the 84-query local regression corpus.}
+\label{tab:retrieval}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.8\textwidth, height=6cm, bar width=14pt,
+  symbolic x coords={Dense semantic,BM25,Hybrid},
+  xtick=data, ymin=0.85, ymax=1.02,
+  ylabel={Score (0--1)},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\small, draw=none, /tikz/every even column/.append style={column sep=8pt}}, area legend,
+  tick label style={font=\small}, label style={font=\small},
+  axis lines*=left, ymajorgrids, grid style={black!12},
+  enlarge x limits=0.25]
+\addplot[fill=barA, draw=black!70] coordinates {(Dense semantic,0.9565) (BM25,0.9565) (Hybrid,1.0)};
+\addplot[fill=barB, draw=black!70] coordinates {(Dense semantic,0.9420) (BM25,0.9565) (Hybrid,0.9855)};
+\addplot[fill=barC, draw=black!70] coordinates {(Dense semantic,0.9493) (BM25,0.9396) (Hybrid,1.0)};
+\legend{Top-3 hit rate, Mean Recall@3, MRR}
+\end{axis}
+\end{tikzpicture}
+\caption{Top-3 hit rate, mean Recall@3 and MRR in the local regression benchmark. The axis starts at 0.85 to make the differences visible.}
+\label{fig:retrieval}
+\end{figure}
+
+Hybrid retrieval ranked all 69 positive cases first and rejected all 15 negatives. BM25 was fastest but accepted seven unrelated queries. These results are development-corpus regression evidence, not independent population-level accuracy or a formal confidentiality proof.
+
+\section{AI Evaluation and Performance}
+
+The final unchanged 40-case Linux CPU suite required the expected generated or insufficient mode, exact quotation validity and authorised scope. All 31 answerable responses were genuine generated successes, and all nine unanswerable queries correctly abstained. No tested quotation or permission-scope failure was recorded. Overall adapter median answer latency was 19.90 seconds; generated and abstained cases have different workloads (Figure~\ref{fig:ai}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.6\textwidth, height=5.5cm, bar width=40pt,
+  symbolic x coords={Generated / answerable,Abstained / unanswerable},
+  xtick=data, ymin=0, ymax=36,
+  ylabel={Accepted cases (of 40)}, nodes near coords,
+  every node near coord/.append style={font=\small},
+  tick label style={font=\small}, label style={font=\small},
+  axis lines*=left, ymajorgrids, grid style={black!12},
+  enlarge x limits=0.45]
+\addplot[fill=barA, draw=black!70] coordinates {(Generated / answerable,31) (Abstained / unanswerable,9)};
+\end{axis}
+\end{tikzpicture}
+\caption{Strict AI acceptance categories: 31 generated positives and nine abstentions.}
+\label{fig:ai}
+\end{figure}
+
+MiniLM startup and encoding were measured separately (Figure~\ref{fig:minilm}). In a fresh process, Torch import took 1.631~s, Sentence Transformers import 3.740~s, MiniLM load 0.732~s, first encode 0.426~s and warm encode 0.021~s, for a total of 6.661~s. One observed cold Qwen load took approximately 24.37~s. No matched GPU or EC2 performance comparison was measured.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.8\textwidth, height=5.5cm, bar width=24pt,
+  symbolic x coords={Torch import,ST import,Model load,First encode,Warm encode},
+  xtick=data, ymin=0, ymax=4.3,
+  ylabel={Duration (s)}, nodes near coords,
+  every node near coord/.append style={font=\small, /pgf/number format/fixed, /pgf/number format/precision=3},
+  tick label style={font=\small}, label style={font=\small},
+  axis lines*=left, ymajorgrids, grid style={black!12},
+  enlarge x limits=0.13]
+\addplot[fill=barA, draw=black!70] coordinates {(Torch import,1.631) (ST import,3.740) (Model load,0.732) (First encode,0.426) (Warm encode,0.021)};
+\end{axis}
+\end{tikzpicture}
+\caption{Measured MiniLM process startup and encoding phases (ST = Sentence Transformers); not a Qwen inference benchmark.}
+\label{fig:minilm}
+\end{figure}
+
+\section{Discussion}
+
+Secure storage, file management, controlled sharing, intelligent discovery and document question answering are implemented and supported by the evidence above. Deployment readiness is demonstrated for standalone Windows and the native Linux rehearsal; complete EC2 hosting remains pending.
+
+The strongest results are in retrieval and grounding. Hybrid retrieval ranked every positive query first and rejected every negative query, while BM25 alone accepted seven unrelated queries. Generation passed all 31 answerable and nine abstention cases with no tested quotation or permission-scope failure. Table~\ref{tab:challenges} lists the main engineering challenges, the implemented response to each, and the limit that remains.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{4.4cm}L@{}}
+\toprule
+\textbf{Engineering challenge} & \textbf{Implemented response / residual limit}\\
+\midrule
+Permission consistency & Trusted actor/file IDs and current source/history rechecks; finite regression coverage\\
+Retrieval relevance & Exact-anchor rescue, rank fusion and evidence gates; curated corpus may overfit\\
+Strict grounding & One source-faithful correction; CPU correction budget increased to 90~s\\
+Portability and recovery & Independent runtime assets, hashes, isolated Linux fixture and verified restores\\
+Shutdown and security & Bounded cancellation, restricted networks and stable updates; 23 high/critical identifiers remain\\
+\bottomrule
+\end{tabularx}
+\caption{Engineering challenges, responses and residual limits.}
+\label{tab:challenges}
+\end{table}
+
+We also want to state the limitations plainly.
+
+\begin{enumerate}
+  \item \textbf{The evaluation corpus is small.} The synthetic development corpus is not an independent holdout, so the retrieval and AI figures are regression evidence rather than general accuracy.
+  \item \textbf{Model capacity is limited.} Qwen 3B has limited reasoning capacity, and the evidence and context budgets can miss relevant content. OCR is not guaranteed.
+  \item \textbf{Request scope and concurrency are bounded.} At most 250 scoped indexed files are accepted per private request, and generation is single-slot.
+  \item \textbf{Cloud hosting is not complete.} Full EC2 hosting, role enforcement and cloud-host performance measurements are still pending.
+  \item \textbf{Scale and resilience were not demonstrated.} No distributed availability test, large load study, independent penetration test or multi-region recovery was performed, and 23 high or critical image CVE identifiers remain.
+\end{enumerate}

@@ -1,0 +1,30 @@
+\chapter{Conclusion and Future Work}
+
+\section{Conclusion}
+
+NimbusVault integrates secure file management and evidence-grounded document intelligence. Express and PostgreSQL govern identity and ownership, S3 stores originals, existing AWS services coordinate bounded cloud stages, and MiniLM with SQLite plus Qwen enable scoped discovery and answers. Recorded local tests, the native AWS rehearsal and genuine interface evidence demonstrate the academic prototype.
+
+Of the six objectives in Section~\ref{sec:objectives}, secure storage, file management, controlled sharing, intelligent discovery and document question answering are implemented and supported by the evidence in Chapter~\ref{ch:results}. Deployment readiness is met for standalone Windows and the native Linux rehearsal; full EC2 hosting remains pending, and further evaluation is required before any production-scale claim.
+
+The project shows that file storage, controlled sharing and scoped, evidence-grounded question answering can work under one permission policy. The results are bounded by the small development corpus and the unfinished EC2 deployment.
+
+\section{Key Findings}
+
+\begin{itemize}
+  \item \textbf{Hybrid retrieval outperformed either single mode.} On the 84-query regression corpus it ranked a relevant file first for all 69 positive queries (dense 65/69, BM25 64/69) and rejected all 15 negative queries, where BM25 rejected only 8/15.
+  \item \textbf{Grounded generation behaved as designed.} On the 40-case Linux CPU suite, all 31 answerable queries produced genuine generated responses and all nine unanswerable queries correctly abstained. No quotation or permission-scope failure was recorded, and median adapter answer latency was 19.90 seconds.
+  \item \textbf{Some results were less favourable.} The first Linux AI suite accepted 38/40 and needed correction-timeout changes to reach 40/40, and 23 distinct high or critical image CVE identifiers remain across four images.
+\end{itemize}
+
+\section{Future Work}
+
+The limitations listed in the Discussion should guide the next steps.
+
+\begin{itemize}
+  \item Authorised EC2 acceptance, covering role enforcement, persistence and final stopped-state checks.
+  \item A larger blinded retrieval evaluation and an adversarial access evaluation.
+  \item Richer document parsing, OCR and reranking.
+  \item Capacity benchmarks for the single-slot generation path and the 250-file scoped request limit.
+  \item Remediation of residual image vulnerabilities, following general guidance such as \cite{OWASP}.
+  \item Public HTTPS and distributed resilience, which require separate design and acceptance.
+\end{itemize}

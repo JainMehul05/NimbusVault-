@@ -7,255 +7,290 @@
       "checkpoint_blob": "b27203cbe95740a28e05e6fff84c426407ed15ac",
       "publication_sha256": "fd1566e8e6e04d4ed3610e1e862564f75deb7df81927f06aa95462829e8b9072",
       "exact_checkpoint_bytes": false,
-      "adaptation": "University application/documentation layout note"
+      "adaptation": "University application/documentation layout note",
+      "publication_blob": "db24d75014a4ea76452c6a4cf039e1758ebfa61c"
     },
     {
       "checkpoint_path": "MERGE_PROGRESS.md",
       "publication_path": "docs/history/MERGE_PROGRESS.md",
       "checkpoint_blob": "99ae9e4f6f51b0b51c8e584ea0c8e10b87bbfade",
       "publication_sha256": "8a86d8a8ef98770ef23870332ff79afe542ce7ecd6a37b502b015d0a61ac3d79",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "99ae9e4f6f51b0b51c8e584ea0c8e10b87bbfade"
     },
     {
       "checkpoint_path": "RESUME_CHECKPOINT.md",
       "publication_path": "docs/history/RESUME_CHECKPOINT.md",
       "checkpoint_blob": "bc9421e22528e6960702842074a982e26f9dedf0",
       "publication_sha256": "a6fa4de8c892f37c18627eda3f039a2e6e09faa56dcaf60ddbe20a9f94276a41",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "bc9421e22528e6960702842074a982e26f9dedf0"
     },
     {
       "checkpoint_path": "backend/prisma/migrations/20261127000000_external_ai_consent/migration.sql",
       "publication_path": "code/backend/prisma/migrations/20261127000000_external_ai_consent/migration.sql",
       "checkpoint_blob": "8cef19bcc6fa8828510eade46a2187888e98f5f7",
       "publication_sha256": "4c88b71eaa21c03979f6bcadc698a6302dc155e96795c2f9470fdc0518dbe804",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "8cef19bcc6fa8828510eade46a2187888e98f5f7"
     },
     {
       "checkpoint_path": "backend/prisma/schema.prisma",
       "publication_path": "code/backend/prisma/schema.prisma",
       "checkpoint_blob": "99b365e8b1595d309eac033de1bfabb6f57ad027",
       "publication_sha256": "ef887104c82383629ced68caecea1681208159191634578183e42a85e9d9ecf7",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "99b365e8b1595d309eac033de1bfabb6f57ad027"
     },
     {
       "checkpoint_path": "backend/src/modules/ai/ai.controller.ts",
       "publication_path": "code/backend/src/modules/ai/ai.controller.ts",
       "checkpoint_blob": "acb2bee618d399c4fbf2ab04362d07b891db2f91",
       "publication_sha256": "482e94bcb185c0485503b77cd03e441873db6193c44f9901a2e8e17a6d3ad9fc",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "acb2bee618d399c4fbf2ab04362d07b891db2f91"
     },
     {
       "checkpoint_path": "backend/src/modules/ai/ai.validation.ts",
       "publication_path": "code/backend/src/modules/ai/ai.validation.ts",
       "checkpoint_blob": "e387e550cfe5969911394adafbf82315a753b390",
       "publication_sha256": "0f9c3980b2fcc2c2b8a9bce34c869ed17e6ad5dcd8b01c751a05a0c3671877d7",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "e387e550cfe5969911394adafbf82315a753b390"
     },
     {
       "checkpoint_path": "backend/src/modules/ai/local-intelligence.ts",
       "publication_path": "code/backend/src/modules/ai/local-intelligence.ts",
       "checkpoint_blob": "69c358efb5924b43754a3b0eff5a806e2ac3c62a",
       "publication_sha256": "8e7ac3763e8a87a3fc7169c76e1fa78b51236d18da9e8844c9138282fbaf4c93",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "69c358efb5924b43754a3b0eff5a806e2ac3c62a"
     },
     {
       "checkpoint_path": "backend/src/modules/users/user.routes.ts",
       "publication_path": "code/backend/src/modules/users/user.routes.ts",
       "checkpoint_blob": "98159dabd21eaf80e70389782f7b827eb875e5ad",
       "publication_sha256": "45d9d7cdd264378d3d890f5d9f5371a30afff02fa9f91b07528e4d974fe1b1b2",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "98159dabd21eaf80e70389782f7b827eb875e5ad"
     },
     {
       "checkpoint_path": "backend/tests/external-ai.integration.test.ts",
       "publication_path": "code/backend/tests/external-ai.integration.test.ts",
       "checkpoint_blob": "5e5cbec0eb0d96e26fcadf0aa1b2240b894eb334",
       "publication_sha256": "25e868155435b1fe5b441dfb943b21f3497304a5f26b0e29023bc0de3981cc7c",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "5e5cbec0eb0d96e26fcadf0aa1b2240b894eb334"
     },
     {
       "checkpoint_path": "deployment/compose.ec2.yml",
       "publication_path": "code/deployment/compose.ec2.yml",
       "checkpoint_blob": "f1545babb72298c121c2e1bde5b26b763dfa0ccf",
       "publication_sha256": "2b40745ba72fb555038fb7094d0bc3ccb3c456ecbe2fd9cc738b573706b99604",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "f1545babb72298c121c2e1bde5b26b763dfa0ccf"
     },
     {
       "checkpoint_path": "deployment/ec2-groq-key.sh",
       "publication_path": "code/deployment/ec2-groq-key.sh",
       "checkpoint_blob": "feea71eedde3917489e01db413c6284719ac4f9c",
       "publication_sha256": "1142a14d76e4a0667d63d8a969cb6187172d20ad887b01b580be33da840a5c10",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "feea71eedde3917489e01db413c6284719ac4f9c"
     },
     {
       "checkpoint_path": "deployment/launcher-ready.sh",
       "publication_path": "code/deployment/launcher-ready.sh",
       "checkpoint_blob": "d4b581cbe69ddf13f837e6948f1f9b64ee8e4297",
       "publication_sha256": "51ab633589c25d48c141c1e81379404a37ed0902387f1e5fbfdacab57e03b9df",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "d4b581cbe69ddf13f837e6948f1f9b64ee8e4297"
     },
     {
       "checkpoint_path": "docs/AWS_CLOUD_ACCEPTANCE_MATRIX.md",
       "publication_path": "docs/AWS_CLOUD_ACCEPTANCE_MATRIX.md",
       "checkpoint_blob": "7a00114aa81d67d3125566447ad6f45b2305d9fa",
       "publication_sha256": "795ba55423b64c36aae9d59047f3bf0966223c21fe838dcc1b1fad6e5bb8dfff",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "7a00114aa81d67d3125566447ad6f45b2305d9fa"
     },
     {
       "checkpoint_path": "docs/AWS_DEPLOYMENT_COST_REPORT.md",
       "publication_path": "docs/AWS_DEPLOYMENT_COST_REPORT.md",
       "checkpoint_blob": "108a85857598e6f5778580d36b92951288659882",
       "publication_sha256": "4508b669c7a25bfddb616c0f72080db100ca455ad2300cf92237bfaadd86af1e",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "108a85857598e6f5778580d36b92951288659882"
     },
     {
       "checkpoint_path": "docs/AWS_DEPLOYMENT_SECURITY.md",
       "publication_path": "docs/AWS_DEPLOYMENT_SECURITY.md",
       "checkpoint_blob": "c7478d67882ef8b65515c27dda762ac9bf4a7710",
       "publication_sha256": "1a66ed07b39079bb85f55f04b2c514bcfaa4cf671cd84405a5ab1d828a52cd2f",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "c7478d67882ef8b65515c27dda762ac9bf4a7710"
     },
     {
       "checkpoint_path": "docs/AWS_FINAL_DEPLOYMENT_REPORT.md",
       "publication_path": "docs/AWS_FINAL_DEPLOYMENT_REPORT.md",
       "checkpoint_blob": "64a814372216aa647f42bd48095f793f9fd35417",
       "publication_sha256": "a61c88b6d2b02b59dc3b734107055da3e1a6d910a15d72f425c9a8e407b68e87",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "64a814372216aa647f42bd48095f793f9fd35417"
     },
     {
       "checkpoint_path": "docs/EC2_PERFORMANCE_REPORT.md",
       "publication_path": "docs/EC2_PERFORMANCE_REPORT.md",
       "checkpoint_blob": "7c24a99c950673643aed2c3c6617536e514cf847",
       "publication_sha256": "ec08c42571b86903393c1882e1d5ccb438507130001d13a19bb14446ec2b6943",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "7c24a99c950673643aed2c3c6617536e514cf847"
     },
     {
       "checkpoint_path": "docs/GROQ_AI_EVALUATION.md",
       "publication_path": "docs/GROQ_AI_EVALUATION.md",
       "checkpoint_blob": "b5aea670d2aa985fcddc83f38acaae547fb36944",
       "publication_sha256": "967a19c2e37c13e9b4b7ac7137a279fe8981579f3221a5edf00319557745e87e",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "b5aea670d2aa985fcddc83f38acaae547fb36944"
     },
     {
       "checkpoint_path": "docs/GROQ_DEPLOYMENT_PROPOSAL.md",
       "publication_path": "docs/GROQ_DEPLOYMENT_PROPOSAL.md",
       "checkpoint_blob": "f6254ed79f90d177e3671704722d8ab54d582ee3",
       "publication_sha256": "587a9a5a1b5a2c222baf07bfa4a75d0b0c795e2a72fb5b2a2bfdae8f46c21e06",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "f6254ed79f90d177e3671704722d8ab54d582ee3"
     },
     {
       "checkpoint_path": "docs/GROQ_INTEGRATION_GUIDE.md",
       "publication_path": "docs/GROQ_INTEGRATION_GUIDE.md",
       "checkpoint_blob": "c89a098e487690fb474e3e92c81b259b8042d085",
-      "publication_sha256": "281ff01e573e117d645a4658694c213d4ab3085858a4ef9bcac4125a76ada25f",
+      "publication_sha256": "2006532e508e7aaef09efcae24ce5c36a046a57d27cc554f9c8f2ce41522100b",
       "exact_checkpoint_bytes": false,
-      "adaptation": "University layout guidance"
+      "adaptation": "University layout guidance",
+      "publication_blob": "93181aba1a13f9ca780bd0c2894399ade122a2b0"
     },
     {
       "checkpoint_path": "docs/PUBLIC_DEPLOYMENT_GUIDE.md",
       "publication_path": "docs/PUBLIC_DEPLOYMENT_GUIDE.md",
       "checkpoint_blob": "d7d4df4eaac08f89bac365d2f2cb6801b8cb6b20",
       "publication_sha256": "86f207ab4f55c23484a395c5f1ca39f6404786ae898c444d2b39ef99c38fe0b7",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "d7d4df4eaac08f89bac365d2f2cb6801b8cb6b20"
     },
     {
       "checkpoint_path": "docs/UNIVERSITY_DEMONSTRATION_GUIDE.md",
       "publication_path": "docs/UNIVERSITY_DEMONSTRATION_GUIDE.md",
       "checkpoint_blob": "1fd3d1dfbf7bc9d9972550fa6ebdd1412ad85a3c",
       "publication_sha256": "869c5cbbaf804351379577066696e4b65e1141c9dfbcc404ced28b4661062186",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "1fd3d1dfbf7bc9d9972550fa6ebdd1412ad85a3c"
     },
     {
       "checkpoint_path": "docs/evidence/groq/groq-public-answer.png",
       "publication_path": "docs/evidence/groq/groq-public-answer.png",
       "checkpoint_blob": "c3f38338054c564b6d0c0081e97bb97982f3c9f4",
       "publication_sha256": "28bf72f50c24fbc3c05ae1a591e63741211d31401203380e504edfe98a9ac39a",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "c3f38338054c564b6d0c0081e97bb97982f3c9f4"
     },
     {
       "checkpoint_path": "docs/evidence/groq/latency-comparison.csv",
       "publication_path": "docs/evidence/groq/latency-comparison.csv",
       "checkpoint_blob": "c34ca88d9303ce3ccd4cfb43d9bfb1bc7a936708",
       "publication_sha256": "3eb708447cc905b89fa2d508e089f159929ba7f30804beaaf8a776b6e5653e78",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "c34ca88d9303ce3ccd4cfb43d9bfb1bc7a936708"
     },
     {
       "checkpoint_path": "frontend/src/components/ai/AiModePanel.test.tsx",
       "publication_path": "code/frontend/src/components/ai/AiModePanel.test.tsx",
       "checkpoint_blob": "8732a037ec61a88ff543a016319333b40a2ff084",
       "publication_sha256": "149a7f854cbdc2c5899fefd87ce76808cdb7207a0171081341247e5d7361ae8f",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "8732a037ec61a88ff543a016319333b40a2ff084"
     },
     {
       "checkpoint_path": "frontend/src/components/ai/AiModePanel.tsx",
       "publication_path": "code/frontend/src/components/ai/AiModePanel.tsx",
       "checkpoint_blob": "65919038d6e5d614e109772460adaf6df6e244c5",
       "publication_sha256": "c3499162b4f1a6dfb532148a7e0e2845cbf02fec9a04f35152e6ccbac612a206",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "65919038d6e5d614e109772460adaf6df6e244c5"
     },
     {
       "checkpoint_path": "frontend/src/pages/AskPage.tsx",
       "publication_path": "code/frontend/src/pages/AskPage.tsx",
       "checkpoint_blob": "e4add32ed772737d207276018957058c11f27dd7",
       "publication_sha256": "3fa3e94babee45931170897704312be978997def6eb3054bfb6b0910e65a4bba",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "e4add32ed772737d207276018957058c11f27dd7"
     },
     {
       "checkpoint_path": "frontend/src/services/ai.ts",
       "publication_path": "code/frontend/src/services/ai.ts",
       "checkpoint_blob": "39098ca08394349d55f84a94b831726057d142fb",
       "publication_sha256": "51b9270c985c588c0c9fc92057945e269c719b6396e02249b72babeb4f60ac92",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "39098ca08394349d55f84a94b831726057d142fb"
     },
     {
       "checkpoint_path": "intelligence/app/config.py",
       "publication_path": "code/intelligence/app/config.py",
       "checkpoint_blob": "c3037f445ce8cf3de83fd5d5f09a1e2bc039d73c",
-      "publication_sha256": "9ab13d0932fececeb5f414f8e6a364b2748548f1de0ee16878e0e69fa5c52ca9",
-      "exact_checkpoint_bytes": false,
-      "adaptation": "Independent regression assertion checks key path against Windows helper location"
+      "publication_sha256": "0aa8a221d7a5dd8cefed4f01a6dee1c055910b1e195352141cab745b8ee1d48e",
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "c3037f445ce8cf3de83fd5d5f09a1e2bc039d73c"
     },
     {
       "checkpoint_path": "intelligence/app/internal.py",
       "publication_path": "code/intelligence/app/internal.py",
       "checkpoint_blob": "94ae306d3aaff06c79623d4c3365562bd10cdfc4",
       "publication_sha256": "f399cdef18e2ba3c9b7a4a8f883c74519fd7b52e7ec27ccdf547e97f1906b206",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "94ae306d3aaff06c79623d4c3365562bd10cdfc4"
     },
     {
       "checkpoint_path": "intelligence/app/llm.py",
       "publication_path": "code/intelligence/app/llm.py",
       "checkpoint_blob": "3d27702287b22870ff7348eb1fdbe6f3b77e31ad",
       "publication_sha256": "3e05d0452d18413b0fb53014c26c34bab2744e106b55a1d5f15031ecf45f4326",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "3d27702287b22870ff7348eb1fdbe6f3b77e31ad"
     },
     {
       "checkpoint_path": "intelligence/app/provider_quota.py",
       "publication_path": "code/intelligence/app/provider_quota.py",
       "checkpoint_blob": "1b887434f9df883b70fb724ebbf4d8f6e3b0375e",
       "publication_sha256": "cf3314e737d494310bb2e66724d749d732e00adb92b2e94ee7c3d650b726060d",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "1b887434f9df883b70fb724ebbf4d8f6e3b0375e"
     },
     {
       "checkpoint_path": "intelligence/app/rag.py",
       "publication_path": "code/intelligence/app/rag.py",
       "checkpoint_blob": "3325d3f0bc449818ca414d4a8908d41a314724cf",
       "publication_sha256": "a68e18e469a6faf940670d77b08c0bf1b9bd4334118f367533756ec96d743a0b",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "3325d3f0bc449818ca414d4a8908d41a314724cf"
     },
     {
       "checkpoint_path": "intelligence/tests/test_groq_provider.py",
       "publication_path": "code/intelligence/tests/test_groq_provider.py",
       "checkpoint_blob": "1a738acd19ccb8ab2cb5f7bb8bbcd8dc0f64d31a",
-      "publication_sha256": "5c9a1743d54de1e538d809bc4b41b3c359b555fce1a90c99579d657a0b5f8cbd",
+      "publication_sha256": "39a40724aff91fdbb05fb808d8302ca5487cfc44b5283da046fe1ebfa1381024",
       "exact_checkpoint_bytes": false,
-      "adaptation": "Independent regression assertion checks key path against Windows helper location"
+      "adaptation": "Independent regression assertion checks key path against Windows helper location",
+      "publication_blob": "b683e835459fdfb9f2c3431e58c88bee0f0a3c39"
     },
     {
       "checkpoint_path": "package.json",
       "publication_path": "code/package.json",
       "checkpoint_blob": "cbbb6a4b7b972e78ca90b045e61f422a7146d29b",
       "publication_sha256": "61e416efa8ec328768394c9e68023c8022ddcd3a662d0dc8608bc9a258cb5a64",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "cbbb6a4b7b972e78ca90b045e61f422a7146d29b"
     },
     {
       "checkpoint_path": "scripts/benchmark-ai.py",
@@ -263,44 +298,51 @@
       "checkpoint_blob": "a7697ffa8fa52c79c01f6b8aefefc21eb79e8e0c",
       "publication_sha256": "b869202b5f3e23ed168416c274706a9908085beafcd858e191142e2b1cb8ce94",
       "exact_checkpoint_bytes": false,
-      "adaptation": "Output default points to repository docs/"
+      "adaptation": "Output default points to repository docs/",
+      "publication_blob": "dbacf235450d06e74a597d757d2b5d7b91fec9ec"
     },
     {
       "checkpoint_path": "scripts/launcher-aws.py",
       "publication_path": "code/scripts/launcher-aws.py",
       "checkpoint_blob": "1c84004d7c926ddc6c4043349f191eb7235811ab",
       "publication_sha256": "c38737fc9b7f299ec7d351cefadee56914916a84ddeed54141825316a7b83f8e",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "1c84004d7c926ddc6c4043349f191eb7235811ab"
     },
     {
       "checkpoint_path": "scripts/launcher.ps1",
       "publication_path": "code/scripts/launcher.ps1",
       "checkpoint_blob": "34dd950108412910a1a1cb8df9ab0a1edecb1715",
       "publication_sha256": "d2c1d8e32bdc040929ec6f18e82a793a8d1ad9cecd3133f1a4bfee49615d9175",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "34dd950108412910a1a1cb8df9ab0a1edecb1715"
     },
     {
       "checkpoint_path": "scripts/measure-public-groq.cjs",
       "publication_path": "code/scripts/measure-public-groq.cjs",
       "checkpoint_blob": "9d3fe742cb6b762fafacbd6fce69fa638385bbda",
       "publication_sha256": "4ce251b23992de508a50f6db7cb424c69c1d91338f41e50d8e1c33f8f37defba",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "9d3fe742cb6b762fafacbd6fce69fa638385bbda"
     },
     {
       "checkpoint_path": "scripts/set-ai-provider.ps1",
       "publication_path": "code/scripts/set-ai-provider.ps1",
       "checkpoint_blob": "b31dd2c671f8fc972b3dabf7cd21f666c258e830",
       "publication_sha256": "88fcf401b184930494f6d62853ed478a30612ac62fa7bf171a42e3c2dc3c2a0c",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "b31dd2c671f8fc972b3dabf7cd21f666c258e830"
     },
     {
       "checkpoint_path": "scripts/verify-ec2-application.py",
       "publication_path": "code/scripts/verify-ec2-application.py",
       "checkpoint_blob": "d4f8be749364c819fa7c4ae57b26554e31662888",
       "publication_sha256": "9f8701b76e76429db5aac9e53d4d5dfc22a1935bd40f73c9fee127b132ff8716",
-      "exact_checkpoint_bytes": true
+      "exact_checkpoint_bytes": true,
+      "publication_blob": "d4f8be749364c819fa7c4ae57b26554e31662888"
     }
   ],
   "excluded_root_readme": "Content integrated into professional university README instead of overwriting it.",
-  "academic_directories_touched": false
+  "academic_directories_touched": false,
+  "checksum_basis": "Committed Git blobs (checkout newline conversion excluded)"
 }

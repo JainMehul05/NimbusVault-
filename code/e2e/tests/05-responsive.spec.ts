@@ -72,7 +72,7 @@ test('landing page: every link and button works', async ({ page }) => {
   const hrefs = await page.locator('a[href]').evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute('href')!))])
   expect(hrefs.length).toBeGreaterThan(6)
   for (const href of hrefs) {
-    if (href.startsWith('#')) expect(await page.locator(`[id="${href.slice(1)}"]`).count(), href).toBe(1)
+    if (href.startsWith('#')) await expect(page.locator(`[id="${href.slice(1)}"]`), href).toHaveCount(1)
     else if (/^https:\/\/github\.com\//.test(href)) {
       const external = page.locator(`a[href="${href}"]`).first()
       expect(await external.getAttribute('rel')).toMatch(/noreferrer|noopener/)
@@ -81,6 +81,7 @@ test('landing page: every link and button works', async ({ page }) => {
       await expect(page.locator('h1').first()).toBeVisible()
       await expect(page.getByText(/^404$/)).toHaveCount(0)
       await page.goto('/')
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     } else throw new Error(`Unexpected external link ${href}`)
   }
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()

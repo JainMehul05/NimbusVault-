@@ -153,6 +153,7 @@
   "publication_only_repairs": [
     "Regression verifies the existing standalone Groq key path against the actual Windows helper location; checkpoint configuration retained",
     "Historical executable modes restored for eight shell helpers",
-    "Upgrade fixture baseline pinned before hardening so later consent migration does not invalidate legacy data fixtures"
+    "Upgrade fixture baseline pinned before hardening so later consent migration does not invalidate legacy data fixtures",
+    "Landing navigation regression waits for React mounting before asserting the same anchor count"
   ]
 }

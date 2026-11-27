@@ -1,0 +1,6 @@
+path,median_seconds,source
+Qwen2.5 3B EC2 CPU warm,28.1,historical Session A benchmark
+Qwen2.5 3B EC2 CPU cold,70.7,historical Session A
+Qwen2.5 3B Windows GPU warm,1.5,historical
+Groq gpt-oss-20b laptop 40-case,1.24,fresh 27 Nov
+Groq gpt-oss-20b public browser,1.6,fresh 27 Nov (1.5/1.6/3.0)

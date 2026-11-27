@@ -39,6 +39,8 @@ export const aiAskSchema = z.object({
     conversationId: z.string().uuid().optional(),
     requestId: z.string().uuid().optional(),
     folderId: z.string().uuid().optional(),
+    /** 'local' forces private Qwen; 'auto' uses the server's configured provider. */
+    provider: z.enum(['auto', 'local']).default('auto'),
   }),
 });
 

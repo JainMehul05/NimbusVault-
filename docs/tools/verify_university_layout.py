@@ -25,6 +25,9 @@ allowed_roots = set(REQUIRED) - {".github/workflows"}
 allowed_roots.update((".github", ".gitattributes", ".gitignore", "LICENSE", "LICENSE.template", "Makefile", "README.md", "mkdocs.yml", "pyproject.toml", "uv.lock"))
 for migration in ("0_init", "20261123000000_security_fixes_and_ai_documents", "20261125000000_phase5_hardening"):
     assert "code/backend/prisma/migrations/" + migration + "/migration.sql" in files, "Missing tracked Prisma migration: " + migration
+index_modes = {line.split("\t", 1)[1]: line.split()[0] for line in subprocess.check_output(["git", "ls-files", "--stage"], cwd=ROOT).decode().splitlines()}
+for executable in ("scripts/localstack-init.sh", "scripts/smoke-test.sh", "infra/scripts/bootstrap.sh", "infra/scripts/common.sh", "infra/scripts/deploy.sh", "infra/scripts/push-image.sh", "infra/scripts/teardown.sh", "infra/scripts/verify.sh"):
+    assert index_modes.get("code/" + executable) == "100755", "Executable mode lost: " + executable
 for name in filter(None, files):
     assert name.split("/")[0] in allowed_roots, "Unexpected root item: " + name
     path = Path(name)

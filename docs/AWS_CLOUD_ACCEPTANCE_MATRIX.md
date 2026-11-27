@@ -1,3 +1,13 @@
+## Session C additions (27 Nov 2026, UTC)
+| Service | Responsibility | Test | Result | Class |
+|---|---|---|---|---|
+| SSM Parameter Store | Groq key as SecureString (Standard, aws/ssm key) | put from laptop file; host fetch with instance role 15:38 | Works; value never printed | Live-new |
+| IAM (app role) | Read of exactly one parameter + KMS decrypt via SSM | live fetch on EC2 (policy simulator returns an unexplained deny with no matched statement for all parameters, including working ones) | Works live | Live-new |
+| API Gateway (public) | Async Groq answers through 30 s gateway limit | public browser + API | 1.5–5.6 s answers | Live-new |
+| S3/EventBridge/SQS/Lambda/Step Functions/DynamoDB/CloudWatch | Native chain ending in a Groq answer | 15:57:29–15:58:14 | SUCCEEDED, idle restored | Live-new |
+| EC2/EBS/SSM/Scheduler | Launcher-driven start/stop | 16:05–16:24 | ready 42 s; verified stopped | Live-new |
+| Groq Cloud (external, not AWS) | LLM generation only | 40-case + public | 40/40; Free tier | Fresh |
+
 ## Session B additions (27 Nov 2026, UTC)
 | Service | Responsibility | Test | Result | Class |
 |---|---|---|---|---|

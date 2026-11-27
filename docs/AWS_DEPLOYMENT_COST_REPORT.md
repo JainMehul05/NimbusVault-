@@ -1,3 +1,8 @@
+## Session C (27 Nov 2026)
+EC2 ≈ 50 min (15:36–16:05 + 16:05–16:24 launcher test) ≈ USD 0.11; Parameter Store Standard free; temporary S3 patches deleted; Groq Free tier ≈ 120 requests, ≈ 140k tokens across all tests on 27 Nov (below 1,000 RPD / 200k TPD per model). Out-of-pocket ₹0; no paid plan on AWS or Groq. Credits read 139.997804 (billing lag).
+
+---
+
 ## Session B (27 Nov 2026)
 ≈72 instance-minutes across 4 starts ≈ USD 0.15 (EC2 + IPv4) + API Gateway (a few thousand requests ≈ USD 0.01) + Cloud Map USD 0.10/month; the CloudFront VPC origin has no charge and no distribution exists. Public hosting rates: 1 h 0.12 · 4 h 0.50 · 8 h 1.00 · 24 h 2.99 · 30 days 24/7 ≈ 92.7 (not authorized) · stopped EBS 2.88/month. With ≈ USD 140 credits and plan expiry 24 May 2027: after ≈ USD 17 of EBS, ≈ 960 running hours remain. Credits read 139.997804 (billing lag).
 

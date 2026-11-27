@@ -47,7 +47,7 @@ Traditional file storage helps users keep documents but often leaves discovery d
 | Cloud | Private S3 originals, bounded native processing, administration views and AWS vector demonstration |
 | Operation | Five Windows launchers, readiness/warmup checks, backup tooling and bounded EC2 sessions |
 
-**Release boundary:** published generation uses private Qwen through Ollama. Groq GPT-OSS 20B has a separate local checkpoint; Session C verification is ongoing and its unfinished changes are excluded. See [AI provider status](docs/AI_PROVIDER_STATUS.md).
+**Verified generation providers:** Groq `openai/gpt-oss-20b` and private Qwen through Ollama. The completed Session C checkpoint `ef9872c` is included; external inference requires consent from the asker and each document owner. See [AI provider status](docs/AI_PROVIDER_STATUS.md).
 
 ## Application architecture
 
@@ -63,10 +63,10 @@ flowchart LR
     DB --> RET
     RET --> RAG[Grounded RAG and citation validation]
     RAG --> Q[Private Ollama / Qwen2.5 3B]
-    RAG -. Separate pending integration: consent-gated .-> G[External Groq / GPT-OSS 20B]
+    RAG -->|Asker and owner consent| G[External Groq / GPT-OSS 20B]
 ```
 
-The backend determines the documents a user can access. Intelligence retrieves evidence from that scope, builds a bounded context and validates generated claims against cited passages. The dashed external-provider path describes the separate pending integration, not shipped functionality.
+The backend determines the documents a user can access. Intelligence retrieves evidence from that scope, builds a bounded context and validates generated claims against cited passages. External-provider selection is consent-gated; private Qwen remains selectable when its runtime is configured.
 
 ## AWS architecture
 
@@ -91,7 +91,7 @@ flowchart TB
 
 Cloud Map provides discovery; it is not a network proxy. Native cloud stages validate/process eligible objects and record workflow state; private reconciliation/indexing completes the application search path. Not every upload runs every optional cloud demonstration. Ordinary hybrid search uses local vectors; S3 Vectors is a separate bounded demonstration. CDK and other historical infrastructure source is retained without implying it is all deployed.
 
-**CloudFront was not successfully deployed as a public distribution.** The verified public hosting path uses API Gateway. [Deployment evidence](docs/AWS_FINAL_DEPLOYMENT_REPORT.md) distinguishes Sessions A/B and retained infrastructure from pending work.
+**CloudFront was not successfully deployed as a public distribution.** The verified public hosting path uses API Gateway. [Deployment evidence](docs/AWS_FINAL_DEPLOYMENT_REPORT.md) distinguishes Sessions A/B and retained infrastructure from the completed Session C update.
 
 ## Technology stack
 
@@ -103,7 +103,7 @@ Cloud Map provides discovery; it is not a network proxy. Native cloud stages val
 | Intelligence | Python, FastAPI, document extraction and chunking |
 | Embeddings | `sentence-transformers/all-MiniLM-L6-v2`, normalized 384-dimensional vectors |
 | Search | Cosine similarity, BM25 and hybrid ranking |
-| Generation | Published: Ollama / Qwen2.5 3B; pending separate integration: Groq / GPT-OSS 20B |
+| Generation | Ollama / Qwen2.5 3B; Groq / openai/gpt-oss-20b |
 | AWS | EC2/EBS, S3/S3 Vectors, EventBridge, SQS/DLQ, Lambda, Step Functions, DynamoDB, API Gateway, VPC Link, Cloud Map, IAM/STS, SSM, Parameter Store, CloudWatch, CloudTrail and Scheduler |
 | Infrastructure | CloudFormation and retained CDK source |
 | Deployment | Docker Compose, native Linux EC2 tooling, Windows standalone launchers |
@@ -113,7 +113,7 @@ Cloud Map provides discovery; it is not a network proxy. Native cloud stages val
 
 MiniLM maps passages and queries to normalized vectors; cosine similarity finds semantically related text even when wording differs. BM25 provides lexical matching, while hybrid ranking combines both signals. Retrieval-augmented generation supplies selected passages to Qwen and validates source references and quotations before displaying the answer. Missing support results in a labelled abstention rather than an unsupported claim.
 
-Retrieval and conversations are permission-scoped; revoked access is rechecked. The separate Groq work introduces external processing only under consent controls and persistent provider budgets. Those controls are not claimed as part of the current published application until that integration is finalized.
+Retrieval and conversations are permission-scoped; revoked access is rechecked. Groq receives the question and selected excerpts only after asker and document-owner consent. Persistent per-user and organization budgets bound provider requests, including corrections; quota or provider failures produce a labelled fallback. Private Qwen remains an option on a configured host.
 
 ![Genuine local Qwen answer with cited synthetic evidence](docs/screenshots/grounded-answer.png)
 
@@ -125,11 +125,12 @@ These are finite regression measurements on synthetic corpora, not universal acc
 |---|---|---|
 | Hybrid retrieval | 69/69 positive top-1; 15/15 negatives rejected; Recall@3 98.55%; MRR 1.0 | 84-query EC2 regression; median 6.78 ms, p95 8.13 ms |
 | Qwen strict RAG | 40/40: 31 generated answers and nine correct abstentions; zero measured quotation/permission failures | Session A EC2 CPU; median 28.1 s; retained in Session B |
+| Final Session C hybrid search | Original 69/69 positives and 15/15 negatives retained; median 7.7 ms | Final EC2 search verification |
 | Public browser checks | 54 responsive checks plus seven workflows | Recorded Session B public HTTPS verification |
-| Published-source regressions | Backend 309, frontend 60, Python 83 plus two Windows real-Qwen checks; infrastructure 22 | Retained Session B laptop report, not newly executed counts |
-| Separate Groq local benchmark | 40/40; 31 generated, nine abstentions; median 1.24 s, p95 3.6 s | Local checkpoint `caa4548`; excludes pacing waits; not completed Session C or shipped-runtime evidence |
+| Session C regressions | Backend 313, frontend 63, Python 97; infrastructure 22 retained | Deployment-agent report; two real-Qwen tests not rerun |
+| Groq local benchmark | 40/40; 31 generated, nine abstentions; median 1.24 s, p95 3.6 s | Session C evidence; excludes pacing waits; local provider measurement, not public latency |
 
-The Groq/local versus earlier Qwen/EC2 median comparison is approximately 22.7× across different environments. It does not establish equivalent public browser-to-answer latency. [Provider status](docs/AI_PROVIDER_STATUS.md), [search results](docs/EC2_SEARCH_BENCHMARK.md), [Qwen evaluation](docs/EC2_AI_QUALITY_EVALUATION.md) and [current audit checks](docs/FINAL_GITHUB_AUDIT.md) record the distinctions.
+Session C also measured public browser click-to-visible answers at **1.5 s, 1.6 s and 3.0 s**, separately from local benchmarks. The Groq/local versus earlier Qwen/EC2 median comparison is approximately 22.7× across different environments. [Provider status](docs/AI_PROVIDER_STATUS.md), [search results](docs/EC2_SEARCH_BENCHMARK.md), [Qwen evaluation](docs/EC2_AI_QUALITY_EVALUATION.md) and [current audit checks](docs/FINAL_GITHUB_AUDIT.md) record the distinctions.
 
 ## Public deployment
 
@@ -154,11 +155,13 @@ Setup creates private local configuration, installs dependencies and AI runtimes
 
 | Double-click launcher | Purpose |
 |---|---|
-| `Start NimbusVault.bat` | Start Docker if needed, check services, warm MiniLM/Qwen and open the local application |
+| `Start NimbusVault.bat` | Start Docker if needed, check services, warm MiniLM and verify the configured generation provider, then open the local application |
 | `Stop NimbusVault.bat` | Gracefully stop project services and verify their stopped state |
 | `Start NimbusVault AWS.bat` | Check authentication, credits and explicit bounded-session approval; rearm safeguards, start the configured instance and verify the public site |
 | `Stop NimbusVault AWS.bat` | Shut down the configured AWS session and verify the stopped instance |
 | `NimbusVault Status.bat` | Show local/AI readiness and configured AWS session status |
+
+To enable cloud inference locally, store your own key with `npm run ai:set-groq-key`, select `npm run ai:provider -- groq`, opt in on the Ask page and restart. Use `npm run ai:provider -- ollama` for private inference.
 
 Local address: [http://127.0.0.1:3100](http://127.0.0.1:3100). All advanced npm commands remain available from `code/`. AWS launchers require appropriate credentials and private deployment/session configuration; a clone does not automatically gain access to an AWS account. Linux EC2 uses native Linux AI binaries and [its deployment procedure](docs/LINUX_STANDALONE_BASELINE.md), not the Windows launchers.
 
@@ -189,9 +192,9 @@ The layout follows the [official UCS503P template](https://github.com/tiet-ucs50
 
 ## Security, privacy and limits
 
-Authentication, permission checks and private object storage constrain access. Citation validation ties answers to inspectable evidence. Private keys, passwords, runtime manifests, uploads, conversations, database files, installed dependencies and model weights are excluded from Git. External AI consent and provider quotas remain part of the pending integration, not the current release's privacy promise.
+Authentication, permission checks and private object storage constrain access. Citation validation ties answers to inspectable evidence. Private keys, passwords, runtime manifests, uploads, conversations, database files, installed dependencies and model weights are excluded from Git. External AI is opt-in for both the asker and document owner. Consent does not follow automatically from share permissions. Persisted request/token quotas and provider cooldowns constrain external usage.
 
-AWS starts fail closed when plan/credit/session checks fail. Host deadlines, a credit watchdog and an independent Scheduler stop bound sessions; these controls are not a billing cap. Free-tier/provider quotas, CPU inference latency, single-generation concurrency, residual upstream container CVEs, incomplete historical journals and academic-scale validation remain limitations. CloudFront and completed Session C are not claimed.
+AWS starts fail closed when plan/credit/session checks fail. Host deadlines, a credit watchdog and an independent Scheduler stop bound sessions; these controls are not a billing cap. Free-tier/provider quotas, CPU inference latency, single-generation concurrency, residual upstream container CVEs, incomplete historical journals and academic-scale validation remain limitations. CloudFront was not deployed. A mobile AI question and the owner-controlled Groq Zero Data Retention toggle remain unverified; mobile page loading/registration was verified in Session B.
 
 ## Further documentation
 

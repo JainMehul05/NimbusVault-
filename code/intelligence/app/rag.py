@@ -1,3 +1,4 @@
+from typing import Literal
 import asyncio
 import json
 import re
@@ -35,6 +36,10 @@ class Ask(BaseModel):
     file_ids: list[str] = Field(default_factory=list, max_length=250)
     conversation_id: str | None = None
     extractive: bool = False
+    # 'auto' uses the configured provider; 'local' forces the private Ollama/Qwen runtime.
+    provider: Literal['auto', 'groq', 'local'] = 'auto'
+    # Files whose owners (and the asker) permitted external AI processing; a subset of file_ids.
+    external_file_ids: list[str] = Field(default_factory=list, max_length=250)
 
     @field_validator("question")
     @classmethod
@@ -258,9 +263,46 @@ def missing_requested_coverage(question, sources, claims):
     return False
 
 
+def local_fallback_allowed():
+    return settings.ollama_fallback_enabled
+
+
+def choose_provider(payload, sources):
+    """Pick the generation provider and the passages it may see.
+
+    External (Groq) generation receives only passages from files that the authenticated backend
+    listed in external_file_ids (asker and owner both permitted external processing). Everything
+    else stays private. Returns (provider or None, sources_for_generation, notice).
+    """
+    if settings.llm_provider != 'groq' or payload.provider == 'local':
+        if payload.provider == 'local' and settings.llm_provider == 'groq' and not local_fallback_allowed():
+            return None, [], 'Private local AI is not enabled on this server. Showing source excerpts.'
+        return 'ollama', sources, None
+    allowed = set(payload.external_file_ids)
+    if payload.file_ids:
+        allowed &= set(payload.file_ids)
+    external = [s for s in sources if s['file_id'] in allowed]
+    if not external:
+        if local_fallback_allowed():
+            return 'ollama', sources, ('External AI processing is not permitted for these documents; '
+                                       'answered with the private local model.')
+        return None, [], ('External AI processing is not permitted for these documents, so only source excerpts '
+                          'are shown. Allow fast cloud AI in Account settings (document owners must allow it too).')
+    notice = None
+    if len(external) < len(sources):
+        notice = ('Some relevant passages were withheld from fast cloud AI because their owners have not '
+                  'permitted external processing.')
+    return 'groq', external, notice
+
+
 @router.get("/status")
 async def ai_status():
-    result = await llm.status()
+    if settings.llm_provider == 'groq':
+        result = llm.groq_status()
+        result["fallback"] = (await llm.status()) if local_fallback_allowed() else None
+        result["provider"] = "groq"
+    else:
+        result = await llm.status()
     result["busy"] = generation_lock.locked()
     return result
 
@@ -354,18 +396,32 @@ async def ask(payload: Ask, request: Request):
                 for s in sources[:4]
             ]
             if not payload.extractive:
-                diagnostic = await llm.status()
-                if diagnostic["available"]:
-                    task = asyncio.create_task(llm.generate(retrieval_query, sources))
+                provider, gen_sources, notice = choose_provider(payload, sources)
+                diagnostic = llm.groq_status() if provider == 'groq' else await llm.status()
+                if provider == 'groq' and not diagnostic['available'] and local_fallback_allowed():
+                    local = await llm.status()
+                    if local['available']:
+                        reason = diagnostic['reason'] or 'unavailable'
+                        provider, gen_sources, diagnostic = 'ollama', sources, local
+                        notice = 'Fast cloud AI unavailable (' + reason + '); answered with the private local model.'
+                result["provider"] = provider
+                actor = getattr(request.state, 'actor', None) or 'local-user'
+                if notice:
+                    result["warning"] = notice
+                if provider is None:
+                    pass
+                elif diagnostic["available"]:
+                    sources_for_generation = gen_sources
+                    task = asyncio.create_task(llm.generate(retrieval_query, sources_for_generation, **provider_args(provider, actor)))
                     try:
                         generated, timing = await wait_for_generation(
                             task, request, payload.request_id
                         )
-                        generated, repairs = align_citations(generated, sources)
+                        generated, repairs = align_citations(generated, sources_for_generation)
                         result["timings"]["citation_alignment_repairs"] = repairs
-                        claims = await run_in_threadpool(validate_claims, generated, sources)
+                        claims = await run_in_threadpool(validate_claims, generated, sources_for_generation)
                         initial_claims = claims
-                        missing_coverage = missing_requested_coverage(question, sources, claims)
+                        missing_coverage = missing_requested_coverage(question, sources_for_generation, claims)
                         if (generated.insufficient and generated.claims) or (
                             not generated.insufficient
                             and (
@@ -384,14 +440,14 @@ async def ask(payload: Ask, request: Request):
                                 + " Cover EVERY explicitly requested topic using its relevant source. For a short excerpt summary cover each distinct stated control; avoid repeating one control instead of covering another. Copy complete supported sentences when useful."
                             )
                             task = asyncio.create_task(
-                                asyncio.wait_for(llm.generate(correction, sources), timeout=settings.llm_correction_timeout)
+                                asyncio.wait_for(llm.generate(correction, sources_for_generation, **provider_args(provider, actor)), timeout=settings.llm_correction_timeout)
                             )
                             generated, timing = await wait_for_generation(
                                 task, request, payload.request_id
                             )
-                            generated, repairs = align_citations(generated, sources)
+                            generated, repairs = align_citations(generated, sources_for_generation)
                             result["timings"]["citation_alignment_repairs"] += repairs
-                            claims = await run_in_threadpool(validate_claims, generated, sources)
+                            claims = await run_in_threadpool(validate_claims, generated, sources_for_generation)
                             if not generated.insufficient:
                                 claims = merge_verified_claims(claims, initial_claims)
                         if generated.insufficient:
@@ -409,9 +465,13 @@ async def ask(payload: Ask, request: Request):
                                     for c in claims
                                 ),
                                 claims=claims,
-                                sources=[s for s in sources if s["citation"] in used],
-                                model=llm.settings.llm_model,
+                                sources=[s for s in sources_for_generation if s["citation"] in used],
+                                model=timing.get('model') if provider == 'groq' else llm.settings.llm_model,
+                                provider=provider,
+                                external=provider == 'groq',
                             )
+                            if notice:
+                                result["warning"] = notice
                             if len(claims) != len(generated.claims):
                                 result["warning"] = (
                                     "Only statements that passed source verification are shown; some generated details were omitted."
@@ -427,15 +487,21 @@ async def ask(payload: Ask, request: Request):
                         result["timings"]["generation"] = timing
                     except HTTPException:
                         raise
+                    except llm.ProviderError as error:
+                        result["warning"] = error.message + " Source excerpts remain available."
+                        result["provider_error"] = {'code': error.code, 'retry_after': error.retry_after}
                     except Exception:
                         result["warning"] = (
-                            "Local generation failed or timed out. Source excerpts remain available; retry when the runtime is ready."
+                            ("Fast cloud AI" if provider == 'groq' else "Local generation")
+                            + " failed or timed out. Source excerpts remain available; retry shortly."
                         )
                     finally:
                         if not task.done():
                             task.cancel()
                 else:
                     result["warning"] = diagnostic["reason"]
+                    if diagnostic.get('retry_after'):
+                        result["provider_error"] = {'code': 'cooldown', 'retry_after': diagnostic['retry_after']}
         if payload.request_id in cancelled_requests:
             raise HTTPException(499, "Answer preparation interrupted")
         result["timings"]["total_ms"] = round((time.perf_counter() - started) * 1000, 2)
@@ -491,3 +557,8 @@ def delete_conversation(conversation_id: str, confirm: bool = False):
     with connect() as db:
         db.execute("DELETE FROM conversations WHERE id=?", (conversation_id,))
     return {"deleted": conversation_id}
+
+
+def provider_args(provider, actor):
+    """The local path keeps the original generate(question, sources) call exactly."""
+    return {'provider': provider, 'actor': actor} if provider == 'groq' else {}

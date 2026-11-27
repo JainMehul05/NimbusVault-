@@ -1,3 +1,5 @@
+> **AI demo (Session C):** after starting, open Ask NimbusVault, keep *Fast Cloud AI — Groq*, click *Allow fast cloud AI* (synthetic demo documents only), ask e.g. "What is the synthetic retention code for Session A?" — a cited answer appears in ≈2 s. Explain: MiniLM search runs on AWS EC2; only the question and relevant excerpts go to Groq; the private Qwen model remains available locally.
+
 > **Public URL (Session B):** https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com — AWS-generated (API Gateway); CloudFront pending AWS account verification. Give the professor the separate invitation code (`professor_invite_code` in `.runtime/public-deployment/public-secrets.json`) or a demo account. See `PUBLIC_DEPLOYMENT_GUIDE.md`.
 
 # University demonstration guide â€” NimbusVault on AWS

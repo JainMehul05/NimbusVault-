@@ -21,7 +21,7 @@ export async function requestStop(userId:string,requestId:string) {
   return {cancellation_requested:true};
 }
 interface EvidenceSource { file_id:string;chunk_id:number;passage:string;similarity:number;citation?:number;score_kind?:string }
-interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown> }
+interface LocalAnswer { mode:'generated'|'extractive'|'insufficient';answer:string;model:string|null;sources:EvidenceSource[];warning?:string;conversation_id?:string;timings?:Record<string,unknown>;provider?:'groq'|'ollama'|null;external?:boolean;provider_error?:{code:string;retry_after?:number|null} }
 
 export async function allowedScope(userId: string, selected?: string[], filters?:{folderId?:string;category?:FileCategory}) {
   const ids = await authorizationService.listAccessibleFileIds(userId, selected);
@@ -54,7 +54,7 @@ export async function mapAnswer(userId:string,result:LocalAnswer):Promise<Answer
   const sources=result.sources||[];
   const mapped=await mapSources(userId,sources);
   if(mapped.length!==sources.length) throw AppError.notFound('Access changed while preparing the answer. Start a new question.');
-  return {status:result.mode==='insufficient'?'insufficient_evidence':'answered',answer:result.answer?.replace(/\[(\d+)\]/g,'[S$1]'),citations:mapped.map((s,i)=>({...s,ref:`S${sources[i].citation}`})),sourcesConsidered:sources.length,model:result.mode==='generated'?result.model:'Extractive fallback',...{mode:result.mode,warning:result.warning,conversationId:result.conversation_id,timings:result.timings,retrievalBackend:'local'}};
+  return {status:result.mode==='insufficient'?'insufficient_evidence':'answered',answer:result.answer?.replace(/\[(\d+)\]/g,'[S$1]'),citations:mapped.map((s,i)=>({...s,ref:`S${sources[i].citation}`})),sourcesConsidered:sources.length,model:result.mode==='generated'?result.model:'Extractive fallback',...{mode:result.mode,provider:result.mode==='generated'?result.provider??'ollama':null,external:result.mode==='generated'&&result.external===true,providerError:result.provider_error,warning:result.warning,conversationId:result.conversation_id,timings:result.timings,retrievalBackend:'local'}};
 }
 export async function localHistory(userId:string,id:string) {
   const scope=await allowedScope(userId);
@@ -69,6 +69,17 @@ export async function localHistory(userId:string,id:string) {
   }
   return {exchanges:await Promise.all(history.exchanges.map(async e=>({question:e.question,response:await mapAnswer(userId,e.response)})))};
 }
+/**
+ * Files whose excerpts may be sent to the external AI provider: only when the asker opted in, and
+ * only files whose OWNER opted in. Read access to a shared file never grants external processing.
+ */
+export async function externalScope(userId:string,scope:string[]):Promise<string[]> {
+  if(!scope.length) return [];
+  const asker=await prisma.user.findUnique({where:{id:userId},select:{externalAiConsent:true}});
+  if(!asker?.externalAiConsent) return [];
+  const files=await prisma.file.findMany({where:{id:{in:scope},deletedAt:null,owner:{externalAiConsent:true}},select:{id:true}});
+  return files.map(f=>f.id);
+}
 export const localIntelligence = {
   async search(userId:string,query:string,options:{limit:number;fileIds?:string[];mode?:string;folderId?:string;category?:FileCategory}) {
     const started=performance.now();
@@ -79,7 +90,7 @@ export const localIntelligence = {
     const results=mapped.filter((row,index)=>mapped.findIndex(other=>other.fileId===row.fileId)===index);
     return {results,model:'sentence-transformers/all-MiniLM-L6-v2',retrievalBackend:'local',awsCalls:0,retrievalMs:Math.round(performance.now()-started),resultCount:results.length};
   },
-  async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string;folderId?:string}):Promise<AnswerResult> {
+  async ask(userId:string,question:string,options:{fileIds?:string[];topK:number;conversationId?:string;requestId?:string;folderId?:string;provider?:'auto'|'local'}):Promise<AnswerResult> {
     const scope=await allowedScope(userId,options.fileIds,options);
     const requestId=options.requestId||randomUUID();
     const pending=pendingStops.get(`${userId}:${requestId}`);
@@ -88,7 +99,8 @@ export const localIntelligence = {
     if(activeRequests.has(requestId)) throw AppError.conflict('Request already running');
     activeRequests.set(requestId,userId);
     let result:LocalAnswer;
-    try { result=await intelligence<LocalAnswer>('/api/ai/ask',{question,file_ids:scope,conversation_id:options.conversationId,request_id:requestId},userId,scope); }
+    const externalFileIds=await externalScope(userId,scope);
+    try { result=await intelligence<LocalAnswer>('/api/ai/ask',{question,file_ids:scope,conversation_id:options.conversationId,request_id:requestId,provider:options.provider||'auto',external_file_ids:externalFileIds},userId,scope); }
     finally { activeRequests.delete(requestId); }
     return mapAnswer(userId,result);
   },

@@ -82,6 +82,150 @@ outside knowledge. Return insufficient=true and no claims only when evidence can
 Otherwise insufficient=false. Maximum seven claims. No citation markers or URLs in text."""
 
 
+GROQ_BASE_URL = 'https://api.groq.com/openai/v1'   # fixed; never user-configurable
+# Strict structured output (constrained decoding on gpt-oss). Length limits are enforced afterwards
+# by GroundedAnswer and by the server-side citation/quotation validation.
+GROQ_SCHEMA = {
+    'type': 'object', 'additionalProperties': False, 'required': ['insufficient', 'claims'],
+    'properties': {
+        'insufficient': {'type': 'boolean'},
+        'claims': {'type': 'array', 'items': {
+            'type': 'object', 'additionalProperties': False, 'required': ['text', 'sources', 'quotes'],
+            'properties': {'text': {'type': 'string'},
+                           'sources': {'type': 'array', 'items': {'type': 'integer'}},
+                           'quotes': {'type': 'array', 'items': {'type': 'string'}}}}}},
+}
+
+
+class ProviderError(Exception):
+    """A categorised, user-safe provider failure (never contains secrets or raw provider bodies)."""
+
+    def __init__(self, code, message, retry_after=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.retry_after = retry_after
+
+
+def groq_key():
+    """Read the key at call time (rotation needs no restart). Returns None when not configured."""
+    try:
+        key = settings.groq_api_key_file.read_text(encoding='utf-8').strip()
+    except OSError:
+        return None
+    return key if re.fullmatch(r'gsk_[A-Za-z0-9]{20,}', key) else None
+
+
+def groq_status():
+    from . import provider_quota
+    result = {'runtime': 'Groq Cloud', 'model': settings.groq_model, 'available': False,
+              'local_only': False, 'external': True, 'busy': False, 'reason': None}
+    if not groq_key():
+        result['reason'] = 'Fast cloud AI is not configured on this server.'
+        return result
+    cooling = provider_quota.cooldown()
+    if cooling:
+        result['reason'] = cooling[1]
+        result['retry_after'] = max(1, int(cooling[0] - __import__('time').time()))
+        return result
+    result['available'] = True
+    result['quota'] = provider_quota.summary()
+    return result
+
+
+def estimate_tokens(messages):
+    # Conservative: ~3.2 characters per token plus the full completion budget.
+    return int(sum(len(m['content']) for m in messages) / 3.2) + settings.groq_max_completion_tokens
+
+
+async def generate_groq(messages, actor, kind):
+    """One bounded Groq chat completion. Raises ProviderError; never retries 4xx."""
+    import time
+    from . import provider_quota
+
+    key = groq_key()
+    if not key:
+        raise ProviderError('not_configured', 'Fast cloud AI is not configured on this server.')
+    cooling = provider_quota.cooldown()
+    if cooling:
+        raise ProviderError('cooldown', cooling[1], max(1, int(cooling[0] - time.time())))
+    payload = {
+        'model': settings.groq_model,
+        'messages': messages,
+        'temperature': 0,
+        'max_completion_tokens': settings.groq_max_completion_tokens,
+        'response_format': {'type': 'json_schema',
+                            'json_schema': {'name': 'grounded_answer', 'strict': True, 'schema': GROQ_SCHEMA}},
+        'stream': False,
+    }
+    if settings.groq_model.startswith('openai/gpt-oss'):
+        payload['reasoning_effort'] = settings.groq_reasoning_effort
+        payload['include_reasoning'] = False
+    elif settings.groq_model.startswith('qwen/'):
+        payload['reasoning_effort'] = 'none'   # no hidden thinking tokens for grounded extraction
+    estimated = estimate_tokens(messages)
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            usage_id = provider_quota.reserve(actor, estimated, kind)
+        except provider_quota.QuotaExceeded as error:
+            raise ProviderError('quota', error.reason, error.retry_after)
+        started = time.perf_counter()
+        try:
+            async with httpx.AsyncClient(base_url=GROQ_BASE_URL, verify=True, follow_redirects=False, trust_env=False,
+                                         timeout=httpx.Timeout(settings.groq_timeout, connect=5)) as client:
+                response = await client.post('/chat/completions', json=payload,
+                                             headers={'Authorization': f'Bearer {key}'})
+        except (httpx.TimeoutException, httpx.TransportError):
+            # The request may have been processed: keep the reservation.
+            provider_quota.settle(usage_id, None, 'network_error')
+            if attempts < 2:
+                continue
+            raise ProviderError('unavailable', 'Fast cloud AI did not respond in time. Try again shortly.')
+        elapsed_ms = round((time.perf_counter() - started) * 1000, 1)
+        status = response.status_code
+        if status == 200:
+            data = response.json()
+            usage = data.get('usage') or {}
+            provider_quota.settle(usage_id, usage.get('total_tokens'), 'ok')
+            choice = (data.get('choices') or [{}])[0]
+            content = (choice.get('message') or {}).get('content') or ''
+            if not content.strip():
+                raise ProviderError('malformed', 'Fast cloud AI returned an empty answer.')
+            try:
+                answer = GroundedAnswer.model_validate_json(content)
+            except ValueError:
+                raise ProviderError('malformed', 'Fast cloud AI returned an unreadable answer.')
+            timing = {
+                'provider': 'groq', 'model': data.get('model', settings.groq_model), 'latency_ms': elapsed_ms,
+                'prompt_tokens': usage.get('prompt_tokens'), 'completion_tokens': usage.get('completion_tokens'),
+                'total_tokens': usage.get('total_tokens'),
+                'reasoning_tokens': (usage.get('completion_tokens_details') or {}).get('reasoning_tokens'),
+                'provider_queue_s': usage.get('queue_time'), 'provider_total_s': usage.get('total_time'),
+                'remaining_requests_today': response.headers.get('x-ratelimit-remaining-requests'),
+                'remaining_tokens_minute': response.headers.get('x-ratelimit-remaining-tokens'),
+                'finish_reason': choice.get('finish_reason'),
+            }
+            return answer, timing
+        # Server-error responses are not charged by Groq; client errors may count toward limits.
+        provider_quota.settle(usage_id, 0 if status >= 500 else None, f'http_{status}')
+        if status == 429:
+            retry = response.headers.get('retry-after')
+            seconds = int(float(retry)) if retry and retry.replace('.', '', 1).isdigit() else 60
+            provider_quota.set_cooldown(seconds, 'Fast cloud AI is rate-limited by the provider. Try again shortly.')
+            raise ProviderError('rate_limited', 'Fast cloud AI is rate-limited by the provider. Try again shortly.', seconds)
+        if status in (401, 403):
+            provider_quota.set_cooldown(900, 'Fast cloud AI credentials were rejected. An administrator must update the key.')
+            raise ProviderError('credentials', 'Fast cloud AI credentials were rejected. An administrator must update the key.')
+        if status in (404, 400, 413, 422):
+            raise ProviderError('request', f'Fast cloud AI rejected the request (HTTP {status}).')
+        if status >= 500 and attempts < 2:
+            await __import__('asyncio').sleep(1)
+            continue
+        raise ProviderError('unavailable', f'Fast cloud AI is temporarily unavailable (HTTP {status}).')
+
+
 async def status():
     result = {
         "runtime": "Ollama",
@@ -107,7 +251,7 @@ async def status():
     return result
 
 
-async def generate(question, sources):
+async def generate(question, sources, provider='ollama', actor='system'):
     actual_question = (
         question.split("\nCitation correction:")[0]
         .split("\nPrevious user questions:")[0]
@@ -152,9 +296,7 @@ async def generate(question, sources):
         ],
         ensure_ascii=False,
     )
-    payload = {
-        "model": settings.llm_model,
-        "messages": [
+    messages = [
             {
                 "role": "system",
                 "content": CORRECTION_SYSTEM
@@ -175,7 +317,13 @@ async def generate(question, sources):
                     ensure_ascii=False,
                 ),
             },
-        ],
+        ]
+    if provider == 'groq':
+        kind = 'correction' if "\nCitation correction:" in question else 'generation'
+        return await generate_groq(messages, actor, kind)
+    payload = {
+        "model": settings.llm_model,
+        "messages": messages,
         "stream": False,
         "format": GroundedAnswer.model_json_schema(),
         "keep_alive": "5m",

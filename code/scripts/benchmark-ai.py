@@ -35,8 +35,8 @@ raw_outputs = []
 original_generate = llm.generate
 
 
-async def traced_generate(question, sources):
-    result = await original_generate(question, sources)
+async def traced_generate(question, sources, *args, **kwargs):
+    result = await original_generate(question, sources, *args, **kwargs)
     raw_outputs.append(result[0].model_dump())
     return result
 
@@ -55,7 +55,10 @@ headers = {
 report = {
     "started_at": datetime.now(timezone.utc).isoformat(),
     "cases_sha256": hashlib.sha256(cases_path.read_bytes()).hexdigest(),
-    "actual_model": settings.llm_model,
+    "actual_model": settings.groq_model if settings.llm_provider == "groq" else settings.llm_model,
+    "provider": settings.llm_provider,
+    # Synthetic benchmark corpus only; explicitly cleared for external processing in Groq runs.
+    "external_processing": os.environ.get("BENCHMARK_EXTERNAL") == "1",
     "isolated_local_only": True,
     "aws_calls": 0,
     "aws_sdk_instrumentation": aws_evidence,
@@ -84,15 +87,34 @@ with tempfile.TemporaryDirectory(prefix="nimbus-ai-benchmark-") as temporary:
             raw_outputs.clear()
             scope = [ids[k] for k in case["scope"]]
             body = {"question": case["question"], "file_ids": scope}
+            if os.environ.get("BENCHMARK_EXTERNAL") == "1":
+                body["external_file_ids"] = scope
             if case.get("thread") in threads:
                 body["conversation_id"] = threads[case["thread"]]
-            started = time.perf_counter()
-            response = client.post(
-                "/api/ai/ask", headers={**headers, "x-file-scope": json.dumps(scope)}, json=body
-            )
-            elapsed = (time.perf_counter() - started) * 1000
-            response.raise_for_status()
-            answer = response.json()
+            waited_s = 0
+            for _attempt in range(8):
+                # Pace within Free-tier limits: a rate-limited attempt is retried later, never scored.
+                raw_outputs.clear()
+                started = time.perf_counter()
+                response = client.post(
+                    "/api/ai/ask", headers={**headers, "x-file-scope": json.dumps(scope)}, json=body
+                )
+                elapsed = (time.perf_counter() - started) * 1000
+                response.raise_for_status()
+                answer = response.json()
+                limited = (answer.get("provider_error") or {}).get("code") in ("quota", "rate_limited", "cooldown")
+                if not limited:
+                    break
+                pause = min(65, max(5, int((answer["provider_error"].get("retry_after") or 30))))
+                print(case["id"], "rate-limited; waiting", pause, "s", flush=True)
+                waited_s += pause
+                cleanup = __import__("sqlite3").connect(settings.data_dir / "cloudvault.db")
+                try:
+                    cleanup.execute("DELETE FROM exchanges WHERE id=(SELECT MAX(id) FROM exchanges)")
+                    cleanup.commit()
+                finally:
+                    cleanup.close()   # an open handle blocks temp-directory cleanup on Windows
+                time.sleep(pause)
             answer["benchmark_raw_model_outputs"] = list(raw_outputs)
             if case.get("thread") and answer.get("conversation_id"):
                 threads[case["thread"]] = answer["conversation_id"]
@@ -130,6 +152,7 @@ with tempfile.TemporaryDirectory(prefix="nimbus-ai-benchmark-") as temporary:
                     **case,
                     "answer": answer,
                     "latency_ms": round(elapsed, 2),
+                    "rate_limit_wait_s": waited_s,
                     "facts_covered": covered,
                     "fact_coverage": len(covered) / len(facts) if facts else None,
                     "exact_quotation_checks_pass": valid_quotes,
@@ -160,6 +183,22 @@ report["summary"] = {
     "permission_failures": sum(not c["permission_scope_pass"] for c in report["cases"]),
     "median_total_latency_ms": statistics.median(c["latency_ms"] for c in report["cases"]),
 }
+lat = sorted(c["latency_ms"] for c in report["cases"])
+gen = [c for c in report["cases"] if c["answer"].get("mode") == "generated"]
+usage = [t for c in report["cases"] for t in (c["answer"].get("timings", {}).get("initial_generation"),
+                                               c["answer"].get("timings", {}).get("generation")) if isinstance(t, dict)]
+report["summary"].update({
+    "p95_total_latency_ms": lat[max(0, int(len(lat) * 0.95) - 1)],
+    "median_generated_latency_ms": statistics.median(c["latency_ms"] for c in gen) if gen else None,
+    "provider_counts": {p: sum(c["answer"].get("provider") == p for c in gen) for p in ("groq", "ollama")},
+    "extractive_answers": sum(c["answer"].get("mode") == "extractive" for c in report["cases"]),
+    "provider_requests": len(usage),
+    "corrections": sum(bool(c["answer"].get("timings", {}).get("correction_attempted")) for c in report["cases"]),
+    "prompt_tokens": sum(t.get("prompt_tokens") or 0 for t in usage),
+    "completion_tokens": sum(t.get("completion_tokens") or 0 for t in usage),
+    "reasoning_tokens": sum(t.get("reasoning_tokens") or 0 for t in usage),
+    "rate_limit_wait_s": sum(c["rate_limit_wait_s"] for c in report["cases"]),
+})
 report["finished_at"] = datetime.now(timezone.utc).isoformat()
 output.write_text(json.dumps(report, indent=2))
 print(json.dumps(report["summary"], indent=2))

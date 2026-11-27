@@ -1,6 +1,6 @@
 {
-  "published_source_baseline": "e195e9de7bc35f47ba55156751f4d6d22d64953c",
-  "application_files": 401,
+  "published_source_baseline": "ef9872c0f56daa5fc68ad408023d4ed3a7ab498b",
+  "application_files": 410,
   "baseline_application_paths_accounted_for": 401,
   "missing_application_files": [],
   "recovered_missing_migrations": [
@@ -123,18 +123,31 @@
     }
   ],
   "module_files": {
-    "frontend": 88,
-    "backend": 116,
-    "intelligence": 27,
+    "frontend": 90,
+    "backend": 118,
+    "intelligence": 29,
     "infrastructure": 2,
     "infra": 22,
-    "deployment": 26,
-    "scripts": 81,
+    "deployment": 27,
+    "scripts": 83,
     "benchmarks": 5,
     "e2e": 9,
     "samples": 1,
     "config": 5
   },
   "unfinished_groq_imported": false,
-  "python_source_files_parsed": 70
+  "python_source_files_parsed": 70,
+  "prior_published_source_baseline": "e195e9de7bc35f47ba55156751f4d6d22d64953c",
+  "completed_groq_included": true,
+  "session_c_checkpoint_mapping": "session-c-source-migration.json",
+  "restored_executable_modes": [
+    "code/infra/scripts/bootstrap.sh",
+    "code/infra/scripts/common.sh",
+    "code/infra/scripts/deploy.sh",
+    "code/infra/scripts/push-image.sh",
+    "code/infra/scripts/teardown.sh",
+    "code/infra/scripts/verify.sh",
+    "code/scripts/localstack-init.sh",
+    "code/scripts/smoke-test.sh"
+  ]
 }

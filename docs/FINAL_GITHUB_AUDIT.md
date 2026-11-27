@@ -2,7 +2,7 @@
 
 Repository: https://github.com/JainMehul05/NimbusVault-
 Authoritative starting main: `93ff735075b3083ac14db82301753a02ab61d5c2`
-Application baseline included: verified Session B source `e195e9de7bc35f47ba55156751f4d6d22d64953c`, relocated under `code/` with documented path adaptations. This report accompanies the final audit commit; the exact resulting remote hash and Actions state are verified after publication in the completion response and private remote-verification record.
+Application checkpoint included: completed Session C `ef9872c0f56daa5fc68ad408023d4ed3a7ab498b`, imported into `code/` with documented layout adaptations. Original source inventory and migration recovery use Session B `e195e9d` as their historical baseline. This report accompanies the final audit commit; the exact resulting remote hash and Actions state are verified after publication in the completion response and private remote-verification record.
 
 ## Protected academic submissions
 
@@ -36,7 +36,7 @@ A narrow migration-source exception now retains these without allowing private d
 | RAG | `rag.py`, `llm.py`, `internal.py`: scoped retrieval, conversation context, citation/quotation validation, abstention and Ollama/Qwen; existing tests retained |
 | Operations | Five `.bat` files, `code/scripts/launcher.ps1`, platform/setup/start/stop, AWS controllers, deployment and backup source |
 
-No finished Groq implementation is imported. The separate branch remains at local checkpoint `caa4548` while the deployment agent marks Session C in progress and has uncommitted deployment/UI changes. [Provider status](AI_PROVIDER_STATUS.md) records the verified local benchmark separately. User-suggested 313/63/97 test counts are not substituted for results of this published source. The latest complete deployment evidence included remains Sessions A/B; this is an explicit limitation, not a claim that newer work is absent locally.
+The completed Session C checkpoint became available during this audit after the initial `997b8fc` structural audit was published. It is now integrated and verified through the university mapping; no uncommitted development files were copied. [Provider status](AI_PROVIDER_STATUS.md) and [checkpoint mapping](session-c-source-migration.json) identify the exact provenance. Session C reports backend 313, frontend 63 and Python 97; rerun publication checks are distinguished below.
 
 ## AWS source coverage and deployment scope
 
@@ -51,9 +51,9 @@ The published source includes `code/infrastructure/` CloudFormation/worker defin
 | CloudWatch, CloudTrail | Diagnostics and retained stop/event evidence; not every observability component is provisioned by every template |
 | CloudFormation, CDK | Infrastructure definitions; presence does not imply every stack was deployed |
 | Scheduler and host safeguards | External stop, host deadline, runtime timer, credit watchdog and fail-closed plan/session checks retained |
-| CloudFront / KMS | CloudFront public distribution was not deployed. No completed Session C KMS claim is made |
+| CloudFront / KMS | CloudFront public distribution was not deployed. SecureString uses AWS-managed KMS encryption; no custom KMS-key deployment is asserted |
 
-The public URL matches Session B documentation: https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com . Availability is bounded by authorized sessions; this audit does not start the instance or call AWS. Older Session A/private-host descriptions in retained reports are historical, not current uptime statements.
+The public URL matches Session B documentation: https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com . Availability is bounded by authorized sessions; this audit does not start the instance or call AWS. Older Session A/B descriptions in retained reports are historical, not current uptime statements. Session C reports EC2 stopped at 16:24 UTC; that is recorded evidence, not a fresh cloud read by this audit.
 
 ## Checks actually rerun in the isolated publication checkout
 
@@ -61,11 +61,11 @@ The public URL matches Session B documentation: https://d00xx7hyr7.execute-api.a
 |---|---|
 | Backend and frontend build | PASS |
 | Backend/frontend lint | PASS |
-| Frontend Vitest | 60 tests passed, 14 files |
+| Frontend Vitest | 63 tests passed, 15 files after Session C import |
 | Infrastructure Vitest | 22 tests passed |
 | AWS launcher mocked safety tests | 10 passed; no AWS calls |
 | Docker launcher mocked readiness/timeout | Two checks passed; real Docker untouched |
-| Python account guard and SDK transport tests | 11 passed; synthetic/mock transports |
+| Python Groq provider, account guard and SDK transport tests | 25 passed; synthetic/mock transports; full isolated suite recorded in final completion evidence |
 | Python source syntax | 70 files parsed |
 | PowerShell syntax | 23 files parsed |
 | Platform Node script syntax | PASS |
@@ -75,7 +75,7 @@ The public URL matches Session B documentation: https://d00xx7hyr7.execute-api.a
 | MkDocs | Clean build passed; academic filenames updated outside protected folders |
 | Mermaid architecture diagrams | Both rendered to SVG/PNG with Mermaid in headless Edge and visually reviewed |
 
-Backend database/integration suites, real-model Python suites and browser-to-application acceptance are not rerun locally because they require separately configured services/models. Existing CI retains those applicable service-backed checks. This audit does not claim a fresh full setup, live launcher demonstration, new AI benchmark, current public-site health or completed cloud acceptance. Historical measured performance remains labelled in the README.
+Backend database/integration suites, real-Qwen generation and browser-to-application acceptance are not rerun locally because they require separately configured services/runtime. A private isolated MiniLM copy permits offline Python regression without changing the active application. Existing CI retains those applicable service-backed checks. This audit does not claim a fresh full setup, live launcher demonstration, new AI benchmark, current public-site health or completed cloud acceptance. Historical measured performance remains labelled in the README.
 
 ## README and documentation improvements
 
@@ -92,3 +92,21 @@ The proposed tracked tree and reachable outgoing history are scanned for credent
 A normal push must preserve remote ancestry and all three protected tree IDs. No force push, history rewrite, branch/tag deletion, active application modification, desktop-shortcut change or AWS operation is authorized or performed in this audit.
 
 Pre-publication security result: 1,268 proposed-index/history blobs and 14 known private values checked, zero findings. Changes after that scan only record these non-sensitive verification results; the final commit is scanned again before pushing.
+
+## Completed Session C follow-up
+
+While remote verification of `997b8fc` was running, the deployment agent finalized `ef9872c` and supplied completed Session C reports. The source checkout was clean. The follow-up imports all 42 changed non-root-README files through the university mapping and incorporates the original README delta into the professional university/application guides. [Exact checkpoint-to-publication mapping](session-c-source-migration.json) preserves provenance. Benchmark output paths retain the `../docs/` adaptation. No academic file is imported or changed.
+
+Includes Groq gpt-oss-20b, owner/asker consent migration and enforcement, provider selection, transactional persistent quota ledger, provider tests, adaptive public polling, provider-aware startup, Linux Prisma engine target, SSM key-fetch/secret mount source and completed deployment/evaluation documentation. Reported Session C results: local Groq 40/40; 31 generated and nine abstentions; local median 1.24 s, p95 3.6 s; public browser samples 1.5/1.6/3.0 s; EC2 search median 7.7 ms and original accuracy; backend 313, frontend 63, Python 97. These deployment-agent measurements are not rerun cloud/AI benchmarks by this audit.
+
+The Session C report verifies the instance stopped and cloud rule/consumer idle. The GitHub audit does not call AWS. Mobile AI and the owner-controlled Groq ZDR toggle remain pending. SecureString uses AWS-managed KMS; no separate custom KMS deployment is asserted. Academic final-report content remains absent/owner-managed and is not regenerated. Updated isolated tests, secret scans, protected tree comparison, documentation/diagram/link checks and remote verification apply to the final follow-up commit.
+
+Final source inventory now contains **410** application files. Completed checkpoint changes are independently checked against their original Git blobs; the application-layout note, benchmark documentation-output path and integration-guide layout note need adaptation. All other imported implementation files retain the completed source bytes.
+
+Additional CI-discovered portability defect: eight shell scripts lost executable Git modes during Windows relocation. The LocalStack ready hook consequently failed with permission denied. Restored the exact original 100755 modes for six `code/infra/scripts/*.sh` helpers, `code/scripts/localstack-init.sh` and `code/scripts/smoke-test.sh`. The initial audit CI passed backend, frontend, browser end-to-end, infrastructure and security jobs; only container startup failed on this mode defect. Final follow-up CI is checked separately.
+
+Fresh isolated Session C checks: backend/frontend builds and lint passed; frontend 63, full Python 97 (two real-Qwen tests deliberately deselected), provider/guard subset 25 and AWS launcher mock tests 10 passed. MiniLM used an ignored isolated copied cache, with offline mode; the active cache was only read. No external model request or AWS operation was performed.
+
+Fresh-clone Groq path fix: the Windows key helper stores `code/.runtime/secrets/groq-api-key`, but the imported default looked inside `code/intelligence/.runtime/`. Corrected the default to the application root and added a regression assertion matching the helper. Explicit EC2 secret mounts remain supported. This publication-only fix does not edit the active application.
+
+Final follow-up details: 72 Python sources parse; 24 PowerShell scripts parse; Session C Compose validates; 26 focused provider/account/SDK tests pass after the standalone key-path fix. The complete preceding isolated Python run passed 97 tests with two real-Qwen cases deselected. No new paid/provider inference was executed. Checkpoint mapping labels all five intentional adaptations rather than claiming byte-identical modified files.

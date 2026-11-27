@@ -16,8 +16,14 @@ for route in ('health','warmup'):
                               data=b'' if route=='warmup' else None)
     with urllib.request.urlopen(req, timeout=300) as r: data=json.load(r)
     if route=='health': assert data.get('status')=='ok'
-    else: assert data.get('available') is True and data.get('warmed') is True, 'Qwen warmup not confirmed'
-print('OK fresh MiniLM embedding and genuine Qwen readiness generation')
+    else:
+        runtime = data.get('runtime') or 'AI'
+        assert data.get('available') is True and data.get('warmed') is True, f"{runtime} readiness not confirmed: {data.get('reason')}"
+if data.get('external'):
+    # Groq mode: no Qwen load and no quota spent; availability = key configured and not cooling down.
+    print(f"OK fresh MiniLM embedding; fast cloud AI ready ({data.get('runtime')} {data.get('model')}, external, Qwen not loaded)")
+else:
+    print('OK fresh MiniLM embedding and genuine Qwen readiness generation')
 PY
 curl -fsS --max-time 30 http://127.0.0.1:3100/api/v1/health/ready | \
   python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; assert d["status"]=="ready" and d["checks"]["database"]=="ok"'

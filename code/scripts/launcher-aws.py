@@ -104,7 +104,7 @@ def status(c):
     warm_file = PRIVATE / 'launcher-warmup.json'
     if warm_file.exists():
         warm = json.loads(warm_file.read_text())
-        print(f'Last verified AWS MiniLM + Qwen warmup: {warm["warmed_at"]}; '
+        print(f'Last verified AWS MiniLM + AI-provider readiness: {warm["warmed_at"]}; '
               'historical, not proof that models remain loaded now.')
     else:
         print('AWS AI readiness: no launcher-verified warmup yet.')
@@ -132,7 +132,7 @@ def start(c):
     try:
         found, tags = c['instance']()
         active_authorization(c, tags)
-        print('Checking host safeguards, application readiness and fresh MiniLM/Qwen warmup...')
+        print('Checking host safeguards, application readiness, fresh MiniLM and AI-provider readiness...')
         result, output = c['run_remote'](ROOT / 'deployment/launcher-ready.sh', timeout=420)
         # This script emits stage names only, no environment values or credentials.
         print(output[-1800:])

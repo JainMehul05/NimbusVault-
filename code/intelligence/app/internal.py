@@ -83,6 +83,12 @@ def health():
 @app.post("/warmup")
 async def warmup():
     await run_in_threadpool(engine.encode, ["NimbusVault local model readiness"])
+    if settings.llm_provider == 'groq':
+        # Never load Qwen nor spend Groq quota just to warm up: report configuration readiness only.
+        groq = rag.llm.groq_status()
+        return {"runtime": "Groq Cloud", "model": settings.groq_model, "available": groq["available"],
+                "local_only": False, "external": True, "busy": rag.generation_lock.locked(),
+                "reason": groq.get("reason"), "warmed": groq["available"], "embedding_warmed": True}
     status = await rag.llm.status()
     if status["available"] and not rag.generation_lock.locked():
         import httpx
@@ -215,6 +221,8 @@ async def ask(payload: rag.Ask, request: Request):
     if payload.file_ids and not set(payload.file_ids).issubset(scope):
         raise HTTPException(403, "Scope denied")
     payload.file_ids = payload.file_ids or scope
+    # Defence in depth: external processing can never exceed the authorized scope.
+    payload.external_file_ids = [f for f in payload.external_file_ids if f in set(payload.file_ids)]
     if payload.conversation_id:
         with connect() as db:
             row = db.execute(

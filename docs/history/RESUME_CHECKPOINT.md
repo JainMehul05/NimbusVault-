@@ -1,3 +1,18 @@
+## Session C complete — 27 Nov 2026 ~16:30 UTC (supersedes everything below)
+Groq gpt-oss-20b live on the public URL (LLM_PROVIDER=groq on EC2, Qwen fallback off). EC2 STOPPED (verified 16:24 UTC); rule DISABLED, mapping Disabled; temp S3 objects deleted. New AWS: parameter /nimbusvault/groq/api-key + IAM read statements (ledger). Results: 40/40 Groq benchmark, public answers 1.5–3 s, search 84 at baseline, native chain → Groq, launchers verified. Pending: mobile AI question; Groq ZDR toggle (user, console). Branch claude/groq-integration-20261127 (not pushed). Docs: docs/GROQ_INTEGRATION_GUIDE.md, docs/GROQ_AI_EVALUATION.md.
+
+---
+
+## Session C in progress — 27 Nov 2026 ~15:57 UTC (EC2 RUNNING, session ends 17:36 UTC; host poweroff 17:26, external stop 17:31)
+Groq live on the public URL: parameter /nimbusvault/groq/api-key (SecureString Standard), IAM read added (live-verified), patches groq + groq2 deployed (LLM_PROVIDER=groq, gpt-oss-20b, Qwen fallback off), migration applied. Public results: consent off -> no Groq; Groq single/multi/follow-up/abstain pass; browser answer 1.5/1.6/3.0 s. Laptop AWS token EXPIRED at ~15:57 UTC: user must re-login. Pending: header-label patch (built locally), search 84 + provider-down test (script .runtime/groq/ec2-search-and-down.sh; restore key by renaming groq-api-key.held back), optional native window, launcher + phone tests, delete temp S3 patches patch-groq*.tar.gz, aws:stop, docs, commit (branch claude/groq-integration-20261127).
+
+---
+
+## Groq integration in progress — 27 Nov 2026 (uncommitted)
+Implemented locally (tests green): provider abstraction (intelligence/app/llm.py `generate_groq`, fixed https://api.groq.com/openai/v1, strict JSON schema, reasoning_effort low), persistent race-free quota ledger (intelligence/app/provider_quota.py, budgets below Free limits 30 RPM/1K RPD/8K TPM/200K TPD), consent model (User.externalAiConsent, migration 20261127000000; backend externalScope: asker AND owner opt-in), provider choice + AI mode panel + honest provider labels, Groq-mode warmup without Qwen. Defaults remain Ollama (LLM_PROVIDER=ollama). Key setup: `npm run ai:set-groq-key` → .runtime/secrets/groq-api-key (Git-ignored). NEXT: key not yet stored (prompt waiting in terminal) → model discovery, candidate benchmark, 40-case Groq benchmark, launchers, AWS proposal. EC2 stopped; no AWS changes. A parallel tool is active (.runtime/github-publication, docs edits) — coordinate.
+
+---
+
 ## Session B complete — 27 Nov 2026 ~12:45 UTC (supersedes everything below)
 Public URL https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com (API Gateway + VPC link + Cloud Map → EC2 private IP:8080). CloudFront blocked pending AWS Support account verification (VPC origin already Deployed). EC2 STOPPED 12:39 UTC; rule DISABLED, mapping Disabled; temporary S3 objects deleted. Startup failure (curl 56) fixed; 3 ordinary start cycles, watchdog and Scheduler stops verified live. Reports: `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` (Session B section), `docs/PUBLIC_DEPLOYMENT_GUIDE.md`. A separate tool (likely Codex) added `.bat` launchers in parallel; its 11:38 UTC launcher-stop interrupted tests — never run both against EC2 at once. Next: CloudFront after verification (approval needed); optional cleanup.
 

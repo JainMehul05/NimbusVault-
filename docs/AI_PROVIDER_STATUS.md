@@ -1,11 +1,19 @@
-# AI provider publication status
+# Verified AI providers — Session C
 
-The current published application is the verified Session B/Qwen source (`e195e9d` before relocation into `code/`). Retrieval and citations run in NimbusVault; private generation uses Ollama with `qwen2.5:3b`.
+The published source includes completed checkpoint `ef9872c` from `claude/groq-integration-20261127`, following inspection of its final deployment report and clean committed source. The earlier local checkpoint `caa4548` is its predecessor, not the final deployment checkpoint.
 
-The separate development branch has local Groq checkpoint `caa4548` (`claude/groq-integration-20261127`). Source inspection confirms an `openai/gpt-oss-20b` provider, consent migration and enforcement, provider selection, persistent quota ledger, provider tests and provider-aware warmup. The deployment agent's latest checkpoint text still marks AWS Session C **in progress** and additional deployment/UI verification files are uncommitted. Those unfinished changes are not copied into this release.
+## Implementation and privacy
 
-The local evaluation report at that checkpoint records 40/40 strict cases: 31 generated answers, nine abstentions, zero quotation/permission failures, median 1.24 s and p95 3.6 s, excluding deliberate quota-pacing waits. Its comparison with the earlier EC2 CPU Qwen median of 28.1 s is approximately 22.7 times, across different execution environments. This audit did not rerun that benchmark, and these numbers are not published-runtime performance or completed Session C acceptance.
+`code/intelligence/app/llm.py` implements Groq `openai/gpt-oss-20b` with strict structured output and a fixed HTTPS provider endpoint. `provider_quota.py` reserves persistent request/token budgets transactionally before provider calls. Provider failures, corrections and cooldowns are accounted for. `rag.py` chooses only permitted providers; local Qwen remains available when configured. Provider-aware launchers avoid claiming a Qwen warmup when Groq is selected.
 
-Backend 313, frontend 63 and Python 97 were requested as candidate newer regression counts. They are not adopted as current release results without a completed, verified integration checkpoint. The audit report distinguishes actually rerun published-source checks from retained deployment evidence.
+Backend `externalScope` requires the asker and every included document owner to opt in; share access alone grants no external-processing consent. Retrieval, MiniLM embeddings, storage and source validation stay in NimbusVault. External provider credentials are read from a private runtime key file; on EC2 that file is fetched from Parameter Store SecureString with the instance role and mounted only into intelligence. Actual keys and private manifests are excluded.
 
-Secure key configuration helpers alone do not imply that the provider is included or deployed. Do not enable a missing provider on this published source. The completed integration, its deployment report and revised documentation belong in a subsequent verified release. No real key or private deployment manifest is included here.
+## Verified evidence, not a new cloud run
+
+The deployment agent reports Session C complete and EC2 stopped at 16:24 UTC on 27 November 2026. Public tests covered consent, scoped single/multi-document answers, follow-up/abstention, revoked access, provider outage, native AWS workflow reconciliation, start/stop and citations. Browser click-to-visible samples were 1.5 s, 1.6 s and 3.0 s; API-path timings include polling and differ. The unchanged 84-query search remained at 69/69 positives and 15/15 negative rejection.
+
+Local strict Groq benchmark: 40/40, 31 generated answers and nine abstentions, no measured quotation/permission failures, median 1.24 s and p95 3.6 s, excluding deliberate pacing waits. Comparison with historical EC2 Qwen median 28.1 s is approximately 22.7 times across different environments, not universal performance. Reported Session C regressions: backend 313, frontend 63, Python 97; two real-Qwen tests were not rerun. Fresh isolated publication checks are recorded in the repository audit.
+
+Remaining: mobile AI question, Groq Console Zero Data Retention toggle and finite Free-tier limits. SecureString uses AWS-managed KMS encryption; no separate customer-managed KMS key deployment is claimed. CloudFront distribution remains undeployed. See [integration guide](GROQ_INTEGRATION_GUIDE.md), [evaluation](GROQ_AI_EVALUATION.md) and [deployment report](AWS_FINAL_DEPLOYMENT_REPORT.md).
+
+The GitHub audit only reads these completed checkpoint reports and source; it performs no AWS or provider API operation and does not modify the active application.

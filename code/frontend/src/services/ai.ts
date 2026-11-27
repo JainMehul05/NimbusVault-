@@ -25,6 +25,9 @@ export interface AiCapabilities {
   limits: { maxFileBytes: number; maxPdfPages: number; maxExtractedChars: number; queriesPerWindow: number; queryWindowMs: number };
   supportedMimeTypes: string[];
   privacy: { sendsDocumentsToThirdParty: boolean; externalProviders: string[] };
+  /** Present only when the server is configured for the external Groq provider. */
+  providers?: { groq: { available: boolean; reason: string | null; retryAfter: number | null; external: true };
+    local: { available: boolean; model: string | null; external: false } };
 }
 
 export interface AiDocument {
@@ -78,6 +81,10 @@ export interface AnswerResult {
   citations: Citation[];
   sourcesConsidered: number;
   model: string | null;
+  /** Which runtime actually generated the answer; null for excerpts. */
+  provider?: 'groq' | 'ollama' | null;
+  external?: boolean;
+  providerError?: { code: string; retry_after?: number | null } | null;
 }
 
 export interface Passage {
@@ -96,7 +103,8 @@ const data = <T,>(p: Promise<{ data: ApiResponse<T> }>) => p.then((r) => r.data.
  * Answers are prepared as a background job and polled, so slow CPU inference is never cut off by
  * CloudFront or proxy time limits. Falls back to the synchronous endpoint on older servers.
  */
-const ASK_POLL_MS = 2000
+// Fast providers answer in under a second: poll quickly at first, then back off to 2 s.
+const ASK_POLL_STEPS_MS = [400, 800, 1500, 2000]
 const ASK_MAX_WAIT_MS = 10 * 60 * 1000
 async function askAsync(body: Record<string, unknown>): Promise<AnswerResult> {
   let jobId: string
@@ -108,8 +116,9 @@ async function askAsync(body: Record<string, unknown>): Promise<AnswerResult> {
     throw error
   }
   const deadline = Date.now() + ASK_MAX_WAIT_MS
+  let polls = 0
   while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, ASK_POLL_MS))
+    await new Promise((resolve) => setTimeout(resolve, ASK_POLL_STEPS_MS[Math.min(polls++, ASK_POLL_STEPS_MS.length - 1)]))
     const poll = await api.get(`/ai/ask/async/${jobId}`)
     const job = poll.data.data as { state: string; result?: AnswerResult; error?: { status: number; code: string; message: string } }
     if (job.state === 'done') return job.result as AnswerResult
@@ -133,7 +142,9 @@ export const aiApi = {
   summarize: (fileId: string) => data<AiDocument['summary']>(api.post(`/ai/files/${fileId}/summary`)),
   search: (query: string, opts: { limit?: number; fileIds?: string[]; mode?: string;folderId?:string;category?:string } = {}) =>
     data<{ results: SearchResult[]; model: string;retrievalMs?:number;resultCount?:number }>(api.post('/ai/search', { query, ...opts })),
-  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string;folderId?:string } = {}) => askAsync({ question, ...opts }),
+  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string;folderId?:string;provider?:'auto'|'local' } = {}) => askAsync({ question, ...opts }),
+  preferences: () => data<{ externalAiConsent: boolean }>(api.get('/users/me/ai-preferences')),
+  setPreferences: (externalAiConsent: boolean) => data<{ externalAiConsent: boolean }>(api.put('/users/me/ai-preferences', { externalAiConsent })),
   cancel: (requestId: string) => api.post('/ai/cancel', { requestId }),
   conversations: () => data<Array<{ id: string; title: string }>>(api.get('/ai/conversations')),
   conversation: (id: string) => data<{exchanges:Array<{question:string;response:AnswerResult}>}>(api.get(`/ai/conversations/${id}`)),

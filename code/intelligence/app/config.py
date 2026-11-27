@@ -24,6 +24,22 @@ class Settings(BaseSettings):
     llm_timeout: int = 120
     llm_threads: int = 4
     llm_correction_timeout: int = 30
+    # Generation provider. 'ollama' keeps the private local Qwen runtime (default, unchanged).
+    # 'groq' sends ONLY the question and authorized retrieved excerpts to Groq Cloud (Free tier).
+    llm_provider: Literal['ollama', 'groq'] = 'ollama'
+    ollama_fallback_enabled: bool = True
+    groq_model: str = 'openai/gpt-oss-20b'
+    groq_api_key_file: Path | None = None
+    groq_timeout: int = 30
+    groq_max_completion_tokens: int = 900
+    groq_reasoning_effort: Literal['low', 'medium', 'high'] = 'low'
+    # Application budgets, kept below the verified Free-tier organization limits
+    # (gpt-oss: 30 RPM, 1,000 RPD, 8,000 TPM, 200,000 TPD).
+    groq_minute_requests: int = 20
+    groq_minute_tokens: int = 6000
+    groq_daily_requests: int = 400
+    groq_daily_tokens: int = 120_000
+    groq_user_daily_requests: int = 40
     evidence_threshold: float = 0.28
     context_chars: int = 10000
     data_dir: Path = ROOT / "data"
@@ -52,6 +68,18 @@ class Settings(BaseSettings):
             raise ValueError('Correction timeout must be bounded to 1–180 seconds')
         if self.llm_model != "qwen2.5:3b":
             raise ValueError("Use the validated local qwen2.5:3b model")
+        if self.groq_api_key_file is None:
+            self.groq_api_key_file = project.parent / '.runtime/secrets/groq-api-key'
+        import re as _re
+        if not _re.fullmatch(r'[a-z0-9][a-z0-9._/-]{2,80}', self.groq_model):
+            raise ValueError('Invalid Groq model identifier')
+        if not 5 <= self.groq_timeout <= 60:
+            raise ValueError('Groq timeout must be 5-60 seconds')
+        if not 200 <= self.groq_max_completion_tokens <= 4000:
+            raise ValueError('Groq completion budget must be 200-4000 tokens')
+        if not (0 < self.groq_minute_requests < 30 and 0 < self.groq_minute_tokens < 8000
+                and 0 < self.groq_daily_requests < 1000 and 0 < self.groq_daily_tokens < 200_000):
+            raise ValueError('Groq budgets must stay below the Free-tier limits')
         if self.aws_region != "ap-southeast-2":
             raise ValueError("CloudVault is restricted to ap-southeast-2")
         if not self.s3_object_prefix.startswith(

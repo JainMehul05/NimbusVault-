@@ -1,4 +1,4 @@
-> University publication layout: run application commands from `code/`. Documentation references written as `docs/...` in historical notes below refer to the repository-root `../docs/`; source/runtime paths remain relative to the application root. These notes do not authorize AWS operations or replay of old sessions.
+> University layout: run application commands from code/; repository documentation is in ../docs/. Historical docs paths below are relative to the repository root.
 
 # NimbusVault — continuation instructions for coding agents
 
@@ -7,7 +7,7 @@ Read `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` first (current state: Session B compl
 ## Architecture
 - `frontend/` React + TypeScript + Vite + Tailwind (NimbusVault branding — do not redesign).
 - `backend/` Express + TypeScript + Prisma + PostgreSQL; JWT + rotating refresh sessions, files/folders, sharing, inheritance, trash.
-- `intelligence/` FastAPI: extraction, chunking, MiniLM-L6-v2 (384-d), BM25, hybrid (default), Ollama Qwen2.5 3B Q4_K_M RAG with citation/quote validation. Authenticated by `INTERNAL_SERVICE_TOKEN`.
+- `intelligence/` FastAPI: extraction, chunking, MiniLM-L6-v2 (384-d), BM25, hybrid (default), RAG with citation/quote validation. Generation: Ollama Qwen2.5 3B (private, default on Windows) or Groq `openai/gpt-oss-20b` (`LLM_PROVIDER=groq`, live on EC2; consent-gated, quota ledger `provider_quota.py`). Groq key: `.runtime/secrets/groq-api-key` / SSM `/nimbusvault/groq/api-key` — never print it. Authenticated by `INTERNAL_SERVICE_TOKEN`.
 - AWS (existing, reuse, never duplicate): S3 `cloudvault-d0c2b49b4347` (`cloudvault/files/`), S3 Vectors, DynamoDB `cloudvault-v3-dev`, Lambda/SQS/DLQ/Step Functions/EventBridge/API Gateway/Parameter Store, CloudFormation stack `cloudvault-v3-dev`.
 - EC2 deployment: `deployment/` (Linux Dockerfiles, `compose.ec2.yml`, systemd units, host scripts). Bundle builder `scripts/prepare-ec2-bundle.py` → `.runtime/aws-deployment/bundle/` (private, local only).
 

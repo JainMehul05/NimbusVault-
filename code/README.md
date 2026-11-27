@@ -186,3 +186,7 @@ The completed 70-page academic report is a **pre-deployment evidence snapshot** 
 ## Licensing
 
 CloudVault-derived code retains its Apache-2.0 license and notices in `LICENSE.cloudvault` and `NOTICE.cloudvault`. The upstream NimbusVault `LICENSE` is empty, so no new blanket redistribution license is invented. Check the separate Qwen model license before redistribution or use outside its terms. Model weights and executable distributions are not bundled.
+
+## Verified Groq integration — Session C
+
+The completed source checkpoint is `ef9872c`. See [the integration guide](../docs/GROQ_INTEGRATION_GUIDE.md) and [Session C deployment verification](../docs/AWS_FINAL_DEPLOYMENT_REPORT.md). Run `npm run ai:set-groq-key` to store a key privately, then `npm run ai:provider -- groq` (or `ollama`) and restart. External inference requires asker and document-owner consent; search and embeddings stay private.

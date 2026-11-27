@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // native: the Windows standalone app; debian-openssl-3.0.x: the EC2 Linux API image.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -102,6 +104,9 @@ model User {
   status            String         @default("active")
   storageQuotaBytes BigInt         @default(5368709120)
   storageUsedBytes  BigInt         @default(0)
+  /// Opt-in: the user's questions and their own documents' excerpts may be sent to the external
+  /// AI provider (Groq). Off by default; shared readers can never grant it for an owner.
+  externalAiConsent Boolean        @default(false)
   lastLoginAt       DateTime?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt

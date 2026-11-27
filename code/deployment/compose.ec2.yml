@@ -81,12 +81,15 @@ services:
       AWS_MIN_CREDIT_RESERVE_USD: "10"
       AWS_METADATA_SERVICE_TIMEOUT: "2"
       AWS_METADATA_SERVICE_NUM_ATTEMPTS: "1"
+      GROQ_API_KEY_FILE: /run/secrets/groq_api_key
     volumes:
       - intelligence-data:/app/data
       - ${MODEL_ASSETS_DIR:?Supply verified model assets}/embedding-cache:/app/.runtime/standalone-ai/embedding-cache:ro
       - ${CLOUD_CONFIGURATION_DIR:?Supply sanitized resource configuration}/cloud-config.json:/app/.runtime/cloud-config.json:ro
       - ${CLOUD_CONFIGURATION_DIR:?Supply sanitized resource configuration}/cloud-resources.json:/app/.runtime/cloud-resources.json:ro
       - ${CLOUD_CONFIGURATION_DIR:?Supply approved vector fixture}/vector-demo.json:/app/.runtime/vector-demo.json:ro
+      # Groq key (0400, intelligence UID only); /dev/null when external AI is not configured.
+      - ${GROQ_KEY_HOST_FILE:-/dev/null}:/run/secrets/groq_api_key:ro
     networks: [application, models, aws-egress]
     read_only: true
     tmpfs: ["/tmp:size=256m,mode=1777"]

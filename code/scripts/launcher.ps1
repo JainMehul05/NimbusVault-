@@ -69,7 +69,7 @@ function Check-Local {
 function Warm-Local {
   Write-Host 'Warming MiniLM and generating a Qwen readiness response (first load can take several minutes)...'
   $warm=Invoke-RestMethod 'http://127.0.0.1:8101/warmup' -Method Post -Headers @{'x-service-token'=(Local-Token)} -TimeoutSec 300
-  if(-not $warm.available -or -not $warm.warmed){throw 'MiniLM/Qwen warmup did not complete; generation may be busy or the model unavailable.'}
+  if(-not $warm.available -or -not $warm.warmed){throw "MiniLM + $($warm.runtime) warmup did not complete: $($warm.reason)"}
   @{warmed_at=(Get-Date).ToUniversalTime().ToString('o');model=$warm.model} | ConvertTo-Json | Set-Content '.runtime/launcher-warmup.json'
   Write-Host '[OK] Fresh MiniLM embedding and genuine Qwen runtime generation completed.' -ForegroundColor Green
 }

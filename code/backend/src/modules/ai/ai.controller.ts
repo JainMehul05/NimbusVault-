@@ -8,7 +8,7 @@ import { successResponse } from '@common/response';
 import { AppError, ErrorCodes } from '@common/errors';
 import { authorizationService, hasPermission, type PermissionLevel } from '@common/authorization';
 import { activityLogService } from '@modules/activity/activity.service';
-import { getAiStatus } from './ai.status';
+import { getAiStatus, type AiStatus } from './ai.status';
 import { aiIndexingService } from './indexing.service';
 import { summaryService } from './summary.service';
 import { ragService } from './rag.service';
@@ -19,10 +19,10 @@ import { assertAiDailyAllowance } from '@common/public-limits';
 
 /** Shared by the synchronous and asynchronous ask endpoints: identical permissions, grounding and audit. */
 async function runAsk(userId: string, body: AiAskInput, requestId: string) {
-  const { question, fileIds, topK, conversationId, requestId: cancelId, folderId } = body;
+  const { question, fileIds, topK, conversationId, requestId: cancelId, folderId, provider } = body;
   await assertAiDailyAllowance(userId);
   const result = intelligenceEnabled()
-    ? await localIntelligence.ask(userId, question, { fileIds, topK, conversationId, requestId: cancelId, folderId })
+    ? await localIntelligence.ask(userId, question, { fileIds, topK, conversationId, requestId: cancelId, folderId, provider })
     : await ragService.ask(userId, question, { fileIds, topK });
   // The question text itself is not stored in the audit log.
   await activityLogService.logActivity(userId, 'ai_query', {
@@ -85,7 +85,26 @@ function serializeIndex(file: File, index: DocumentIndex | null, level: Permissi
 
 export const aiController = {
   status: asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    res.json(successResponse(getAiStatus(), 'AI status', req.requestId));
+    const base: AiStatus & { providers?: unknown } = getAiStatus();
+    const userId = (req as AuthenticatedRequest).user?.userId;
+    if (intelligenceEnabled() && userId) {
+      // Describe the provider actually configured on this server (never keys or endpoints).
+      try {
+        const live = await intelligence<{ provider?: string; model?: string; available?: boolean; reason?: string | null;
+          retry_after?: number; fallback?: { available?: boolean; model?: string } | null }>('/api/ai/status', undefined, userId, []);
+        if (live.provider === 'groq') {
+          base.generation = { configured: true, provider: 'Groq Cloud', model: live.model ?? 'unknown' };
+          base.privacy = { sendsDocumentsToThirdParty: true, externalProviders: ['Groq'] };
+          base.providers = {
+            groq: { available: Boolean(live.available), reason: live.reason ?? null, retryAfter: live.retry_after ?? null, external: true },
+            local: { available: Boolean(live.fallback?.available), model: live.fallback ? 'qwen2.5:3b' : null, external: false },
+          };
+        }
+      } catch {
+        // Status stays descriptive; generation reports its own availability per answer.
+      }
+    }
+    res.json(successResponse(base, 'AI status', req.requestId));
   }),
 
   getFile: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {

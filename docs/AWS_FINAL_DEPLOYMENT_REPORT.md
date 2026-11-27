@@ -1,3 +1,27 @@
+# Session C — Groq Cloud generation on AWS (27 Nov 2026)
+
+**Status: deployed and verified; EC2 STOPPED (verified 16:24 UTC).** Public URL unchanged: https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com. Generation now uses **Groq `openai/gpt-oss-20b` (Free tier)**; storage, indexing, MiniLM embeddings, BM25/hybrid retrieval, permissions and citation validation remain on EC2. Guide: `GROQ_INTEGRATION_GUIDE.md`; evaluation: `GROQ_AI_EVALUATION.md`.
+
+| Item | Result | Class |
+|---|---|---|
+| Model selection | gpt-oss-20b (production) chosen over gpt-oss-120b (slower) and qwen3.8-27b (preview); 12/12 each on the subset | Fresh, laptop → Groq |
+| 40-case benchmark | 40/40; 31/31 Groq-generated; 9/9 abstentions; 0 quote/permission failures; median 1.24 s, p95 3.6 s | Fresh, laptop → Groq |
+| Public answers (real browser, click → visible) | 1.5 s / 1.6 s / 3.0 s; 0 console errors (Qwen on EC2 previously ≈30–35 s) | Fresh, public HTTPS |
+| Public API checks | consent off → no Groq; single/multi-doc/follow-up/abstain; shared doc only with owner consent; revoked share blocked; prompt injection ignored | Fresh, public HTTPS |
+| Native AWS chain → Groq | S3 → EventBridge → SQS → Lambda → Step Functions SUCCEEDED → DynamoDB → EC2 reconcile → cited Groq answer (3.8 s) → SHA-256 match; window 0.66 min; idle restored; DLQ unchanged | Fresh, live AWS |
+| Search 84 on final EC2 | hybrid 69/69, 15/15 negatives, Recall@3 98.55 %, MRR 1.0, 0 leaks, 7.7 ms median | Fresh, EC2 |
+| Provider outage (invalid key) | excerpts + "credentials rejected" message, 15-min cooldown, search works, no secret exposed; recovered | Fresh, public HTTPS |
+| Key handling | Parameter Store SecureString (Standard); instance-role read verified live; 0400 file, intelligence-only mount; API container cannot read it | Fresh, live AWS |
+| One-click launchers | `Stop NimbusVault AWS.bat` (drain + verified stop) ×2; `Start NimbusVault AWS.bat` run by you (1 h, YES) → ready in 42 s → Groq answer on the started site | Fresh, launchers |
+| Mobile AI question | **Pending** — no phone request reached the server during the test window (mobile page load/registration verified in Session B) | Pending |
+| Regression (laptop) | backend 313, frontend 63, Python 97 (+2 real-Qwen not rerun), launcher 10, infra 22 (Session B) | Fresh / historical |
+
+Defects fixed in Session C: Ask header claimed "no hosted AI" while Groq answered; launcher printed "genuine Qwen readiness" in Groq mode; benchmark harness leaked a SQLite handle on Windows; Windows-generated Prisma client lacked the Linux engine (added `debian-openssl-3.0.x` target); answer polling 2 s → adaptive 0.4–2 s.
+Known characteristic (unchanged retrieval): byte-identical passages in different files are collapsed in unscoped search; each file is still retrievable when scoped.
+Note: another tool pushed commits `421f3c7`, `9a3daee`, `e195e9d` to GitHub `main` on 27 Nov (no secrets found in a scan). Session C work is on local branch `claude/groq-integration-20261127`, not pushed.
+
+---
+
 # Session B — public AWS website and startup repair (27 Nov 2026)
 
 **Status: public website working; EC2 now STOPPED (verified 12:39 UTC).** Public URL (AWS-generated, AWS certificate): **https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com** — the same URL after every authorized stop/start. Start `npm run aws:start -- --hours 2` · warm `npm run aws:warmup` · stop `npm run aws:stop`. Visitors need no AWS credentials. Guide: `PUBLIC_DEPLOYMENT_GUIDE.md`.

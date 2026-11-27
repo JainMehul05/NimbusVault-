@@ -144,6 +144,7 @@ DOCUMENTS = {
     'canary': ('owner', 'cloud-stage-canary.txt', (ROOT / 'samples/cloud-stage-canary.txt').read_bytes(), 'child'),
     # Same approved fixture bytes (allow-listed hash), uploaded fresh through the public website.
     'canary_public': ('owner', 'cloud-stage-canary-public.txt', (ROOT / 'samples/cloud-stage-canary.txt').read_bytes(), 'child'),
+    'canary_groq': ('owner', 'cloud-stage-canary-groq.txt', (ROOT / 'samples/cloud-stage-canary.txt').read_bytes(), 'child'),
     'docB': ('owner', 'session-a-acceptance-note.txt', (
         'NimbusVault Session A acceptance note.\n'
         'The Session A deployment runs on a single m7i-flex.large instance in the Sydney region.\n'

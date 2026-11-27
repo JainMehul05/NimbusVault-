@@ -1,3 +1,5 @@
+> University publication layout: run application commands from `code/`. Documentation references written as `docs/...` in historical notes below refer to the repository-root `../docs/`; source/runtime paths remain relative to the application root. These notes do not authorize AWS operations or replay of old sessions.
+
 # NimbusVault — continuation instructions for coding agents
 
 Read `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` first (current state: Session B complete, public URL https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com, EC2 `i-0569d222e63fc7f36` stopped; CloudFront pending AWS account verification), then `docs/CLAUDE_HANDOVER_STATE.md` for the Codex handover. Then `RESUME_CHECKPOINT.md`, then `.runtime/aws-deployment/state.json` (private, never publish).

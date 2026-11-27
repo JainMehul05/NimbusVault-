@@ -28,7 +28,7 @@ The original submissions are byte-for-byte historical recoveries. No genuine aut
 
 Secure storage and sharing, discoverable documents, grounded answers with citations, preserved user data, reproducible standalone operation and bounded cloud expenditure. The application includes authentication/refresh rotation, nested folders, permissions/inheritance, share links, trash/restore, MiniLM embeddings, FTS5 BM25 and hybrid ranking, Qwen2.5 3B generation, multi-document history/citations and public asynchronous answer jobs.
 
-Groq provider/quota/privacy work is ongoing in the separate active development directory. Unfinished changes are not included in this prepared publication snapshot.
+Groq provider, quota and privacy implementation has a local checkpoint (`caa4548`); AWS Session C verification is still pending. This repository snapshot retains the published Session B application until the completed Session C report and checkpoint are available.
 
 ## Source and installation
 

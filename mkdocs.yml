@@ -29,7 +29,7 @@ plugins:
   - search
   - gen-files:
       scripts:
-        - tools/generate_academic_docs.py
+        - docs/tools/generate_academic_docs.py
   - literate-nav:
       nav_file: summary.md
   - section-index

@@ -49,3 +49,9 @@ The isolated `code/` installed dependencies and generated its own Prisma client,
 The recovery search also inspected the known private backup ZIP and relevant Downloads project names without finding additional original journal/submission files. No extra external figures or bibliography references appear in the recovered historical LaTeX sources. Genuine authored student journals remain unrecovered; no substitute entries were fabricated.
 
 Historical recovery paths have explicit `-text` Git attributes. This prevents newline normalization from changing the original LaTeX/journal bytes: both SHA-256 and historical Git blob IDs are checked against the staged files, not merely the working copies.
+
+## Final publication prerequisites
+
+The latest request requires explicit approval of the complete verified publication commit before pushing to `main`. Local Groq checkpoint `caa4548` is not evidence that AWS Session C is complete. Further deployment changes remain in the active development checkout and are not copied here.
+
+[Complete baseline file migration record](repository-file-migration.json). Documentation build and verification helpers live in `docs/tools/`, keeping the root restricted to university folders and necessary configuration. `.gitattributes` preserves exact historical file bytes; `LICENSE.template` preserves the upstream documentation attribution.

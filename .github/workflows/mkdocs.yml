@@ -2,7 +2,7 @@ name: University documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'journals/**', 'assets/**', 'project-proposal/**', 'project-report-prototype-stage/**', 'project-report-final/**', 'tools/**', 'mkdocs.yml', 'pyproject.toml', 'uv.lock', '.github/workflows/mkdocs.yml']
+    paths: ['docs/**', 'journals/**', 'assets/**', 'project-proposal/**', 'project-report-prototype-stage/**', 'project-report-final/**', 'mkdocs.yml', 'pyproject.toml', 'uv.lock', '.github/workflows/mkdocs.yml']
   pull_request:
   workflow_dispatch:
 permissions:

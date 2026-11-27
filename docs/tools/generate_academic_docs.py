@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import mkdocs_gen_files
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 def publish_tree(source, destination):
     # Never export ignored build environments, raw captures or private working files.

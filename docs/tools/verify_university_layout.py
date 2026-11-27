@@ -4,7 +4,7 @@ import hashlib
 import json
 import subprocess
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 REQUIRED = ("assets", "code", "docs", "journals", "project-proposal",
             "project-report-prototype-stage", "project-report-final", ".github/workflows")
 for name in REQUIRED:
@@ -21,7 +21,10 @@ for name in ("Start NimbusVault.bat", "Stop NimbusVault.bat", "Start NimbusVault
              "Stop NimbusVault AWS.bat", "NimbusVault Status.bat"):
     assert (ROOT / "code" / name).is_file(), name
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
+allowed_roots = set(REQUIRED) - {".github/workflows"}
+allowed_roots.update((".github", ".gitattributes", ".gitignore", "LICENSE", "LICENSE.template", "Makefile", "README.md", "mkdocs.yml", "pyproject.toml", "uv.lock"))
 for name in filter(None, files):
+    assert name.split("/")[0] in allowed_roots, "Unexpected root item: " + name
     path = Path(name)
     assert not any(p in path.parts for p in ("node_modules", ".venv", ".runtime", ".private-backup")), name
     assert path.suffix.lower() not in (".gguf", ".safetensors", ".exe", ".dll", ".db", ".sqlite", ".lnk"), name

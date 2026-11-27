@@ -58,7 +58,9 @@ export default defineConfig({
     {
       command: 'npx vite preview --port 4173 --strictPort',
       cwd: '../frontend',
-      url: `http://localhost:${WEB_PORT}`,
+      // Exercise the proxy as well as the HTML shell before starting browser tests.
+      url: `http://localhost:${WEB_PORT}/api/v1/health/ready`,
+      env: { API_PROXY_TARGET: `http://127.0.0.1:${API_PORT}` },
       reuseExistingServer: !process.env.CI,
     },
   ],

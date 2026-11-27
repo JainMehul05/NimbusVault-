@@ -27,6 +27,9 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.internal import app  # noqa: E402
 from app import llm  # noqa: E402
+from app.benchmark_guard import install as install_aws_guard  # noqa: E402
+
+aws_evidence = install_aws_guard()
 
 raw_outputs = []
 original_generate = llm.generate
@@ -55,6 +58,7 @@ report = {
     "actual_model": settings.llm_model,
     "isolated_local_only": True,
     "aws_calls": 0,
+    "aws_sdk_instrumentation": aws_evidence,
     "cases": [],
 }
 output = root / args.output

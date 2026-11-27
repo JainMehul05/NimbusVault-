@@ -5,11 +5,17 @@ import boto3
 from botocore.config import Config
 from .config import settings
 from . import cost_guard
+from .aws_metrics import record_vector_query
 
 
 @lru_cache
 def session():
-    return boto3.Session(profile_name=settings.aws_profile, region_name=settings.aws_region)
+    sdk_session = boto3.Session(
+        profile_name=settings.aws_profile if settings.aws_auth_mode == 'profile' else None,
+        region_name=settings.aws_region,
+    )
+    sdk_session.events.register('before-call.s3vectors.QueryVectors', record_vector_query)
+    return sdk_session
 
 
 @lru_cache

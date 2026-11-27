@@ -1,0 +1,7 @@
+FROM pgvector/pgvector:pg16-trixie@sha256:c28c0b700f3f1b5eec14082b31ad6e7c8a566d14386323609c615315e7c0ffc8
+USER root
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* \
+    && rm -f /usr/local/bin/gosu
+# Compose runs PostgreSQL directly as its unprivileged owner. The root-only gosu
+# entrypoint branch is intentionally unavailable in this production image.
+USER postgres

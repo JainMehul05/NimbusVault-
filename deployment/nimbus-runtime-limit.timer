@@ -1,0 +1,12 @@
+[Unit]
+Description=Independent bounded EC2 runtime safeguard
+
+[Timer]
+# Boot-scoped, rather than application-scoped: restarting Docker cannot extend it.
+# Fifteen minutes of the proposed four-hour session are reserved for boot/draining.
+OnBootSec=3h45min
+AccuracySec=1s
+Unit=nimbus-runtime-limit.service
+
+[Install]
+WantedBy=timers.target

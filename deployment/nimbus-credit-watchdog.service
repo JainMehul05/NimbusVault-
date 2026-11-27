@@ -1,0 +1,15 @@
+[Unit]
+Description=Stop the approved demo host on credit or authorization uncertainty
+After=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/nimbusvault/deployment/credit-watchdog.py
+TimeoutStartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+# AWS CLI v2 may create cache/config directories under HOME; keep them in a
+# private writable tmpfs so a read-only filesystem cannot cause a false poweroff.
+PrivateTmp=true
+Environment=HOME=/tmp
+Environment=PATH=/usr/local/bin:/usr/bin:/bin

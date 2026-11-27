@@ -420,6 +420,7 @@ def storage_operation(p: StorageOperation):
 @app.get("/cloud/status")
 def cloud_status():
     import httpx
+    from .aws_metrics import snapshot as sdk_usage
 
     local = {
         "embedding_loaded": engine.model is not None,
@@ -458,6 +459,7 @@ def cloud_status():
         probe = {}
     return {
         "audit": snapshot,
+        "sdk_usage": sdk_usage(),
         "native_rehearsal": proof,
         "live_probe": probe,
         "local_intelligence": local,
@@ -466,7 +468,7 @@ def cloud_status():
         else {"allowed": False, "status": "paused"},
         "local_search_default": True,
         "cloud_vectors": "not enabled for multi-user accounts",
-        "workflow": "paused until bounded rehearsal",
+        "workflow": 'unverified' if not snapshot.get('services') else 'see timestamped audit; historical state is not live health',
         "observed_at": now(),
     }
 

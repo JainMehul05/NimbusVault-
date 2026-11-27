@@ -9,6 +9,7 @@ from app import cost_guard, storage
 
 
 def test_cloud_dense_scopes_and_stale_vectors(client, monkeypatch):
+    monkeypatch.setenv('NIMBUS_LOCAL_RETRIEVAL', 'false')
     rows = [
         {"id": 1, "file_id": "a", "text": "active"},
         {"id": 2, "file_id": "b", "text": "outside scope"},
@@ -41,6 +42,7 @@ def test_cloud_dense_scopes_and_stale_vectors(client, monkeypatch):
 
 
 def test_cloud_failure_is_labeled_local_fallback(client, monkeypatch):
+    monkeypatch.setenv('NIMBUS_LOCAL_RETRIEVAL', 'false')
     class Denied:
         def query_vectors(self, **_):
             raise ClientError({"Error": {"Code": "AccessDeniedException"}}, "QueryVectors")
@@ -59,6 +61,21 @@ def test_cloud_failure_is_labeled_local_fallback(client, monkeypatch):
         diagnostic["provider"] == "local_fallback"
         and diagnostic["reason"] == "AccessDeniedException"
     )
+
+
+def test_local_dense_mode_never_constructs_a_cloud_vector_client(monkeypatch):
+    monkeypatch.setenv('NIMBUS_LOCAL_RETRIEVAL', 'true')
+
+    def forbidden(_):
+        raise AssertionError('Normal local retrieval must make zero AWS vector calls')
+
+    monkeypatch.setattr(cloud, 'client', forbidden)
+    scores, diagnostic = cloud.dense_scores(
+        [{'id': 1, 'file_id': 'synthetic', 'text': 'synthetic evidence'}],
+        np.array([[1.0, 0.0]]), np.array([1.0, 0.0]), ['synthetic'],
+    )
+    assert scores.tolist() == [1.0]
+    assert diagnostic['provider'] == 'local' and diagnostic['aws_calls'] == 0
 
 
 def test_outbox_keeps_failed_conditional_write(client, monkeypatch):
@@ -109,16 +126,20 @@ def test_real_aggregate_values_and_spa_routes(client):
     ],
 )
 def test_free_plan_guard_fails_closed(tmp_path, monkeypatch, kind, status, credits, allowed):
+    from datetime import datetime, timedelta, timezone
+
     monkeypatch.setattr(cost_guard, "ROOT", tmp_path)
     monkeypatch.setattr(cloud.settings, "data_dir", tmp_path / "data")
     monkeypatch.setattr(cost_guard, "_cached", (0.0, False))
+    monkeypatch.setattr(cost_guard, 'account_matches', lambda: True)
 
     class Billing:
         def get_account_plan_state(self):
             return {
                 "accountPlanType": kind,
                 "accountPlanStatus": status,
-                "accountPlanRemainingCredits": {"amount": credits},
+                "accountPlanRemainingCredits": {"amount": credits, "unit": "USD"},
+                "accountPlanExpirationDate": datetime.now(timezone.utc) + timedelta(days=1),
             }
 
     monkeypatch.setattr(cost_guard, "billing_client", lambda: Billing())

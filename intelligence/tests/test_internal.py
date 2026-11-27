@@ -3,6 +3,8 @@
 import base64
 import hashlib
 import json
+import os
+from pathlib import Path
 from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
@@ -183,7 +185,6 @@ def test_unapproved_cloud_and_integrity_fail_closed(private):
 
 
 def test_real_local_qwen_grounding(private):
-    from pathlib import Path
 
     client, h = private
     a = add(
@@ -203,8 +204,8 @@ def test_real_local_qwen_grounding(private):
     )
     assert response.status_code == 200, response.text
     result = response.json()
-    destination = Path(__file__).resolve().parents[2] / ".runtime/local-qwen-acceptance.json"
-    destination.parent.mkdir(exist_ok=True)
+    destination = Path(os.environ.get('NIMBUS_TEST_EVIDENCE_DIR', Path(__file__).resolve().parents[2] / '.runtime')) / 'local-qwen-acceptance.json'
+    destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(result, indent=2), encoding="utf-8")
     assert result["mode"] == "generated", result
     assert result["model"] == "qwen2.5:3b"
@@ -258,7 +259,6 @@ def test_invented_purpose_relationship_is_rejected():
 
 
 def test_real_qwen_conflicting_policies(private):
-    from pathlib import Path
 
     client, h = private
     a = add(
@@ -285,7 +285,7 @@ def test_real_qwen_conflicting_policies(private):
     assert response.status_code == 200, response.text
     result = response.json()
     (
-        Path(__file__).resolve().parents[2] / ".runtime/conflicting-policies-acceptance.json"
+        Path(os.environ.get('NIMBUS_TEST_EVIDENCE_DIR', Path(__file__).resolve().parents[2] / '.runtime')) / 'conflicting-policies-acceptance.json'
     ).write_text(json.dumps(result, indent=2), encoding="utf-8")
     assert result["mode"] == "generated", result
     assert "30" in result["answer"] and "90" in result["answer"]

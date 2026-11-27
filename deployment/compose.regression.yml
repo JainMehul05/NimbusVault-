@@ -1,0 +1,66 @@
+name: nimbusvault-ec2-regression
+services:
+  test-postgres:
+    image: pgvector/pgvector:pg16-trixie@sha256:c28c0b700f3f1b5eec14082b31ad6e7c8a566d14386323609c615315e7c0ffc8
+    environment:
+      POSTGRES_USER: nimbus_test
+      POSTGRES_PASSWORD: synthetic-test-database-only
+      POSTGRES_DB: nimbusvault_test
+    networks: [isolated-tests]
+    mem_limit: 384m
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U nimbus_test -d nimbusvault_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  test-s3:
+    image: localstack/localstack:3.5@sha256:c0d346a4b726f167e16451d01a217dfe17f07994ac30f7ab61b57aa321b3e4d6
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: us-east-1
+      DISABLE_EVENTS: "1"
+      SKIP_INFRA_DOWNLOADS: "1"
+    networks: [isolated-tests]
+    mem_limit: 768m
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://127.0.0.1:4566/_localstack/health >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  verification:
+    image: nimbusvault-ec2-verification:prepared
+    build: {context: .., dockerfile: deployment/Dockerfile.api, target: verification}
+    working_dir: /repo
+    init: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    user: node
+    mem_limit: 1536m
+    environment:
+      NODE_ENV: test
+      NODE_OPTIONS: --experimental-vm-modules --max-old-space-size=1024
+      DATABASE_URL: postgresql://nimbus_test:synthetic-test-database-only@test-postgres:5432/nimbusvault_test?schema=public
+      INTELLIGENCE_ENABLED: "false"
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: nimbusvault
+      S3_ENDPOINT: http://test-s3:4566
+      S3_FORCE_PATH_STYLE: "true"
+      LOG_LEVEL: error
+    networks: [isolated-tests]
+    depends_on:
+      test-postgres: {condition: service_healthy}
+      test-s3: {condition: service_healthy}
+    command:
+      - sh
+      - -ec
+      - |
+        node -e "fetch('http://test-s3:4566/nimbusvault',{method:'PUT'}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        npm run prisma:deploy --workspace=backend
+        npm run test:backend
+        npm run test:frontend
+        npm test --workspace=infra
+networks:
+  isolated-tests: {internal: true}

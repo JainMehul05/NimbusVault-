@@ -21,9 +21,13 @@ os.environ["INTERNAL_SERVICE_TOKEN"] = "synthetic-local-benchmark-private-token-
 from fastapi.testclient import TestClient  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.internal import app  # noqa: E402
+from app.benchmark_guard import install as install_aws_guard  # noqa: E402
+
+aws_evidence = install_aws_guard()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--label", required=True)
+parser.add_argument("--output", help="Report path; use /tmp on a read-only Linux runtime")
 parser.add_argument("--fresh-held-out", action="store_true")
 parser.add_argument("--independent", action="store_true")
 parser.add_argument("--modes", nargs="+", default=["semantic", "hybrid"])
@@ -46,9 +50,10 @@ report = {
     "model": settings.embedding_model,
     "isolated_local_only": True,
     "aws_calls": 0,
+    "aws_sdk_instrumentation": aws_evidence,
     "cases": [],
 }
-output = root / f"docs/SEARCH_BENCHMARK_{args.label.upper()}.json"
+output = root / args.output if args.output else root / f"docs/SEARCH_BENCHMARK_{args.label.upper()}.json"
 headers = {
     "x-service-token": os.environ["INTERNAL_SERVICE_TOKEN"],
     "x-actor-id": str(uuid5(NAMESPACE_URL, "nimbus-synthetic-benchmark/owner")),

@@ -182,7 +182,7 @@ async def generate(question, sources):
             "temperature": 0,
             "num_ctx": 6144,
             "num_predict": 950,
-            "num_thread": 4,
+            "num_thread": settings.llm_threads,
             "seed": 42,
         },
     }

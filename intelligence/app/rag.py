@@ -12,6 +12,7 @@ from .services import now
 from .retrieval import retrieve, terms
 from .embeddings import engine
 from . import llm
+from .config import settings
 
 router = APIRouter(prefix="/api/ai", tags=["Document intelligence"])
 generation_lock = asyncio.Lock()
@@ -383,7 +384,7 @@ async def ask(payload: Ask, request: Request):
                                 + " Cover EVERY explicitly requested topic using its relevant source. For a short excerpt summary cover each distinct stated control; avoid repeating one control instead of covering another. Copy complete supported sentences when useful."
                             )
                             task = asyncio.create_task(
-                                asyncio.wait_for(llm.generate(correction, sources), timeout=30)
+                                asyncio.wait_for(llm.generate(correction, sources), timeout=settings.llm_correction_timeout)
                             )
                             generated, timing = await wait_for_generation(
                                 task, request, payload.request_id

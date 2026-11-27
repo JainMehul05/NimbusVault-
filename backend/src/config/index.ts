@@ -78,6 +78,7 @@ const generationProvider = (process.env.AI_GENERATION_PROVIDER || 'none').toLowe
 export const config = {
   nodeEnv,
   port: parseInt(process.env.PORT || '3000', 10),
+  bindHost: process.env.BIND_HOST || '127.0.0.1',
   apiPrefix: normalizeApiPrefix(process.env.API_PREFIX),
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
 
@@ -97,7 +98,7 @@ export const config = {
     refreshTtlMs: parseDuration(process.env.JWT_REFRESH_EXPIRES_IN, 7 * 86_400_000),
     /** Absolute lifetime: rotation cannot extend a session past this. */
     maxAgeMs: parseDuration(process.env.SESSION_MAX_AGE, 30 * 86_400_000),
-    cookieName: 'refreshToken',
+    cookieName: process.env.REFRESH_COOKIE_NAME || 'refreshToken',
     cookieSecure: bool(process.env.COOKIE_SECURE, nodeEnv === 'production'),
     cookieSameSite: (['strict', 'lax', 'none'].includes(process.env.COOKIE_SAMESITE ?? '')
       ? process.env.COOKIE_SAMESITE
@@ -233,6 +234,7 @@ export function productionConfigProblems(c: typeof config = config): string[] {
     else if (new Set(value).size < 10) problems.push(`${name} does not look random`);
   };
   secret('JWT_ACCESS_SECRET', c.jwt.accessSecret);
+  if (!/^[A-Za-z0-9_-]+$/.test(c.session.cookieName)) problems.push('REFRESH_COOKIE_NAME must be a safe cookie name');
   secret('JWT_REFRESH_SECRET', c.jwt.refreshSecret);
   if (c.jwt.accessSecret === c.jwt.refreshSecret) problems.push('JWT secrets must differ');
   if (!c.database.url) problems.push('DATABASE_URL (or DB_HOST, DB_USER and DB_PASSWORD) is required');

@@ -4,6 +4,7 @@ import { logger } from '@common/logger';
 import prisma from '@database/prisma';
 import { aiWorker } from '@modules/ai/worker';
 import { maintenance } from '@modules/maintenance/maintenance.service';
+import { cancelActiveGenerations } from '@modules/ai/local-intelligence';
 
 const startServer = () => {
   try {
@@ -13,7 +14,7 @@ const startServer = () => {
     process.exit(1);
   }
 
-  const server = app.listen(config.port, '127.0.0.1', () => {
+  const server = app.listen(config.port, config.bindHost, () => {
     logger.info(
       { port: config.port, env: config.nodeEnv, health: `/api/${config.apiPrefix}/health` },
       'NimbusVault backend listening'
@@ -31,9 +32,14 @@ const startServer = () => {
     shuttingDown = true;
     logger.info({ signal }, 'Shutting down');
     setTimeout(() => process.exit(1), 30_000).unref();
+    // Give short requests a chance to complete, then cancel model work safely
+    // instead of leaving a disconnected answer running until forced termination.
+    const cancelTimer = setTimeout(() => void cancelActiveGenerations(), 10_000);
+    cancelTimer.unref();
     const closed = new Promise<void>((resolve) => server.close(() => resolve()));
     server.closeIdleConnections();
     await Promise.all([closed, aiWorker.stop(), maintenance.stop()]);
+    clearTimeout(cancelTimer);
     await prisma.$disconnect().catch(() => {});
     process.exit(0);
   };

@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+FROM python:3.13-slim-bookworm@sha256:f0fa218d5b06f9b9235024fa061cde2cb141f726de52134471053d2d9b5324a3 AS unpack
+RUN apt-get update && apt-get install -y --no-install-recommends zstd && rm -rf /var/lib/apt/lists/*
+COPY --from=native ollama-linux-amd64.tar.zst /archive.zst
+COPY deployment/extract-ollama-cpu.py /extract.py
+RUN python /extract.py
+
+FROM python:3.13-slim-trixie@sha256:7249d5587b78209a006dc4a3b5340678f84ea729239193aa559962cd8c1fce50
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends libgomp1 libstdc++6 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN python -m pip uninstall -y pip && python -c "import pathlib,shutil; shutil.rmtree(pathlib.Path('/usr/local/lib/python3.13/ensurepip'))"
+COPY --from=unpack /native-cpu/bin/ollama /usr/bin/ollama
+COPY --from=unpack /native-cpu/lib/ollama /usr/lib/ollama
+COPY --from=unpack /native-cpu/CPU_RUNTIME_MANIFEST.json /usr/share/ollama-cpu-manifest.json
+ENV HOME=/tmp LD_LIBRARY_PATH=/usr/lib/ollama OLLAMA_NO_CLOUD=1 OLLAMA_LLM_LIBRARY=cpu
+USER 10002:10002
+ENTRYPOINT ["/usr/bin/ollama"]
+CMD ["serve"]

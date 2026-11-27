@@ -1,0 +1,19 @@
+[Unit]
+Description=NimbusVault isolated EC2 application
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/nimbusvault
+ExecStartPre=/usr/bin/docker compose --env-file /opt/nimbusvault-private/compose.env -f deployment/compose.ec2.yml create
+ExecStartPre=/usr/bin/bash deployment/restrict-metadata.sh
+ExecStart=/usr/bin/docker compose --env-file /opt/nimbusvault-private/compose.env -f deployment/compose.ec2.yml up -d --wait --wait-timeout 240
+ExecStop=/usr/bin/docker compose --env-file /opt/nimbusvault-private/compose.env -f deployment/compose.ec2.yml stop -t 35
+TimeoutStartSec=300
+TimeoutStopSec=150
+
+[Install]
+WantedBy=multi-user.target

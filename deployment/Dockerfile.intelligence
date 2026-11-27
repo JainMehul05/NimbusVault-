@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM python:3.13-slim-trixie@sha256:7249d5587b78209a006dc4a3b5340678f84ea729239193aa559962cd8c1fce50
+WORKDIR /app
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 \
+    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 \
+    OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false
+COPY intelligence/requirements.lock /requirements.lock
+RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu -r /requirements.lock
+# pip/ensurepip are build tooling, not application dependencies. Retain all locked
+# application packages, including the pinned, current setuptools installation.
+RUN python -m pip uninstall -y pip && python -c "import pathlib,shutil; shutil.rmtree(pathlib.Path('/usr/local/lib/python3.13/ensurepip'))"
+RUN useradd --uid 10001 --create-home intelligence && mkdir -p /app/data /app/.runtime/standalone-ai/embedding-cache && chown -R 10001:10001 /app
+COPY intelligence/app /app/intelligence/app
+COPY intelligence/tests /app/intelligence/tests
+COPY intelligence/pyproject.toml /app/intelligence/pyproject.toml
+COPY benchmarks /app/benchmarks
+COPY samples/cloud-stage-canary.txt /app/samples/cloud-stage-canary.txt
+COPY scripts/benchmark-ai.py scripts/benchmark-search.py scripts/benchmark-modes.py scripts/profile-ai-startup.py /app/scripts/
+WORKDIR /app/intelligence
+USER 10001:10001
+EXPOSE 8101
+CMD ["python", "-m", "uvicorn", "app.internal:app", "--host", "0.0.0.0", "--port", "8101", "--no-access-log", "--timeout-graceful-shutdown", "25"]

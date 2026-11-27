@@ -35,7 +35,13 @@
     "docker:up": "docker compose --env-file .env -f compose.local.yml up -d --wait",
     "docker:down": "docker compose --env-file .env -f compose.local.yml stop",
     "docker:logs": "docker compose --env-file .env -f compose.local.yml logs -f",
-    "test:e2e": "npm run e2e --workspace=e2e"
+    "test:e2e": "npm run e2e --workspace=e2e",
+    "aws:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-start.ps1",
+    "aws:connect": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-connect.ps1",
+    "aws:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-status.ps1",
+    "aws:warmup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-warmup.ps1",
+    "aws:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-stop.ps1",
+    "aws:backup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-backup.ps1"
   },
   "devDependencies": {
     "husky": "^9.0.11",

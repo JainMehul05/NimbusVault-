@@ -1,0 +1,8 @@
+[Unit]
+Description=Stop this EC2 instance before its approved runtime expires
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl poweroff
+TimeoutStartSec=10

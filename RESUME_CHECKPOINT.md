@@ -1,3 +1,23 @@
+## Claude continuation — 27 November 2026 (supersedes the Codex block below)
+
+Read `CLAUDE.md` and `docs/CLAUDE_HANDOVER_STATE.md`. Local preparation is complete: the corrected 40-case Qwen replay passed 40/40 (31 generated, 9 abstentions), the 84-query search held its baseline, there are 460 Linux regression tests, the bundle was rebuilt and hash-verified, the host AWS CLI installer was fixed, and the security CVE table is complete. **No AWS resources exist or were modified.** Phase: awaiting explicit user approval of `docs/AWS_DEPLOYMENT_APPROVAL_PROPOSAL.md` (Session A, 4 h max, USD 10 cap, 20 GiB encrypted gp3). Next action: on approval, record `.runtime/aws-deployment/authorization.json` and `resource-ledger.json`, recheck the guard, upload the bundle, then provision.
+
+---
+
+## Current AWS deployment preparation — 27 November 2026
+
+Branch: `codex/aws-deployment-preparation`, based on standalone commit `2c9083696f2fe79e2cf5528f9d39cbdefbb36905` and its existing tag. The complete 2,608-line deployment request is preserved privately at `.runtime/aws-deployment/master-request.txt`. The verified Windows fallback, private databases, original recovery directories and existing AWS resources are preserved.
+
+**No new cloud mutations are authorized or performed. No instance exists yet.** Suggested one-instance/four-hour/USD10 limits are a proposal, not permission. Complete safe local preparation and read-only discovery before asking for the single consolidated authorization.
+
+Current read-only observations: FREE/ACTIVE, USD139.997874 credits; `m7i-flex.large` eligible and available in Sydney, 2 vCPU/8 GiB; Canonical Ubuntu 24.04 x86-64 AMI discovered; no existing regional EC2 instances. Authoritative private evidence: `.runtime/aws-deployment/discovery.json`. Actual rates: compute USD0.1197/hour, public IPv4 USD0.005/hour, gp3 USD0.096/GiB-month. Prior report discrepancy: 12 service checks included two SQS timeouts, not 12 successful results.
+
+Preparation in progress: separate Linux Dockerfiles/Compose; default Windows loopback/profile preserved; explicit private container service URLs; standard instance-role credential chain; expiry/currency/reserve-aware fail-closed guard (20 targeted tests passed); scoped IAM and boot-bound systemd stop safeguard being prepared. Linux images are building locally; no EC2 result may be inferred from these tests. Current status and next action are in `.runtime/aws-deployment/state.json`.
+
+Next: finish container builds, test CPU models and isolated data/auth/shutdown, complete exact resource/IAM/price/security proposal, package sanitized source, create preparation Git checkpoint, then request approval. Never replay the old rehearsal journal or copy personal AWS credentials/private data into EC2.
+
+---
+
 # NimbusVault final independent checkpoint
 
 Independent audit completed. Read `docs/INDEPENDENT_AUDIT_REPORT.md` first; it supersedes historical figures below. Current449 automated tests (296 backend/57 frontend/74 Python/22 infrastructure), real browser54+7, focused UI/access checks,84 search queries, original24/24 plus new16/16 strict Qwen cases. Active cancellation observed and passed499/no completed history/next slot; cloud-paused and model-stopped checks restored. Final app running/warmed at http://127.0.0.1:3100. `git log -1` gives final checkpoint; no push.

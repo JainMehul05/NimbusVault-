@@ -1,0 +1,9 @@
+[Unit]
+Description=Check demo credit and authorization boundaries every two minutes
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=2min
+AccuracySec=5s
+Unit=nimbus-credit-watchdog.service
+[Install]
+WantedBy=timers.target

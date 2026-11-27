@@ -7,6 +7,10 @@ import { AppError } from '@common/errors';
 import type { SearchResult, AnswerResult } from './rag.service';
 export const activeRequests = new Map<string,string>();
 const pendingStops=new Map<string,number>();
+/** Cancel only this process's registered requests during bounded service drain. */
+export async function cancelActiveGenerations() {
+  await Promise.allSettled(Array.from(activeRequests, ([requestId,userId]) => requestStop(userId,requestId)));
+}
 export async function requestStop(userId:string,requestId:string) {
   const active=activeRequests.get(requestId);
   if(active && active!==userId) throw AppError.notFound('Active request not found');

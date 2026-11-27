@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1
+ARG NODE_IMAGE=node:24-trixie-slim@sha256:4d00acb4bcc42c454c4eb801526f7ad7f772ea3bd4fd168c5cc2e384abcbb9d4
+FROM ${NODE_IMAGE} AS build
+WORKDIR /repo
+ENV ONNXRUNTIME_NODE_INSTALL=skip ONNXRUNTIME_NODE_INSTALL_CUDA=skip
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+COPY backend/package.json backend/
+COPY frontend/package.json frontend/
+COPY e2e/package.json e2e/
+COPY infra/package.json infra/
+COPY backend/prisma backend/prisma
+RUN npm ci --workspace=backend --workspace=frontend --include-workspace-root=false --no-audit --no-fund
+COPY backend backend
+COPY frontend frontend
+RUN cd backend && npx prisma generate && npm run build
+RUN cd frontend && npm run build
+
+FROM build AS verification
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
+COPY infra infra
+COPY e2e e2e
+RUN npm ci --workspace=backend --workspace=frontend --workspace=infra --include-workspace-root=false --ignore-scripts --no-audit --no-fund && cd backend && npx prisma generate
+RUN chown -R node:node /repo/frontend /repo/infra /repo/e2e
+CMD ["npm", "run", "test:backend"]
+
+FROM build AS production-deps
+RUN npm prune --omit=dev --workspace=backend --include-workspace-root=false --ignore-scripts
+RUN mkdir -p /repo/backend/node_modules
+
+FROM ${NODE_IMAGE}
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/backend
+RUN rm -rf /usr/local/lib/node_modules/npm && rm -f /usr/local/bin/npm /usr/local/bin/npx
+ENV NODE_ENV=production PORT=3100 BIND_HOST=0.0.0.0 SERVE_FRONTEND=true HOME=/tmp
+COPY --from=production-deps /repo/node_modules /app/node_modules
+COPY --from=production-deps /repo/backend/node_modules /app/backend/node_modules
+COPY --from=build /repo/backend/package.json /app/backend/package.json
+COPY --from=build /repo/backend/dist /app/backend/dist
+COPY --from=build /repo/backend/prisma /app/backend/prisma
+COPY --from=build /repo/backend/scripts/migrate.cjs /app/backend/scripts/migrate.cjs
+COPY --from=build /repo/frontend/dist /app/frontend/dist
+USER node
+EXPOSE 3100
+CMD ["node", "dist/main.js"]

@@ -4,12 +4,17 @@ export const intelligenceEnabled = () => process.env.INTELLIGENCE_ENABLED === 't
 export async function intelligence<T = unknown>(path: string, body?: unknown, actor?: string, scope: string[] = []): Promise<T> {
   const token = process.env.INTERNAL_SERVICE_TOKEN;
   if (!token || token.length < 32) throw AppError.serviceUnavailable('Private intelligence service is not configured', 'AI_PROVIDER_UNAVAILABLE');
+  const baseUrl = process.env.INTELLIGENCE_URL || 'http://127.0.0.1:8101';
+  if (!['http://127.0.0.1:8101', 'http://intelligence:8101'].includes(baseUrl)) {
+    throw AppError.serviceUnavailable('Untrusted intelligence service address', 'AI_PROVIDER_UNAVAILABLE');
+  }
   let response: Response;
-  try { response = await fetch(`http://127.0.0.1:8101${path}`, {
+  const timeoutMs = Math.min(600000, Math.max(1000, Number(process.env.INTELLIGENCE_TIMEOUT_MS) || 180000));
+  try { response = await fetch(`${baseUrl}${path}`, {
     method: body === undefined ? 'GET' : 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Service-Token': token, ...(actor ? { 'X-Actor-Id': actor, 'X-File-Scope': JSON.stringify(scope) } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(180000),
+    signal: AbortSignal.timeout(timeoutMs),
   }); } catch { throw AppError.serviceUnavailable('Private intelligence service is unavailable. Retry after startup or inspect local runtime logs.', 'AI_PROVIDER_UNAVAILABLE'); }
   if (!response.ok) {
     if(response.status===499) throw new AppError('Answer preparation interrupted',499,'AI_CANCELLED');

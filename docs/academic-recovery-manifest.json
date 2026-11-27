@@ -1,0 +1,104 @@
+{
+  "template_repository": "https://github.com/tiet-ucs503/ucs503p-202627odd-template",
+  "template_commit": "2cd8dba362da1b5178d03fe04b4f499b41525436",
+  "publication_base": "e195e9de7bc35f47ba55156751f4d6d22d64953c",
+  "recovered_files": [
+    {
+      "destination": "project-proposal/NimbusVault_Project_Proposal.pdf",
+      "historical_commit": "86264bd44be222dd7ba1d1fce63c16ca266925f2",
+      "historical_path": "project-proposal/NimbusVault_Project_Proposal.pdf",
+      "git_blob": "79298746761d429fe1509a9d0d0261bbdefdd0ae",
+      "sha256": "77e84151bf79b76d97096e8026615c8d1755b705ed78f2b556e55420cf737c70",
+      "bytes": 142225,
+      "classification": "original proposal submission"
+    },
+    {
+      "destination": "project-proposal/main (3).tex",
+      "historical_commit": "86264bd44be222dd7ba1d1fce63c16ca266925f2",
+      "historical_path": "project-proposal/main (3).tex",
+      "git_blob": "28dce9b78df5b3d49b063278bdc23d16adf958ad",
+      "sha256": "4a5272c8afc67b1757fd8157c57a2262ce53cc9985e4085d2bdc0d06f5c80eda",
+      "bytes": 27512,
+      "classification": "original proposal submission"
+    },
+    {
+      "destination": "project-report-prototype-stage/NimbusVault_Project_report.pdf",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "project-report-prototype-stage/NimbusVault_Project_report.pdf",
+      "git_blob": "79298746761d429fe1509a9d0d0261bbdefdd0ae",
+      "sha256": "77e84151bf79b76d97096e8026615c8d1755b705ed78f2b556e55420cf737c70",
+      "bytes": 142225,
+      "classification": "original prototype submission"
+    },
+    {
+      "destination": "project-report-prototype-stage/NimbusVault_Project_report.tex",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "project-report-prototype-stage/NimbusVault_Project_report.tex",
+      "git_blob": "b4e398a8a4a794aa016bfe6e8a6783562fde4475",
+      "sha256": "318520594dd0faec4d1b2e2e7aef5f27040351240b17feaad03031b39ad21be3",
+      "bytes": 28024,
+      "classification": "original prototype submission"
+    },
+    {
+      "destination": "project-proposal/revisions/2026-10-13/NimbusVault_Project_Proposal (1).pdf",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "project_proposal/NimbusVault_Project_Proposal (1).pdf",
+      "git_blob": "0faa1d81d9af1ff9bc9d91940df9d1aa7c86d032",
+      "sha256": "ee0e1b2ab30f202642dc4c4bbe020b36a28401e667d7c3dc84611c5190dc9cb9",
+      "bytes": 138486,
+      "classification": "later original proposal revision"
+    },
+    {
+      "destination": "project-proposal/revisions/2026-10-13/NimbusVault_Project_Proposal.tex",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "project_proposal/NimbusVault_Project_Proposal.tex",
+      "git_blob": "8edf2c989fbbaced3d95d66b84a1737a293d926e",
+      "sha256": "ff06d1e5180e02df73785ae4899fc195ffaa28848c54605643fe9e97939d6130",
+      "bytes": 26680,
+      "classification": "later original proposal revision"
+    },
+    {
+      "destination": "journals/template-examples/1024030xxx-bhanurekha/index.md",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "journals/1024030xxx-bhanurekha/index.md",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "classification": "historical template example; not a NimbusVault student contribution"
+    },
+    {
+      "destination": "journals/template-examples/1024030xxx-bhanurekha/w1-ticket-resolution.md",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "journals/1024030xxx-bhanurekha/w1-ticket-resolution.md",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "classification": "historical template example; not a NimbusVault student contribution"
+    },
+    {
+      "destination": "journals/template-examples/1024030xxx-vidya/index.md",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "journals/1024030xxx-vidya/index.md",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "classification": "historical template example; not a NimbusVault student contribution"
+    },
+    {
+      "destination": "journals/template-examples/1024030xxx-vidya/w1-ticket-resolution.md",
+      "historical_commit": "06bccdfafcecd75316a70b3e6c39018205d5fd65",
+      "historical_path": "journals/1024030xxx-vidya/w1-ticket-resolution.md",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "classification": "historical template example; not a NimbusVault student contribution"
+    }
+  ],
+  "missing_genuine_student_journals": [
+    "1024030021 Saras",
+    "1024030020 Mehul Jain",
+    "1024030012 Mansimar Kaur"
+  ],
+  "university_layout_prepared": true,
+  "groq_integration": "awaiting completed verified checkpoint; no unfinished changes copied"
+}

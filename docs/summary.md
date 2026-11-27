@@ -1,0 +1,24 @@
+# Navigation
+
+- [NimbusVault](index.md)
+- [Academic reports](academic-submissions.md)
+- [Team journals](journals/index.md)
+    - [Saras](journals/1024030021-saras/index.md)
+    - [Mehul Jain](journals/1024030020-mehul-jain/index.md)
+    - [Mansimar Kaur](journals/1024030012-mansimar-kaur/index.md)
+    - [Historical template examples](journals/template-examples/index.md)
+- [University-template compliance](UNIVERSITY_TEMPLATE_COMPLIANCE.md)
+- [Layout and fresh-clone guide](PUBLICATION_LAYOUT.md)
+- Application and AI
+    - [Architecture](ARCHITECTURE_FINAL.md)
+    - [API](guides/api.md)
+    - [Database](phase-0/03-Database.md)
+    - [Search benchmarks](EC2_SEARCH_BENCHMARK.md)
+    - [RAG evaluation](EC2_AI_QUALITY_EVALUATION.md)
+- AWS deployment
+    - [Public hosting](PUBLIC_DEPLOYMENT_GUIDE.md)
+    - [Architecture](AWS_DEPLOYMENT_ARCHITECTURE.md)
+    - [Deployment verification](AWS_FINAL_DEPLOYMENT_REPORT.md)
+    - [Financial safeguards](AWS_DEPLOYMENT_COST_REPORT.md)
+    - [Security](AWS_DEPLOYMENT_SECURITY.md)
+    - [University demonstration](UNIVERSITY_DEMONSTRATION_GUIDE.md)

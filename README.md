@@ -1,188 +1,91 @@
 # NimbusVault
 
-**AI-powered cloud storage and document intelligence**, built as a UCS503P university project at Thapar Institute of Engineering and Technology, Patiala.
+**UCS503P · Software Engineering Project · 2026–27 Odd Semester**
+**Department of Computer Science and Engineering, Thapar Institute of Engineering and Technology (Deemed to be University), Patiala**
 
-NimbusVault combines a React file-management interface, Express authentication and permissions, private S3 originals, and a private FastAPI intelligence service. MiniLM embeddings, BM25 and hybrid retrieval find relevant passages; Ollama runs Qwen2.5 3B to answer questions with source citations. The Windows standalone application and the Linux EC2 deployment use the same application source.
+AI-powered cloud storage and document intelligence: permission-controlled file management, semantic/BM25/hybrid search, multi-document RAG and source citations, with Windows standalone and bounded Linux EC2 hosting.
 
-**Verified public AWS address:** https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com
+## Team and supervision
 
-The public application is available **only during an explicitly authorized EC2 hosting session**. The latest deployment checkpoint records EC2 stopped; a stopped host returns a service-unavailable response. This is an AWS API Gateway HTTPS endpoint with an AWS-managed certificate. CloudFront distribution creation remains blocked by AWS account verification; no CloudFront website is claimed. See the [public deployment guide](docs/PUBLIC_DEPLOYMENT_GUIDE.md).
-
-![Actual public NimbusVault landing page](docs/evidence/public/public-landing.png)
-
-## Features
-
-- Registration and login, JWT access tokens, rotating refresh-token families, device sessions and logout/revocation.
-- Files and nested folders, uploads/downloads, rename/move, resource permissions and inheritance, sharing, bounded share links, trash and restore.
-- Permission-scoped filename, exact, dense semantic, BM25 and hybrid search.
-- Local 384-dimensional normalized `all-MiniLM-L6-v2` embeddings; SQLite vectors and FTS5 lexical retrieval.
-- Qwen2.5 3B `Q4_K_M` generation through Ollama, multi-document RAG, conversation history, follow-ups and clickable source passages.
-- Exact-quotation/source validation, one bounded correction, explicit abstention and visibly labelled extractive fallback. A fallback is not reported as genuine Qwen generation.
-- Administrator-only cloud diagnostics; ordinary cached search/Ask uses private retrieval, with a separately guarded optional S3 Vectors demonstration.
-- Public-host invite registration, quotas, rate limits and asynchronous answer jobs to accommodate API Gateway request timeouts.
-- Windows one-click launchers, Linux containers, persistent backups, bounded AWS sessions and automatic shutdown safeguards.
-
-## Architecture
-
-```mermaid
-flowchart TD
-    Browser[React browser interface] --> API[Express: identity and resource permissions]
-    API --> PG[(PostgreSQL / Prisma)]
-    API --> S3[Private S3 original documents]
-    API --> AI[Private FastAPI intelligence]
-    AI --> Index[(SQLite passages, vectors and FTS5)]
-    AI --> MiniLM[MiniLM embeddings / hybrid retrieval]
-    AI --> Qwen[Ollama / Qwen2.5 3B]
-    S3 --> Events[EventBridge / SQS / Lambda]
-    Events --> Workflow[Step Functions / DynamoDB]
-    Workflow -. outbound private reconciliation .-> AI
-    Public[AWS API Gateway HTTPS] --> Link[VPC link / Cloud Map]
-    Link --> API
-```
-
-The cloud workflow performs bounded validation/classification and metadata stages, then ends at an awaiting-local-embedding marker. Private reconciliation, embedding and Qwen generation happen separately on the application host. PostgreSQL owns user permissions; a vector match never grants access to a document.
-
-## Technology stack
-
-| Layer | Implementation |
+| Roll number | Student |
 |---|---|
-| Frontend | React, TypeScript, Vite, Tailwind CSS, React Router, Axios |
-| Application API | Node.js, Express, TypeScript, Zod, Prisma, PostgreSQL/pgvector |
-| Private intelligence | Python 3.13, FastAPI, PyTorch, Sentence Transformers, NumPy, SQLite FTS5 |
-| Generation | Ollama, Qwen2.5 3B Q4_K_M; bounded context and concurrency |
-| Runtime | Docker Compose, Windows PowerShell/batch, Linux systemd and SSM |
-| Tests | Jest, Vitest, pytest, Playwright, infrastructure assertions |
-| AWS storage/processing | S3, S3 Vectors, DynamoDB, EventBridge, SQS/DLQ, Lambda, Step Functions |
-| AWS hosting/operations | EC2, encrypted EBS, API Gateway, VPC link, Cloud Map, CloudWatch, IAM/STS, Systems Manager/Parameter Store, CloudFormation, EventBridge Scheduler |
+| 1024030021 | Saras |
+| 1024030020 | Mehul Jain |
+| 1024030012 | Mansimar Kaur |
 
-The separate CDK infrastructure project is retained as source; its existence does not mean every defined resource is deployed. CloudFront VPC-origin preparation exists, but the distribution is pending account verification. No Kubernetes, RDS, ECS, NAT gateway or load balancer is claimed as part of the accepted deployment.
+Supervisor: **Dr. Paramveer Sidhu**. Names, roll numbers and university details are preserved from the original submission; no individual contribution is inferred or fabricated.
 
-## Local installation (Windows)
+## Academic submissions and journals
 
-Prerequisites: Node.js 20+ (the workstation was validated with Node 24), Git, Docker Desktop with Linux containers, `uv` with Python 3.13, internet for first installation and sufficient disk/RAM for the models. Complete Docker Desktop/WSL first-run prompts normally.
+1. [Original project proposal](project-proposal/README.md) · [PDF](project-proposal/NimbusVault_Project_Proposal.pdf) · [LaTeX](project-proposal/main%20%283%29.tex)
+2. [Original prototype-stage report](project-report-prototype-stage/README.md) · [PDF](project-report-prototype-stage/NimbusVault_Project_report.pdf) · [LaTeX](project-report-prototype-stage/NimbusVault_Project_report.tex)
+3. [Final-report source and build instructions](project-report-final/README.md) · [existing report snapshot PDF](project-report-final/NimbusVault_Final_Project_Report.pdf)
+4. [Individual team-member journals](journals/index.md) · [Saras](journals/1024030021-saras/index.md) · [Mehul Jain](journals/1024030020-mehul-jain/index.md) · [Mansimar Kaur](journals/1024030012-mansimar-kaur/index.md)
+
+The original submissions are byte-for-byte historical recoveries. No genuine authored journal entries for these students were found; that gap is stated explicitly, while original template examples are preserved separately. The existing final report predates completed public deployment; its final revision is pending the completed Groq verification/checkpoint. This preparation must not be mistaken for final publication readiness.
+
+## Objectives and implemented features
+
+Secure storage and sharing, discoverable documents, grounded answers with citations, preserved user data, reproducible standalone operation and bounded cloud expenditure. The application includes authentication/refresh rotation, nested folders, permissions/inheritance, share links, trash/restore, MiniLM embeddings, FTS5 BM25 and hybrid ranking, Qwen2.5 3B generation, multi-document history/citations and public asynchronous answer jobs.
+
+Groq provider/quota/privacy work is ongoing in the separate active development directory. Unfinished changes are not included in this prepared publication snapshot.
+
+## Source and installation
+
+The complete application, infrastructure, tests and operation scripts are in **[code/](code/README.md)**. This is the official template's source-code folder; there is no duplicate application at repository root.
 
 ```powershell
 git clone https://github.com/JainMehul05/NimbusVault-.git
-cd NimbusVault-
-# Start Docker Desktop before first setup.
+cd NimbusVault-/code
+# Complete Docker Desktop first-run setup, then start Docker before initial installation.
 npm run setup
 ```
 
-Setup generates private random secrets, installs locked Node/Python dependencies, downloads the pinned portable Windows Ollama runtime when missing, installs/verifies Qwen2.5 3B, applies Prisma migrations and builds the application. MiniLM downloads on its first encoding and is cached inside this project. Review the generated `.env` against [.env.example](.env.example); configure your own approved AWS bucket/account/profile before expecting cloud-backed uploads or storage health to pass. Defaults keep AWS operations/writes disabled. No production data or account credentials are supplied by this repository.
+Normal local demonstration: double-click `code/Start NimbusVault.bat`, wait for readiness and MiniLM/Qwen warmup, then use http://127.0.0.1:3100. Finish with `code/Stop NimbusVault.bat`. The AWS versions and `code/NimbusVault Status.bat` are retained with their full supporting source. All advanced npm commands run from `code/`.
 
-The complete local AI assets are intentionally excluded from Git: the portable Ollama distribution, Qwen weights (about 1.9 GB), MiniLM cache and Python environment. Their installation scripts and dependency locks are included. The source does not need the original CloudVault project directory.
+The active working application at the existing standalone development directory remains in its existing layout, with its desktop shortcuts and private runtime unchanged. Only this isolated publication worktree uses the university layout. See [the layout mapping](docs/PUBLICATION_LAYOUT.md).
 
-For normal demonstrations, double-click:
+## Architecture and technology
 
-| Launcher | Action |
-|---|---|
-| **Start NimbusVault.bat** | Starts Docker Desktop if needed, waits for database/API/intelligence, checks application readiness, generates a fresh MiniLM embedding, warms Qwen and opens http://127.0.0.1:3100 |
-| **Stop NimbusVault.bat** | Drains owned services, unloads model allocations, stops only the local project database and verifies stopped state |
-| **Start NimbusVault AWS.bat** | Checks AWS identity/Free-plan credits, asks for bounded session authorization, rearms safeguards, starts the existing approved instance, verifies host/AI/public HTTPS and opens the shareable URL |
-| **Stop NimbusVault AWS.bat** | Requests graceful application/OS shutdown and verifies the existing EC2 instance is stopped |
-| **NimbusVault Status.bat** | Shows local health, AI readiness, actual AWS instance state, credits, authorized runtime and public availability |
+React/TypeScript/Vite/Tailwind → Express/Prisma/PostgreSQL for authentication and resource policy → private FastAPI/Python for extraction, chunking, normalized 384D MiniLM embeddings, SQLite vectors/FTS5, BM25/hybrid retrieval and Ollama/Qwen2.5 3B Q4_K_M RAG. Citation validation and current permissions constrain returned evidence.
 
-The batch files handle spaces in paths and keep their result windows open. Machine-specific desktop shortcuts are not distributed; use the batch files after cloning. Repeated start does not silently renew AWS authorization; repeated stop preserves data. Never operate a demonstration launcher concurrently with another deployment/test session on the same EC2 instance.
+AWS: S3/S3 Vectors, EventBridge, SQS/DLQ, Lambda, Step Functions, DynamoDB, CloudWatch, IAM/STS, Parameter Store, CloudFormation, EC2/encrypted EBS, Scheduler, API Gateway/VPC link/Cloud Map and SSM. Heavy AI inference remains on the application host, separate from bounded cloud workflow stages.
 
-Advanced commands remain available:
+**Verified AWS public address:** https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com . The application is available only during an authorized EC2 hosting session. Free-plan eligibility and credits are finite; stopped storage still consumes credits. CloudFront remains pending AWS account verification. No permanent-free-hosting claim is made.
 
-```powershell
-npm start
-npm run warmup
-npm stop
-npm run backup
-npm run build
-npm run lint
-```
+![Genuine public application interface](docs/evidence/public/public-landing.png)
 
-## AWS deployment and operation
+## Documentation and university scaffold
 
-The repository contains infrastructure, Linux Dockerfiles, native CPU Ollama extraction, installation/backup scripts, host hardening, public routing and financial safeguards. Deploying requires your own account-specific private configuration, scoped authorization and resource review. Example schemas are under [config/examples](config/examples/README.md); examples are deliberately unapproved and contain no active identifiers or secrets. Do not run provisioning/rehearsal scripts just because they are present.
-
-For the existing approved deployment, use the AWS launchers or:
-
-```powershell
-npm run aws:start -- --hours 2
-npm run aws:warmup
-npm run aws:status
-npm run aws:url
-npm run aws:stop
-```
-
-AWS startup verifies the expected account, an active/unexpired Free plan, credit currency/reserve and a bounded session (at most four hours). It asks for explicit **YES**, writes absolute deadline/credit tags, replaces the independent stop schedule and checks host runtime/deadline/watchdog timers. Missing approval, uncertain credit state or failed readiness fails closed. Credentials use the normal local AWS provider or the EC2 instance role; no access keys or live authorization manifests are in Git.
-
-See [public hosting](docs/PUBLIC_DEPLOYMENT_GUIDE.md), [deployment evidence](docs/AWS_FINAL_DEPLOYMENT_REPORT.md), [security](docs/AWS_DEPLOYMENT_SECURITY.md), [architecture](docs/AWS_DEPLOYMENT_ARCHITECTURE.md), and the [university demonstration guide](docs/UNIVERSITY_DEMONSTRATION_GUIDE.md). Earlier Session A/manual-SSM instructions are historical; Session B public operation supersedes them.
-
-## Security and preservation
-
-Express derives the current readable-file scope; private FastAPI authenticates the internal service token and validates actor/scope. Citations and history are rechecked against current permissions. Passwords are hashed; refresh rotation, CSRF/CORS, origin protection and public quotas are enforced. PostgreSQL, FastAPI and Ollama are not public endpoints. Cloud uploads require the account guard and write authorization; the native event pipeline stays disabled outside approved windows.
-
-Local startup/stop preserves the database volumes, documents and conversation history. Backups, private SQLite/PostgreSQL data, AWS caches, invitation codes, credentials and model distributions are excluded from Git. The donor project's private data and recovery copies are not included or imported automatically. Retained source and license notices credit the CloudVault integration.
-
-Residual risks remain: the retained container scan reports 23 distinct HIGH/CRITICAL CVE identifiers, including one scanner-critical PostgreSQL libxml2 finding with no stable fix in the assessed image. Prompt-injection checks and permission tests cover finite cases; they do not prove universal safety. The application is an academic demonstration, not a production security certification.
-
-## Verification and measured performance
-
-These are retained, scoped results, not newly rerun cloud benchmarks during repository publication:
-
-| Check | Recorded result |
-|---|---|
-| Latest Session B local regressions | Backend 309, frontend 60, Python 83 plus two Windows real-Qwen tests, infrastructure 22 |
-| Public browser checks | 54 responsive route/viewport checks and seven workflows |
-| Search regression | 84 synthetic queries: 69 positive, 15 negative; hybrid top-1 69/69, negative rejection 15/15, mean Recall@3 98.55%, MRR 1.0, zero tested scope leaks |
-| Strict Qwen evaluation | 40/40: 31 genuine generated answers and nine correct abstentions; retained Session A run, not repeated after the Session B async transport change |
-| EC2 performance | About 40–46 s to application readiness; roughly 31 s warm answers and 70.7 s first answer in the recorded CPU run |
-| Preservation/lifecycle | Stop/start persistence, recoverable database restore, graceful cancellation and live watchdog/Scheduler stops documented |
-
-The search corpus was used during development; it is not an untouched holdout. Latencies depend on hardware, caching and request path. No coverage percentage, universal accuracy or equivalence between laptop GPU and EC2 CPU is asserted.
-
-Useful local checks (integration suites require isolated test resources):
-
-```powershell
-npm run build
-npm run lint
-npm run test:frontend
-npm test --workspace=infra
-intelligence\.venv\Scripts\python.exe scripts/test-launcher-aws.py
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-launcher-docker.ps1
-```
-
-Backend/database suites must use disposable test databases and LocalStack as described in the test configuration; never redirect them at personal application data or live AWS. Expensive AI benchmarks are opt-in and retain frozen expected outputs.
-
-## Project structure
+This organization follows [the official UCS503P template](https://github.com/tiet-ucs503/ucs503p-202627odd-template): three separate LaTeX submissions, `code/`, `docs/`, individual `journals/`, root `assets/`, MkDocs, Makefile, pyproject and GitHub Actions.
 
 ```text
-backend/                 Express API, Prisma migrations and tests
-frontend/                React application and UI tests
-intelligence/            Private FastAPI, extraction/retrieval/RAG and tests
-infrastructure/          Existing CloudFormation and Lambda processing source
-infra/                   CDK definitions and infrastructure tests
-deployment/              Linux containers, host setup and shutdown safeguards
-scripts/                 Windows/local/AWS setup, operation and verification
-benchmarks/               Synthetic retrieval and AI fixtures
-config/examples/          Non-secret, unapproved configuration schemas
-docs/                    Current guides, evidence and labelled history
-reports/final_project_report/  Completed academic report source/PDF snapshot
-*.bat                    Five Windows demonstration launchers
+.github/workflows/                 Application CI and university documentation
+assets/                            TIET/template assets and styles
+code/                              Complete application and infrastructure
+  backend/ frontend/ intelligence/
+  deployment/ infrastructure/ infra/
+  scripts/ e2e/ benchmarks/ config/
+docs/                              Technical documentation and recovery evidence
+journals/                          Team recovery-status pages and historical examples
+project-proposal/                  Exact original proposal and later original revision
+project-report-prototype-stage/    Exact original prototype submission
+project-report-final/              Final report source/assets; verified update pending
+Makefile  pyproject.toml  uv.lock   Reproducible documentation build
+mkdocs.yml  .gitignore  LICENSE    University scaffold and publication protections
 ```
 
-## Costs and limitations
+Install `uv`, then run `make docs` for a local site or `make docbuild` to build it. Direct Windows equivalent: `uv run --locked --extra docs mkdocs serve`. Assets, journals and report downloads are published virtually during the documentation build; no symlinks or duplicate application tree are required. The workflow supports the actual default branch, `main`. GitHub Pages deployment requires Settings → Pages → GitHub Actions and repository variable `ENABLE_GITHUB_PAGES=true`; no paid service or forced history update is used.
 
-Recorded Sydney rates are approximately USD 0.1197/hour for compute, USD 0.005/hour for in-use IPv4 and USD 0.096/GiB-month for gp3. Retained 30 GiB storage is about USD 2.88/month even while stopped. API Gateway, Cloud Map and other requests/storage have separate usage costs. These are documented estimates, not a bill or a permanent-free-hosting promise; verify current rates before a new deployment. Free-plan credits and eligibility expire, billing can lag, and timers are operational safeguards rather than a hard billing cap.
+- [Template comparison and recovery status](docs/UNIVERSITY_TEMPLATE_COMPLIANCE.md)
+- [Architecture](docs/ARCHITECTURE_FINAL.md), [API](docs/guides/api.md), [database](docs/phase-0/03-Database.md)
+- [Public deployment](docs/PUBLIC_DEPLOYMENT_GUIDE.md), [AWS verification](docs/AWS_FINAL_DEPLOYMENT_REPORT.md), [demonstration](docs/UNIVERSITY_DEMONSTRATION_GUIDE.md)
+- [Security](docs/AWS_DEPLOYMENT_SECURITY.md), [costs](docs/AWS_DEPLOYMENT_COST_REPORT.md), [search](docs/EC2_SEARCH_BENCHMARK.md), [RAG evaluation](docs/EC2_AI_QUALITY_EVALUATION.md)
 
-Public registration requires a private invitation code. CPU generation is deliberately single-concurrency and can be slow. OCR, permanent purge, arbitrary public-model endpoints, large-scale load testing and distributed high availability are not accepted capabilities. CloudFront is pending AWS account verification. The optional Groq key-storage helper stores a key privately; it does not establish a verified Groq application integration.
+## Verification and limitations
 
-## Documentation and academic report
+Retained Session B results: backend 309, frontend 60, Python 83 plus two Windows real-Qwen tests, infrastructure 22; public browser 54 route/viewport checks plus seven workflows. The 84-query hybrid search regression achieved 69/69 positive top-1 and 15/15 negative rejection; the retained 40-case Qwen run accepted 31 genuine generated answers and nine abstentions. These are finite development/regression results, not universal accuracy or an independent holdout. Later Groq results must come from its completed verification, not inference from these earlier benchmarks.
 
-- [Architecture and source mapping](docs/ARCHITECTURE_FINAL.md)
-- [Standalone independence and recovery](docs/STANDALONE_VERIFICATION_REPORT.md)
-- [Measured search](docs/EC2_SEARCH_BENCHMARK.md), [Qwen evaluation](docs/EC2_AI_QUALITY_EVALUATION.md), [performance](docs/EC2_PERFORMANCE_REPORT.md)
-- [Public deployment guide](docs/PUBLIC_DEPLOYMENT_GUIDE.md) and [demonstration guide](docs/UNIVERSITY_DEMONSTRATION_GUIDE.md)
-- [Publication audit](docs/GITHUB_PUBLICATION_REPORT.md)
-- [Academic PDF](reports/final_project_report/NimbusVault_Final_Project_Report.pdf) and [editable LaTeX](reports/final_project_report/NimbusVault_Final_Project_Report.tex)
+CPU answer latency, single-generation concurrency, finite credits, residual container CVEs, pending CloudFront verification, missing genuine historical student journals and the pending final-report/Groq revision remain explicit limitations. Private databases/conversations, credentials, invitation codes, runtime manifests, backups, dependencies and model binaries are excluded. Dependencies/models are installed separately through the included setup procedures.
 
-The completed 70-page academic report is a **pre-deployment evidence snapshot** from November 27, 2026; its pending-EC2 statements are historical. The Session A/B deployment reports above supersede that operational status. Its sanitized typesetting sources are included; its virtual environment, raw evidence, build products and duplicate ZIP are not. Earlier `docs/phase-*`, donor notes and inactive workflow examples are labelled historical references.
-
-## Licensing
-
-CloudVault-derived code retains its Apache-2.0 license and notices in `LICENSE.cloudvault` and `NOTICE.cloudvault`. The upstream NimbusVault `LICENSE` is empty, so no new blanket redistribution license is invented. Check the separate Qwen model license before redistribution or use outside its terms. Model weights and executable distributions are not bundled.
+Licensing and original attributions are described in [LICENSE](LICENSE); this repository organization does not invent a blanket application licence.

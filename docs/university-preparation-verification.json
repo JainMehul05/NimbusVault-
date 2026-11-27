@@ -1,0 +1,29 @@
+{
+  "status": "prepared locally; final publication gated on verified Groq and final-report revision",
+  "base_commit": "e195e9de7bc35f47ba55156751f4d6d22d64953c",
+  "application_build": "PASS: npm ci and Prisma generation in isolated code/; backend/frontend build",
+  "infrastructure_tests": 22,
+  "aws_launcher_safety_tests": 10,
+  "docker_launcher_mock_tests": 2,
+  "compose_configurations": [
+    "code/compose.local.yml",
+    "code/docker-compose.yml",
+    "code/deployment/compose.ec2.yml"
+  ],
+  "script_syntax": "Python, Node and PowerShell checks passed",
+  "mkdocs_build": "PASS",
+  "rendered_internal_links_checked": 3898,
+  "rendered_missing_targets": 0,
+  "original_recovered_files": 10,
+  "historical_pdf_pages": [
+    17,
+    17,
+    14
+  ],
+  "sensitive_scan": "no credential/private-runtime matches in prepared source",
+  "genuine_team_journals": "not recoverable; explicit recovery-status pages, no fabricated entries",
+  "live_aws_changes": false,
+  "active_application_relocated_or_modified": false,
+  "unfinished_groq_copied": false,
+  "final_report": "existing completed pre-deployment source/PDF preserved; revision pending verified Groq and completed public-deployment evidence"
+}

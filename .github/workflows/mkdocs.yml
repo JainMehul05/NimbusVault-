@@ -1,25 +1,41 @@
-name: Docs
-
+name: University documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'mkdocs.yml', '.github/workflows/mkdocs.yml']
+    paths: ['docs/**', 'journals/**', 'assets/**', 'project-proposal/**', 'project-report-prototype-stage/**', 'project-report-final/**', 'tools/**', 'mkdocs.yml', 'pyproject.toml', 'uv.lock', '.github/workflows/mkdocs.yml']
   pull_request:
-    paths: ['docs/**', 'mkdocs.yml', '.github/workflows/mkdocs.yml']
-
+  workflow_dispatch:
 permissions:
   contents: read
-
+concurrency:
+  group: university-docs-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
-    name: Documentation builds
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install 'mkdocs-material>=9.5,<10'
-      - name: Check documentation encoding
-        run: python -c "from pathlib import Path; [p.read_text(encoding='utf-8') for p in Path('docs').rglob('*.md')]"
-      - run: mkdocs build --site-dir /tmp/site
+        with: {python-version: '3.12'}
+      - run: pip install uv
+      - run: uv sync --locked --extra docs
+      - name: Check Markdown encoding
+        run: uv run --locked --extra docs python -c "from pathlib import Path; [p.read_text(encoding='utf-8') for d in ('docs','journals') for p in Path(d).rglob('*.md')]"
+      - run: uv run --locked --extra docs mkdocs build --clean
+      - uses: actions/upload-pages-artifact@v4
+        with: {path: site}
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ENABLE_GITHUB_PAGES == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

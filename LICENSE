@@ -1,0 +1,6 @@
+NimbusVault licensing scope
+==========================
+
+The official UCS503P documentation/template scaffold and copied template assets retain the MIT notice in LICENSE.template, copyright Raghav B. Venkataramaiyer. That notice is preserved verbatim.
+
+The historical NimbusVault application LICENSE was empty and is preserved at code/LICENSE; this repository organization does not invent a new blanket application licence. CloudVault-derived portions retain their Apache-2.0 licence and notices in code/LICENSE.cloudvault and code/NOTICE.cloudvault. Qwen and other downloaded model/runtime artefacts have their own licences and are not redistributed here. Academic submissions retain their original authorship.

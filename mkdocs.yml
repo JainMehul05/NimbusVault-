@@ -1,59 +1,91 @@
-site_name: NimbusVault
-site_description: AI-Powered Cloud Storage & Document Intelligence Platform — Project Documentation
+site_name: "NimbusVault | UCS503P | TIET Patiala"
+site_description: "NimbusVault academic reports, journals and verified application documentation"
+site_url: https://jainmehul05.github.io/NimbusVault-/
 repo_url: https://github.com/JainMehul05/NimbusVault-
-# Empty placeholder files from the project template; they would shadow the theme's directories.
-exclude_docs: |
-  /assets
-  /journals
+repo_name: JainMehul05/NimbusVault-
+edit_uri: edit/main/docs/
+
 theme:
   name: material
-  palette:
-    primary: indigo
+  custom_dir: assets/theme-overrides
+  logo: assets/tiet-logo.svg
+  favicon: assets/favicon.png
   features:
     - navigation.tabs
     - navigation.sections
+    - navigation.footer
+    - navigation.tracking
+    - navigation.top
     - content.code.copy
+    - content.tabs.link
+    - toc.integrate
+  palette:
+    primary: amber
+    accent: orange
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - tools/generate_academic_docs.py
+  - literate-nav:
+      nav_file: summary.md
+  - section-index
+  - git-revision-date-localized:
+      fallback_to_build_date: false
+      exclude:
+        - journals/**
+        - academic/**
+  - git-authors:
+      exclude:
+        - journals/**
+        - academic/**
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [code/intelligence]
+          options:
+            show_source: false
+            show_root_heading: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
 markdown_extensions:
   - tables
   - admonition
+  - abbr
+  - md_in_html
+  - attr_list
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 4
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-nav:
-  - Home: index.md
-  - Phase 0 — Planning & Architecture:
-      - SRS: phase-0/01-SRS.md
-      - Architecture: phase-0/02-Architecture.md
-      - Database Design: phase-0/03-Database.md
-      - API Contract: phase-0/04-API.md
-      - Technology Decisions: phase-0/05-Technology.md
-      - Security Design: phase-0/06-Security.md
-      - Scalability Design: phase-0/07-Scalability.md
-      - Workflow & Standards: phase-0/08-Workflow.md
-      - Testing Strategy: phase-0/09-Testing.md
-      - Team Ownership: phase-0/10-Team.md
-      - Roadmap: phase-0/11-Roadmap.md
-  - Phase 1 — Foundation Implementation:
-      - Implementation Plan: phase-1/01-phase1-implementation-plan.md
-  - Phase 4 — AI Document Intelligence:
-      - Architecture, Security & API: phase-4/ai-document-intelligence.md
-  - Guides:
-      - Status: guides/status.md
-      - Architecture: guides/architecture.md
-      - Local development: guides/local-development.md
-      - Docker: guides/docker.md
-      - Environment variables: guides/environment.md
-      - Migrations: guides/migrations.md
-      - API: guides/api.md
-      - Security: guides/security.md
-      - Troubleshooting: guides/troubleshooting.md
-  - Phase 5 — AWS:
-      - Architecture: phase-5/aws-architecture.md
-      - Deployment: phase-5/aws-deployment.md
-      - CI/CD: phase-5/ci-cd.md
-      - Operations: phase-5/operations.md
-      - Costs: phase-5/cost.md
-  - Releases:
-      - Integration report: release/integration-report.md
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - sane_lists
+
+validation:
+  nav:
+    omitted_files: info
+  links:
+    not_found: warn

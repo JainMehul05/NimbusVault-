@@ -85,6 +85,9 @@ services:
     environment:
       <<: *backend-env
       PORT: 3000
+      # Listen on the container network so nginx can reach the API.
+      # Host publication below remains restricted to 127.0.0.1.
+      BIND_HOST: 0.0.0.0
       AI_WORKER_ENABLED: "false"
       MAINTENANCE_ENABLED: "false"
     ports:

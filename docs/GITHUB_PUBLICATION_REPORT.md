@@ -37,6 +37,8 @@ Fresh publication checks passed:
 - Python parsing for 72 publishable source files (the report's optional diagram generator emits benign escape-sequence warnings).
 - README local-reference validation and Git whitespace checks.
 
+Post-push CI exposed two publication defects that were corrected without changing AWS resources: a Windows-encoded dash in `STANDALONE_VERIFICATION_REPORT.md` prevented MkDocs from decoding that page, and the legacy development Compose API inherited the standalone loopback bind address, preventing its nginx container from reaching it. Documentation is now valid UTF-8 with an explicit CI encoding check; the development API binds its container interface while host ports remain loopback-only. The complete documentation site builds locally. CI outcomes are recorded separately from retained application benchmark evidence.
+
 The prior Session B backend/Python/real-model/cloud/browser benchmarks are retained evidence, not newly rerun by this publication task. Destructive database suites were not pointed at private data, and expensive generation benchmarks were not repeated unnecessarily.
 
 The report PDF was rendered/reviewed and independently rebuilt during its creation; its local README explicitly labels the pre-deployment status snapshot. Runtime evidence, the typesetting virtual environment, raw captures and a duplicate source ZIP are excluded from publication.

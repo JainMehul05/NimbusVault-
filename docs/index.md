@@ -1,3 +1,5 @@
+> Start with the [current repository audit](FINAL_GITHUB_AUDIT.md), [AI provider status](AI_PROVIDER_STATUS.md) and [public deployment guide](PUBLIC_DEPLOYMENT_GUIDE.md). Phase documents below are historical plans and may describe superseded design decisions.
+
 # NimbusVault Documentation
 
 **NimbusVault** is an AI-powered cloud storage and document intelligence platform: secure file storage, folder organization, sharing with fine-grained controls, and an AI assistant that answers questions about your documents using Retrieval-Augmented Generation (RAG).

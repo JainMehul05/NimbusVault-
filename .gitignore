@@ -109,3 +109,6 @@ recovery-backups/
 *.synctex.gz
 /project-report-final/working/
 /project-report-final/NimbusVault_LaTeX_Source.zip
+
+# Schema migrations are source code, not private database dumps.
+!/code/backend/prisma/migrations/**/migration.sql

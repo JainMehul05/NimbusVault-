@@ -1,0 +1,9 @@
+{
+  "authoritative_remote_main": "93ff735075b3083ac14db82301753a02ab61d5c2",
+  "directories": {
+    "project-proposal": "12fd0ba50fd6de57784bd79b4721065b98b57435",
+    "project-report-final": "fca5082c1afab5e4f05112e4c3604eb337d49489",
+    "project-report-prototype-stage": "9e517f433b775b6f6dc72e70b352d4d502a1f550"
+  },
+  "policy": "Read-only owner-managed directories. Compare against latest remote main immediately before and after publication."
+}

@@ -1,0 +1,140 @@
+{
+  "published_source_baseline": "e195e9de7bc35f47ba55156751f4d6d22d64953c",
+  "application_files": 401,
+  "baseline_application_paths_accounted_for": 401,
+  "missing_application_files": [],
+  "recovered_missing_migrations": [
+    "code/backend/prisma/migrations/0_init/migration.sql",
+    "code/backend/prisma/migrations/20261123000000_security_fixes_and_ai_documents/migration.sql",
+    "code/backend/prisma/migrations/20261125000000_phase5_hardening/migration.sql"
+  ],
+  "files_with_layout_or_documentation_adaptations": [
+    {
+      "original": "CHANGELOG.md",
+      "current": "code/CHANGELOG.md"
+    },
+    {
+      "original": "CLAUDE.md",
+      "current": "code/CLAUDE.md"
+    },
+    {
+      "original": "Makefile",
+      "current": "code/Makefile"
+    },
+    {
+      "original": "README.md",
+      "current": "code/README.md"
+    },
+    {
+      "original": "config/examples/README.md",
+      "current": "code/config/examples/README.md"
+    },
+    {
+      "original": "scripts/audit-cloud-logs.py",
+      "current": "code/scripts/audit-cloud-logs.py"
+    },
+    {
+      "original": "scripts/benchmark-ai.py",
+      "current": "code/scripts/benchmark-ai.py"
+    },
+    {
+      "original": "scripts/benchmark-modes.py",
+      "current": "code/scripts/benchmark-modes.py"
+    },
+    {
+      "original": "scripts/benchmark-search.py",
+      "current": "code/scripts/benchmark-search.py"
+    },
+    {
+      "original": "scripts/build-acceptance-matrix.py",
+      "current": "code/scripts/build-acceptance-matrix.py"
+    },
+    {
+      "original": "scripts/cleanup-preview.py",
+      "current": "code/scripts/cleanup-preview.py"
+    },
+    {
+      "original": "scripts/collect-test-results.py",
+      "current": "code/scripts/collect-test-results.py"
+    },
+    {
+      "original": "scripts/platform.cjs",
+      "current": "code/scripts/platform.cjs"
+    },
+    {
+      "original": "scripts/recheck-step-functions.py",
+      "current": "code/scripts/recheck-step-functions.py"
+    },
+    {
+      "original": "scripts/rehearse-aws.py",
+      "current": "code/scripts/rehearse-aws.py"
+    },
+    {
+      "original": "scripts/verify-access-boundaries.cjs",
+      "current": "code/scripts/verify-access-boundaries.cjs"
+    },
+    {
+      "original": "scripts/verify-aws-detail.py",
+      "current": "code/scripts/verify-aws-detail.py"
+    },
+    {
+      "original": "scripts/verify-aws.py",
+      "current": "code/scripts/verify-aws.py"
+    },
+    {
+      "original": "scripts/verify-cloud-read-probes.cjs",
+      "current": "code/scripts/verify-cloud-read-probes.cjs"
+    },
+    {
+      "original": "scripts/verify-degraded.cjs",
+      "current": "code/scripts/verify-degraded.cjs"
+    },
+    {
+      "original": "scripts/verify-deployed-source.py",
+      "current": "code/scripts/verify-deployed-source.py"
+    },
+    {
+      "original": "scripts/verify-final-ui.cjs",
+      "current": "code/scripts/verify-final-ui.cjs"
+    },
+    {
+      "original": "scripts/verify-local-flows.cjs",
+      "current": "code/scripts/verify-local-flows.cjs"
+    },
+    {
+      "original": "scripts/verify-preservation.py",
+      "current": "code/scripts/verify-preservation.py"
+    },
+    {
+      "original": "scripts/verify-recovered-query.py",
+      "current": "code/scripts/verify-recovered-query.py"
+    },
+    {
+      "original": "scripts/verify-runtime-performance.cjs",
+      "current": "code/scripts/verify-runtime-performance.cjs"
+    },
+    {
+      "original": "scripts/verify-source-safety.py",
+      "current": "code/scripts/verify-source-safety.py"
+    },
+    {
+      "original": "scripts/verify-torch.py",
+      "current": "code/scripts/verify-torch.py"
+    }
+  ],
+  "module_files": {
+    "frontend": 88,
+    "backend": 116,
+    "intelligence": 27,
+    "infrastructure": 2,
+    "infra": 22,
+    "deployment": 26,
+    "scripts": 81,
+    "benchmarks": 5,
+    "e2e": 9,
+    "samples": 1,
+    "config": 5
+  },
+  "unfinished_groq_imported": false,
+  "python_source_files_parsed": 70
+}

@@ -1,3 +1,5 @@
+> Historical structural-publication record. The owner later changed the academic directories on GitHub. Current filenames and availability are documented in [Academic submissions](academic-submissions.md); this audit preserves the owner-managed trees exactly.
+
 # University publication layout and active-development mapping
 
 This repository follows the official UCS503P layout without moving the separately running working application. The authoritative development folder remains the existing standalone development directory; its desktop shortcuts, private databases, model/cache paths and AWS manifests remain there. All moves in this preparation occurred only in a separate clean Git worktree under the ignored `.runtime/university-publication/` directory.

@@ -16,3 +16,6 @@
 "journals/template-examples/1024030xxx-bhanurekha/w1-ticket-resolution.md" -text whitespace=cr-at-eol
 "journals/template-examples/1024030xxx-vidya/index.md" -text whitespace=cr-at-eol
 "journals/template-examples/1024030xxx-vidya/w1-ticket-resolution.md" -text whitespace=cr-at-eol
+
+# Keep the exact historical baseline migration, including its final blank line.
+code/backend/prisma/migrations/0_init/migration.sql whitespace=-blank-at-eof

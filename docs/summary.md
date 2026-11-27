@@ -1,6 +1,8 @@
 # Navigation
 
 - [NimbusVault](index.md)
+- [Final GitHub audit](FINAL_GITHUB_AUDIT.md)
+- [AI provider release status](AI_PROVIDER_STATUS.md)
 - [Academic reports](academic-submissions.md)
 - [Team journals](journals/index.md)
     - [Saras](journals/1024030021-saras/index.md)

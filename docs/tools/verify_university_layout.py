@@ -6,27 +6,29 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 REQUIRED = ("assets", "code", "docs", "journals", "project-proposal",
-            "project-report-prototype-stage", ".github/workflows")
+            "project-report-prototype-stage", "project-report-final", ".github/workflows")
 for name in REQUIRED:
     path = ROOT / name
     assert path.is_dir() and any(p.is_file() for p in path.rglob("*")), name
 for name in ("backend", "frontend", "intelligence", "deployment", "scripts", "infra"):
     assert not (ROOT / name).exists(), "Duplicate application at root: " + name
     assert (ROOT / "code" / name).is_dir(), name
-manifest = json.loads((ROOT / "docs/academic-recovery-manifest.json").read_text(encoding="utf-8"))
-for item in manifest["recovered_files"]:
-    data = (ROOT / item["destination"]).read_bytes()
-    assert hashlib.sha256(data).hexdigest() == item["sha256"], item["destination"]
+protected = json.loads((ROOT / "docs/protected-academic-trees.json").read_text(encoding="utf-8"))
+for name, expected in protected["directories"].items():
+    actual = subprocess.check_output(["git", "rev-parse", "HEAD:" + name], cwd=ROOT).decode().strip()
+    assert actual == expected, "Protected academic tree changed: " + name
 for name in ("Start NimbusVault.bat", "Stop NimbusVault.bat", "Start NimbusVault AWS.bat",
              "Stop NimbusVault AWS.bat", "NimbusVault Status.bat"):
     assert (ROOT / "code" / name).is_file(), name
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
 allowed_roots = set(REQUIRED) - {".github/workflows"}
 allowed_roots.update((".github", ".gitattributes", ".gitignore", "LICENSE", "LICENSE.template", "Makefile", "README.md", "mkdocs.yml", "pyproject.toml", "uv.lock"))
+for migration in ("0_init", "20261123000000_security_fixes_and_ai_documents", "20261125000000_phase5_hardening"):
+    assert "code/backend/prisma/migrations/" + migration + "/migration.sql" in files, "Missing tracked Prisma migration: " + migration
 for name in filter(None, files):
     assert name.split("/")[0] in allowed_roots, "Unexpected root item: " + name
     path = Path(name)
     assert not any(p in path.parts for p in ("node_modules", ".venv", ".runtime", ".private-backup")), name
     assert path.suffix.lower() not in (".gguf", ".safetensors", ".exe", ".dll", ".db", ".sqlite", ".lnk"), name
     assert not (path.name.startswith(".env") and not path.name.endswith(".example")), name
-print("PASS: required university folders, single code tree, ten exact historical files, launchers and tracked-file exclusions")
+print("PASS: required university folders, single code tree, owner-managed academic tree IDs, launchers and tracked-file exclusions")

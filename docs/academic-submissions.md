@@ -1,19 +1,19 @@
 # Academic submissions
 
-The two historical submissions below were recovered from genuine NimbusVault Git objects; their contents were not replaced by template examples. The original proposal and prototype PDF happen to share the same historical Git blob; that fact is retained and documented in the recovery manifest.
+These directories are managed by the project owner. The latest remote `main` is authoritative; this audit does not alter their files, names or contents. Earlier recovery records describe historical versions, not the current submissions.
 
-## Original proposal
+## Project proposal
 
-- [Original proposal PDF](academic/project-proposal/NimbusVault_Project_Proposal.pdf)
-- [Original LaTeX source](academic/project-proposal/main%20%283%29.tex)
-- [Recovery provenance and later revision](academic/project-proposal/README.md)
+- [Current proposal PDF](academic/project-proposal/NimbusVault_Project_Proposal.pdf)
+- [Current proposal LaTeX](academic/project-proposal/NimbusVault_Project_Proposal.tex)
 
-## Original prototype-stage report
+## Prototype-stage report
 
-- [Original PDF](academic/project-report-prototype-stage/NimbusVault_Project_report.pdf)
-- [Original LaTeX source](academic/project-report-prototype-stage/NimbusVault_Project_report.tex)
-- [Recovery notes](academic/project-report-prototype-stage/README.md)
+- [Current prototype PDF](academic/project-report-prototype-stage/project-report-prototype-stage.pdf)
+- [Current prototype LaTeX](academic/project-report-prototype-stage/project-report-prototype-stage.tex)
 
 ## Final report
 
-All final-report contents were removed from the current tree at the owner's request. The original proposal and prototype submissions are unchanged. Earlier final-report versions remain recoverable from Git history.
+The owner-managed `project-report-final/` currently contains only a `.gitignore`; no final PDF or LaTeX source is present. Its contents are protected and were not restored or regenerated. [View the directory on GitHub](https://github.com/JainMehul05/NimbusVault-/tree/main/project-report-final).
+
+[Protected directory tree IDs](protected-academic-trees.json) record the audit baseline. Student journals remain under `journals/`; authored historical entries were not recovered and no contributions were fabricated.

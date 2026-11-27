@@ -1,3 +1,5 @@
+> Historical structural-publication record. The owner later changed the academic directories on GitHub. Current filenames and availability are documented in [Academic submissions](academic-submissions.md); this audit preserves the owner-managed trees exactly.
+
 # Final repository preparation — 27 November 2026
 
 Status: structural publication explicitly authorized; remote verification follows the normal push. Pre-publication remote `main` was rechecked at `e195e9de7bc35f47ba55156751f4d6d22d64953c`.

@@ -1,3 +1,5 @@
+> Historical structural-publication record. The owner later changed the academic directories on GitHub. Current filenames and availability are documented in [Academic submissions](academic-submissions.md); this audit preserves the owner-managed trees exactly.
+
 # Official UCS503P template comparison and recovery
 
 Template inspected: https://github.com/tiet-ucs503/ucs503p-202627odd-template at commit `2cd8dba362da1b5178d03fe04b4f499b41525436`. Its README specifies three separate LaTeX reports, application source in `code/`, documentation in `docs/`, and one journal directory per team member. Its complete tracked tree, workflow, MkDocs configuration, Makefile, pyproject, ignore rules, licence, sample journals and report conventions were inspected.

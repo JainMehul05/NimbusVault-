@@ -1,3 +1,10 @@
+## Actual Session A outcome — 27 November 2026
+
+Approved limits: 1 × m7i-flex.large, 30 GiB encrypted gp3, ≤4 h, ≤USD 10 credits, ≥USD 10 reserve. Actual runtime ≈58 min (09:35:30–10:34 UTC incl. restart test). Live Sydney prices rechecked: USD 0.1197/h compute, 0.005/h public IPv4 (released when stopped), 0.096/GiB-month gp3.
+Estimated credit use ≈ **USD 0.13** (compute ≈0.12, IPv4 ≈0.005, EBS prorated ≈0.004; S3 temporary bundle ≈3.1 GB for <2 h, PUT/GET, Lambda 6 invocations, 1 Step Functions execution, 1 S3 Vectors query, Scheduler ≤3 invocations — all negligible). Credits read USD 139.997804 before and after (billing lag). Continuing while stopped: 30 GiB gp3 ≈ **USD 2.88/month** of credits. Out-of-pocket ₹0; plan FREE, never upgraded. Temporary S3 deployment objects deleted.
+
+---
+
 # AWS deployment cost proposal
 
 Status: preparation only; no new AWS resources provisioned. Currency is USD credit consumption, not a promise of permanently free hosting. The account was read-only verified FREE/ACTIVE with USD139.997874 remaining and plan expiry 24 May 2027. Recheck immediately before provisioning and each authorized start. The requirement remains **INR0 out of pocket**: never upgrade, join an organization, subscribe to Marketplace products or bypass a denied Free-plan operation.

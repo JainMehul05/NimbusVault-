@@ -1,6 +1,6 @@
 # NimbusVault — continuation instructions for coding agents
 
-Read `docs/CLAUDE_HANDOVER_STATE.md` first; it is the current state. Then `RESUME_CHECKPOINT.md`, then `.runtime/aws-deployment/state.json` (private, never publish).
+Read `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` first (current state: Session A complete, EC2 `i-0569d222e63fc7f36` stopped, approval expired), then `docs/CLAUDE_HANDOVER_STATE.md` for the Codex handover. Then `RESUME_CHECKPOINT.md`, then `.runtime/aws-deployment/state.json` (private, never publish).
 
 ## Architecture
 - `frontend/` React + TypeScript + Vite + Tailwind (NimbusVault branding — do not redesign).
@@ -29,6 +29,8 @@ Read `docs/CLAUDE_HANDOVER_STATE.md` first; it is the current state. Then `RESUM
 - Never copy personal AWS credentials, private DBs, conversations or `C:\Users\hp\Downloads\cloudvault-recovery-*` anywhere. Do not touch `Downloads\ip`.
 - Production OCR and permanent purge stay disabled. No GitHub push without explicit approval.
 - Leave EC2 stopped at the end of every session and verify the actual state.
+- New sessions: re-arm the `NimbusStopDeadline` tag, a new external stop schedule and host `authorized-instance.json` before `npm run aws:start` (see `docs/AWS_DEPLOYMENT_GUIDE.md`). Run host steps with `scripts/aws-ssm-run.py`.
+- EC2 cloud mode is reads on / writes off; enabling writes or the EventBridge window needs approval.
 
 ## Continuation procedure
 1. `git status`, `git log -3`, read handover + state.json.

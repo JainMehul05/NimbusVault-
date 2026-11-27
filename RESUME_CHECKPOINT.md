@@ -1,3 +1,9 @@
+## Claude — AWS Session A complete — 27 November 2026 (supersedes everything below)
+
+Read `docs/AWS_FINAL_DEPLOYMENT_REPORT.md`. Session A (`session-a-1acdcb4a`) deployed and accepted on EC2 `i-0569d222e63fc7f36` (m7i-flex.large, 30 GiB encrypted gp3, Sydney); **instance STOPPED and verified 10:34 UTC**; rule DISABLED, mapping Disabled, queue 0, DLQ 1; temporary S3 bundle objects deleted. Session A approval expired 13:25:30 UTC — **any further AWS work needs new user approval**. Resources: `.runtime/aws-deployment/resource-ledger.json`. Results: 64/64 app, 54/54 browser, search 84 at baseline, Qwen 40/40, native workflow SUCCEEDED, stop/start + backup verified; laptop regression 298/59/83/22. Next actions (all need approval): optional S3 original export; optional future demo session; optional cleanup of instance/volume/roles/SG/schedules. No GitHub push.
+
+---
+
 ## Claude continuation — 27 November 2026 (supersedes the Codex block below)
 
 Read `CLAUDE.md` and `docs/CLAUDE_HANDOVER_STATE.md`. Local preparation is complete: the corrected 40-case Qwen replay passed 40/40 (31 generated, 9 abstentions), the 84-query search held its baseline, there are 460 Linux regression tests, the bundle was rebuilt and hash-verified, the host AWS CLI installer was fixed, and the security CVE table is complete. **No AWS resources exist or were modified.** Phase: awaiting explicit user approval of `docs/AWS_DEPLOYMENT_APPROVAL_PROPOSAL.md` (Session A, 4 h max, USD 10 cap, 20 GiB encrypted gp3). Next action: on approval, record `.runtime/aws-deployment/authorization.json` and `resource-ledger.json`, recheck the guard, upload the bundle, then provision.

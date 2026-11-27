@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AppShell } from '@components/layout/AppShell'
 import { Button } from '@components/ui/Button'
 import { api } from '@services/api'
+import { useRuntimeHost, runtimeHostLabel } from '@hooks/useRuntimeHost'
 
 interface Snapshot {
   local_intelligence?: {embedding_loaded?:boolean;runtime_available?:boolean;model?:string}
@@ -28,6 +29,7 @@ export function CloudPage() {
   const [status, setStatus] = useState<Snapshot | null>(null)
   const [message, setMessage] = useState('Detailed infrastructure diagnostics require a designated administrator.')
   const [busy, setBusy] = useState(false)
+  const host = useRuntimeHost()
   async function refresh() {
     setBusy(true)
     try { const response=await api.get('/ai/cloud'); setStatus(response.data.data); setMessage('Timestamped evidence; availability is not continuously monitored.') }
@@ -42,7 +44,7 @@ export function CloudPage() {
   }
   return <AppShell title="Cloud Infrastructure" description="Private AWS storage and serverless workflows, with local search and generation.">
     <div className="grid gap-4 md:grid-cols-2">
-      <section className="border border-border bg-surface p-5"><h2 className="font-semibold">On this laptop</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">NimbusVault handles accounts, permissions and folders in PostgreSQL. MiniLM creates 384-dimensional embeddings; SQLite holds passages and vectors. Qwen2.5 3B generates grounded answers through Ollama. Normal search makes no S3 Vectors request.</p></section>
+      <section className="border border-border bg-surface p-5"><h2 className="font-semibold">{runtimeHostLabel(host)}</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">NimbusVault handles accounts, permissions and folders in PostgreSQL. MiniLM creates 384-dimensional embeddings; SQLite holds passages and vectors. Qwen2.5 3B generates grounded answers through Ollama. Normal search makes no S3 Vectors request.</p></section>
       <section className="border border-border bg-surface p-5"><h2 className="font-semibold">In AWS · Sydney</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">Original bytes use private S3. EventBridge → SQS → Lambda → Step Functions records workflow state in DynamoDB. CloudWatch, IAM API Gateway and Parameter Store support diagnostics. Existing physical resources retain their CloudVault names.</p></section>
     </div>
     <section className="mt-5 border border-border bg-surface p-5"><h2 className="font-semibold">Verification and cost controls</h2><p className="my-3 text-sm leading-6 text-muted-foreground">AWS operations fail closed unless the active Free plan and credit reserve can be verified. Event processing stays paused outside a bounded rehearsal. This local guard is not an AWS billing cap. Cloud vector demonstration uses only a configured, non-sensitive canary and grants no legacy document access.</p><div className="flex flex-wrap gap-2"><Button variant="secondary" loading={busy} onClick={refresh}>Refresh administrator snapshot</Button>{status && <Button variant="secondary" disabled={busy} onClick={vectorDemo}>Run one AWS vector fixture query</Button>}</div><p role="status" className="mt-3 text-sm text-muted-foreground">{message}</p></section>

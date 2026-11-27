@@ -52,6 +52,7 @@ services:
       BIND_HOST: 0.0.0.0
       NODE_OPTIONS: --max-old-space-size=384
       AWS_EC2_METADATA_DISABLED: "true"
+      NIMBUS_RUNTIME_HOST: ec2
     ports: ["127.0.0.1:${HOST_APP_PORT:-3100}:3100"]
     networks: [application, access]
     read_only: true

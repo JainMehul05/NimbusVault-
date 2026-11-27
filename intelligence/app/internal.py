@@ -24,6 +24,16 @@ from . import rag, storage, cost_guard, cloud
 from .services import now
 
 
+def evidence_path(name):
+    """Writable location for runtime evidence. The hardened Linux container mounts
+    /app/.runtime read-only, so evidence lives on the persistent data volume there."""
+    from .config import ROOT
+
+    if os.environ.get("RUNTIME_MODE") == "container":
+        return settings.data_dir / name
+    return ROOT / ".runtime" / name
+
+
 @asynccontextmanager
 async def lifespan(app):
     if len(os.environ.get("INTERNAL_SERVICE_TOKEN", "")) < 32:
@@ -454,7 +464,7 @@ def cloud_status():
     except (OSError, ValueError):
         pass
     try:
-        probe = json.loads((ROOT / ".runtime/app-cloud-probe.json").read_text(encoding="utf-8"))
+        probe = json.loads(evidence_path("app-cloud-probe.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         probe = {}
     return {
@@ -538,7 +548,7 @@ def probe():
         "native_log_event_count": len(logs),
         "latest_log_timestamp": max((e["timestamp"] for e in logs), default=None),
     }
-    (ROOT / ".runtime/app-cloud-probe.json").write_text(
+    evidence_path("app-cloud-probe.json").write_text(
         json.dumps(result, default=str, indent=2), encoding="utf-8"
     )
     return result
@@ -592,7 +602,7 @@ def vector_demo():
         "default_retrieval": "local",
         "does_not_grant_legacy_document_access": True,
     }
-    (ROOT / ".runtime/vector-demo-result.json").write_text(
+    evidence_path("vector-demo-result.json").write_text(
         json.dumps(proof, indent=2), encoding="utf-8"
     )
     return proof

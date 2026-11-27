@@ -1,3 +1,7 @@
+## AWS EC2 deployment (Session A, 27 Nov 2026)
+
+The full application (React/Express/PostgreSQL, FastAPI + MiniLM, Ollama + Qwen2.5 3B on CPU) runs on one encrypted, inbound-port-free `m7i-flex.large` in Sydney, reusing the existing S3/EventBridge/SQS/Lambda/Step Functions/DynamoDB stack. Private access only: `npm run aws:start`, `npm run aws:connect` → `http://127.0.0.1:3200`, `npm run aws:warmup`, `npm run aws:stop`. Each new session needs explicit approval. Results: 64/64 EC2 application checks, 54/54 browser, 84-query search at baseline, 40/40 Qwen. See `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` and `docs/UNIVERSITY_DEMONSTRATION_GUIDE.md`. The Windows standalone app (`npm start`, port 3100) is unchanged.
+
 # NimbusVault Final
 
 > Independent audit update (27 November 2026): Latest independent audit completed:449 automated passes,84-query search evaluation and40/40 strict Qwen cases. [Current report, startup, AWS evidence and limitations](docs/INDEPENDENT_AUDIT_REPORT.md). Ordinary operation remains local MiniLM/Qwen; the single cloud write rehearsal must not be replayed without fresh approval.

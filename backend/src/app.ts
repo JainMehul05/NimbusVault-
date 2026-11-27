@@ -83,6 +83,8 @@ app.get(`/api/${config.apiPrefix}/health`, (req, res) => {
   res.json(successResponse({
     status: 'ok',
     service: 'nimbusvault-backend',
+    // Public, non-sensitive: lets the UI describe where processing runs truthfully.
+    host: process.env.NIMBUS_RUNTIME_HOST === 'ec2' ? 'ec2' : 'local',
     version: process.env.APP_VERSION || process.env.npm_package_version || '1.0.0',
   }, 'NimbusVault backend running', req.requestId));
 });

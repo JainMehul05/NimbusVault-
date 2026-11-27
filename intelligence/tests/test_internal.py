@@ -594,3 +594,24 @@ def test_matching_number_does_not_validate_the_wrong_named_policy(private):
     assert validate_claims(answer, sources) == []
     answer.claims[0].text = "Policy South retains audit logs for 90 days."
     assert len(validate_claims(answer, sources)) == 1
+
+
+def test_runtime_evidence_uses_writable_data_volume_in_container(monkeypatch, tmp_path):
+    """Regression: the hardened EC2 container mounts /app/.runtime read-only."""
+    from app import internal
+    from app.config import ROOT, settings
+
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
+    monkeypatch.setenv("RUNTIME_MODE", "container")
+    assert internal.evidence_path("app-cloud-probe.json") == tmp_path / "app-cloud-probe.json"
+    monkeypatch.delenv("RUNTIME_MODE")
+    assert internal.evidence_path("vector-demo-result.json") == ROOT / ".runtime" / "vector-demo-result.json"
+
+
+def test_runtime_hint_matches_deployment(monkeypatch):
+    from app import llm
+
+    monkeypatch.delenv("RUNTIME_MODE", raising=False)
+    assert "start-ai.ps1" in llm._hint("Local runtime unavailable.", "Run scripts/start-ai.ps1; search and storage still work.")
+    monkeypatch.setenv("RUNTIME_MODE", "container")
+    assert ".ps1" not in llm._hint("Local runtime unavailable.", "Run scripts/start-ai.ps1; search and storage still work.")

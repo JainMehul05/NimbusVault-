@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useRuntimeHost, runtimeHostPhrase } from '@hooks/useRuntimeHost'
 import {
   Activity,
   ArrowRight,
@@ -41,7 +42,7 @@ const features = [
   { icon: Users, eyebrow: 'Collaboration', title: 'Share with people', body: 'Invite registered users to files or whole folders as Viewers or Editors, and change or remove access anytime.', accent: 'blue' },
   { icon: Link2, eyebrow: 'Share links', title: 'Links you control', body: 'Create view-only or download links with expiry dates, optional passwords, and download limits. Revoke in one click.', accent: 'cyan' },
   { icon: Activity, eyebrow: 'Audit trail', title: 'Activity history', body: 'See uploads, downloads, renames, moves, deletions, sign-ins, and sharing changes in one chronological, filterable timeline.', accent: 'violet' },
-  { icon: Sparkles, eyebrow: 'Document AI', title: 'Search and ask your documents', body: 'PDF, Word, Markdown, and text files are indexed for local meaning-based search and Qwen answers that cite their sources — only across documents you can access. MiniLM embeddings and Qwen generation run on your laptop; original files use private AWS S3.', accent: 'blue' },
+  { icon: Sparkles, eyebrow: 'Document AI', title: 'Search and ask your documents', body: 'PDF, Word, Markdown, and text files are indexed for local meaning-based search and Qwen answers that cite their sources — only across documents you can access. MiniLM embeddings and Qwen generation run __HOST__; original files use private AWS S3.', accent: 'blue' },
 ]
 
 const docs = [
@@ -247,6 +248,7 @@ export default function LandingPage() {
     pageRef.current?.style.setProperty('--pointer-y', `${y.toFixed(3)}`)
   }
 
+  const host = useRuntimeHost()
   const navItems = [
     ['#features', 'Features'],
     ['#collaboration', 'Collaboration'],
@@ -336,7 +338,7 @@ export default function LandingPage() {
                 <div className="feature-icon"><feature.icon size={19} /></div>
                 <div className="feature-label">{feature.eyebrow}</div>
                 <h3>{feature.title}</h3>
-                <p>{feature.body}</p>
+                <p>{feature.body.replace('__HOST__', runtimeHostPhrase(host))}</p>
               </article>
             ))}
           </div>

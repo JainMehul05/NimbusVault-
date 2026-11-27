@@ -1,3 +1,5 @@
+> **Deployed 27 Nov 2026 (Session A).** As-built diagram, networks and evidence: `AWS_FINAL_DEPLOYMENT_REPORT.md` §3 and `AWS_CLOUD_ACCEPTANCE_MATRIX.md`. Differences from the plan below: 30 GiB volume (user choice), AWS CLI v2 installed with signature check, absolute tag-based deadline added, sshd disabled, thin patch layers for the evidence-path and EC2-label fixes.
+
 # Prepared AWS architecture — not yet provisioned
 
 One proposed `m7i-flex.large` in Sydney, official Canonical Ubuntu 24.04 x86-64, encrypted 30 GiB gp3, an existing default VPC/public subnet, no inbound security-group rules and outbound HTTPS. A temporary automatically assigned IPv4 provides outbound connectivity without a NAT gateway; no Elastic IP, ALB, ECS, ECR or RDS is proposed. Actual AMI/VPC/subnet identifiers are in the private resource proposal.

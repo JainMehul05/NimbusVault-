@@ -1,6 +1,7 @@
 """Loopback-only inference. No model tools, credentials, remote APIs or cloud mutations."""
 
 import json
+import os
 import re
 import httpx
 from pydantic import BaseModel, Field
@@ -97,11 +98,11 @@ async def status():
                 m["name"] == settings.llm_model for m in response.json().get("models", [])
             )
             result["reason"] = (
-                None if result["available"] else "Model not installed. Run scripts/setup-ai.ps1."
+                None if result["available"] else _hint("Model not installed.", "Run scripts/setup-ai.ps1.")
             )
     except (httpx.HTTPError, ValueError):
-        result["reason"] = (
-            "Local runtime unavailable. Run scripts/start-ai.ps1; search and storage still work."
+        result["reason"] = _hint(
+            "Local runtime unavailable.", "Run scripts/start-ai.ps1; search and storage still work."
         )
     return result
 
@@ -205,3 +206,10 @@ async def generate(question, sources):
         )
     }
     return answer, timing
+
+
+def _hint(problem, windows_action):
+    """Operator hint matching the deployment; the EC2 container has no PowerShell scripts."""
+    if os.environ.get("RUNTIME_MODE") == "container":
+        return problem + " The server model runtime is restarting or stopped; search and storage still work."
+    return problem + " " + windows_action

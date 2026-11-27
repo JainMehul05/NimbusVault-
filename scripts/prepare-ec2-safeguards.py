@@ -29,7 +29,7 @@ policy = {'Version': '2012-10-17', 'Statement': [
 targets = [
     ('ec2:stopInstances', {'InstanceIds': ['INSTANCE_ID_AFTER_EXPLICIT_APPROVAL']}),
     ('eventbridge:disableRule', {'Name': 'cloudvault-v3-dev-uploads'}),
-    ('lambda:updateEventSourceMapping', {'UUID': outputs['MappingId'], 'Enabled': False})]
+    ('lambda:updateEventSourceMapping', {'Uuid': outputs['MappingId'], 'Enabled': False})]
 drafts = []
 for name, arn, (operation, payload) in zip(names, schedules, targets):
     drafts.append({'Name': name, 'ArnForReview': arn, 'GroupName': 'default',

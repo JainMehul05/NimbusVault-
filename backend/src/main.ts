@@ -14,6 +14,9 @@ const startServer = () => {
     process.exit(1);
   }
 
+  // Optional second listener for the CloudFront origin; requests on it must carry the origin secret.
+  const publicPort = Number.parseInt(process.env.PUBLIC_PORT || '', 10);
+  const publicServer = publicPort ? app.listen(publicPort, config.bindHost) : null;
   const server = app.listen(config.port, config.bindHost, () => {
     logger.info(
       { port: config.port, env: config.nodeEnv, health: `/api/${config.apiPrefix}/health` },
@@ -38,7 +41,9 @@ const startServer = () => {
     cancelTimer.unref();
     const closed = new Promise<void>((resolve) => server.close(() => resolve()));
     server.closeIdleConnections();
-    await Promise.all([closed, aiWorker.stop(), maintenance.stop()]);
+    const publicClosed = publicServer ? new Promise<void>((resolve) => publicServer.close(() => resolve())) : Promise.resolve();
+    publicServer?.closeIdleConnections();
+    await Promise.all([closed, publicClosed, aiWorker.stop(), maintenance.stop()]);
     clearTimeout(cancelTimer);
     await prisma.$disconnect().catch(() => {});
     process.exit(0);

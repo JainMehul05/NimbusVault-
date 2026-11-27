@@ -80,6 +80,8 @@ router.post('/cloud/vector-demo',queryLimiter,asyncHandler(async(req,res)=>{
 router.get('/status', aiController.status);
 router.post('/search', searchLimiter, validate(aiSearchSchema), aiController.search);
 router.post('/ask', queryLimiter, validate(aiAskSchema), aiController.ask);
+router.post('/ask/async', queryLimiter, validate(aiAskSchema), aiController.askAsync);
+router.get('/ask/async/:jobId', aiController.askResult);
 router.get('/files/:fileId', validate(aiFileParamsSchema), aiController.getFile);
 router.post('/files/:fileId/index', queryLimiter, validate(aiFileParamsSchema), aiController.reindex);
 router.get('/files/:fileId/text', validate(aiTextQuerySchema), aiController.getText);

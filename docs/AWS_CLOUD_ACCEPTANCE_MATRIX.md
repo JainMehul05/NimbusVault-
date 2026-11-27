@@ -1,3 +1,14 @@
+## Session B additions (27 Nov 2026, UTC)
+| Service | Responsibility | Test | Result | Class |
+|---|---|---|---|---|
+| Amazon API Gateway (HTTP API `d00xx7hyr7`) | Public HTTPS entry, AWS certificate, throttling 20/40 | Public browser + API suites 11:33–12:37 | All pass; cert `*.execute-api.ap-southeast-2.amazonaws.com`; direct EC2 ports refused | Live-new |
+| API Gateway VPC link | Private path into the VPC | Every public request | Works; its SG egress only to app 8080 | Live-new |
+| AWS Cloud Map (HTTP namespace) | Resolves the EC2 private IP:8080 for the integration | Every public request | Works | Live-new |
+| Amazon CloudFront | Preferred `*.cloudfront.net` URL | VPC origin 11:09 → Deployed; distribution 11:21 | VPC origin Deployed; **distribution blocked pending AWS account verification** | Blocked |
+| EventBridge Scheduler | Session stop, idle restore, safeguard test | Test schedule 12:31:31 | StopInstances by the safety role; auto-deleted | Live-new |
+| EC2 / EBS / SSM | Startup cycles and watchdog | 3 ordinary cycles; watchdog poweroff 12:25 | Ready 40–46 s; InstanceInitiatedShutdown | Live-new |
+| S3 / EventBridge / SQS / Lambda / Step Functions / DynamoDB / CloudWatch | Native workflow from the public site | 11:58:01–11:58:55 | SUCCEEDED; job → searchable; 21 log events; idle restored | Live-new |
+
 # AWS cloud acceptance matrix — Session A (27 Nov 2026, UTC)
 
 Classification: **Live-new** = newly exercised today against real AWS · **Config** = configuration read today · **Historical** = earlier evidence only · **Paused** = intentionally idle. Account IDs are redacted. 19 AWS services/resource types are listed; this is not a claim of 19 independent "products".

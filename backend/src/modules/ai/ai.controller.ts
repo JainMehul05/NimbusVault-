@@ -14,6 +14,27 @@ import { summaryService } from './summary.service';
 import { ragService } from './rag.service';
 import { isAiSupportedMimeType } from './extraction';
 import type { AiAskInput, AiSearchInput, AiTextQuery } from './ai.validation';
+import { askJobs } from './ask-jobs';
+import { assertAiDailyAllowance } from '@common/public-limits';
+
+/** Shared by the synchronous and asynchronous ask endpoints: identical permissions, grounding and audit. */
+async function runAsk(userId: string, body: AiAskInput, requestId: string) {
+  const { question, fileIds, topK, conversationId, requestId: cancelId, folderId } = body;
+  await assertAiDailyAllowance(userId);
+  const result = intelligenceEnabled()
+    ? await localIntelligence.ask(userId, question, { fileIds, topK, conversationId, requestId: cancelId, folderId })
+    : await ragService.ask(userId, question, { fileIds, topK });
+  // The question text itself is not stored in the audit log.
+  await activityLogService.logActivity(userId, 'ai_query', {
+    resourceType: 'USER',
+    resourceId: userId,
+    targetOwnerId: userId,
+    metadata: { questionChars: question.length, status: result.status, citations: result.citations.length },
+    requestId,
+  });
+  return result;
+}
+
 
 interface AuthenticatedRequest extends Request {
   user?: { userId: string; email: string; type: string };
@@ -164,17 +185,22 @@ export const aiController = {
   }),
 
   ask: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const userId = req.user!.userId;
-    const { question, fileIds, topK, conversationId, requestId, folderId } = req.body as AiAskInput;
-    const result = intelligenceEnabled() ? await localIntelligence.ask(userId,question,{fileIds,topK,conversationId,requestId,folderId}) : await ragService.ask(userId, question, { fileIds, topK });
-    // The question text itself is not stored in the audit log.
-    await activityLogService.logActivity(userId, 'ai_query', {
-      resourceType: 'USER',
-      resourceId: userId,
-      targetOwnerId: userId,
-      metadata: { questionChars: question.length, status: result.status, citations: result.citations.length },
-      requestId: req.requestId,
-    });
+    const result = await runAsk(req.user!.userId, req.body as AiAskInput, req.requestId);
     res.json(successResponse(result, 'Answer', req.requestId));
+  }),
+
+  /** Starts an answer job and returns immediately (202); the client polls askResult. */
+  askAsync: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const userId = req.user!.userId;
+    const body = req.body as AiAskInput;
+    await assertAiDailyAllowance(userId);
+    const job = askJobs.start(userId, () => runAsk(userId, body, req.requestId));
+    res.status(202).json(successResponse({ jobId: job.id, state: job.state }, 'Answer started', req.requestId));
+  }),
+
+  askResult: asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    if (!/^[0-9a-f-]{36}$/i.test(req.params.jobId)) throw AppError.notFound('Answer job not found', 'AI_JOB_NOT_FOUND');
+    const job = askJobs.get(req.user!.userId, req.params.jobId);
+    res.json(successResponse({ jobId: job.id, state: job.state, result: job.result, error: job.error }, 'Answer job', req.requestId));
   }),
 };

@@ -3,7 +3,7 @@ import { validate } from '@common/validation';
 import { authController } from './auth.controller';
 import { cookieCsrfGuard } from './auth.cookies';
 import { authenticate } from './auth.middleware';
-import { accountFailureLimiter, accountIpFailureLimiter, credentialLimiter, refreshLimiter } from './auth.limits';
+import { accountFailureLimiter, accountIpFailureLimiter, credentialLimiter, refreshLimiter, registerLimiter } from './auth.limits';
 import {
   changePasswordSchema,
   loginSchema,
@@ -24,7 +24,7 @@ router.use((_req, res, next) => {
   next();
 });
 
-router.post('/register', credentialLimiter, validate(registerSchema), authController.register);
+router.post('/register', credentialLimiter, registerLimiter, validate(registerSchema), authController.register);
 router.post(
   '/login',
   credentialLimiter,

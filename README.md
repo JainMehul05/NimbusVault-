@@ -1,8 +1,25 @@
-## AWS EC2 deployment (Session A, 27 Nov 2026)
+## Public website (Session B, 27 Nov 2026)
 
-The full application (React/Express/PostgreSQL, FastAPI + MiniLM, Ollama + Qwen2.5 3B on CPU) runs on one encrypted, inbound-port-free `m7i-flex.large` in Sydney, reusing the existing S3/EventBridge/SQS/Lambda/Step Functions/DynamoDB stack. Private access only: `npm run aws:start`, `npm run aws:connect` → `http://127.0.0.1:3200`, `npm run aws:warmup`, `npm run aws:stop`. Each new session needs explicit approval. Results: 64/64 EC2 application checks, 54/54 browser, 84-query search at baseline, 40/40 Qwen. See `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` and `docs/UNIVERSITY_DEMONSTRATION_GUIDE.md`. The Windows standalone app (`npm start`, port 3100) is unchanged.
+**https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com** — AWS-generated public HTTPS URL (API Gateway → private VPC link → EC2). Start `npm run aws:start -- --hours 2`, warm `npm run aws:warmup`, stop `npm run aws:stop`. Invite-code registration and demo accounts; see `docs/PUBLIC_DEPLOYMENT_GUIDE.md`. Available only while an authorized session runs.
 
 # NimbusVault Final
+
+## One-click demonstration on Windows
+
+Double-click **Start NimbusVault.bat** in this folder or its desktop shortcut. It starts Docker Desktop if needed, waits for the isolated PostgreSQL database and application, generates a fresh MiniLM embedding, warms Qwen, checks the actual frontend/backend/storage readiness, and opens **http://127.0.0.1:3100**. Wait for the green SUCCESS message; cold AI startup can take several minutes. Double-click **Stop NimbusVault.bat** afterward. It drains the backend/intelligence services, unloads model allocations and stops only this project's database, preserving data and leaving Docker Desktop and other projects running.
+
+For AWS, use **Start NimbusVault AWS.bat** and **Stop NimbusVault AWS.bat**. Startup checks the approved instance and AWS identity, requires an active FREE plan/credit reserve, asks for session hours and explicit **YES**, and uses the existing session controller to rearm absolute deadlines, credit safeguards and the independent stop schedule. It checks host timers, application readiness, MiniLM/Qwen warmup and the public CloudFront HTTPS endpoint before opening and printing the shareable URL. Repeating Start never silently extends a running session. Stop verifies actual EC2 `stopped`; persistent storage remains allocated.
+
+**Current deployment integration:** the approved instance exists, but its manifest does not yet contain a public CloudFront URL. The AWS launcher deliberately refuses to start it until the current public deployment work configures that endpoint. It does not provision infrastructure or replace the public URL with a private SSM address. Successful public AWS start/warmup/stop acceptance must be completed in an explicitly authorized session after that deployment.
+
+**NimbusVault Status.bat** shows local subsystem/AI readiness, AWS instance and Free-plan/credit state, remaining host runtime and public website availability. Status does not start services or renew a session. The five desktop shortcuts were created with your approval. These launchers work as a normal Windows user, keep their result window open, and handle spaces in the project path. Advanced npm commands below remain available. If you move the project, use the batch files in the new folder and recreate the desktop shortcuts.
+
+See [one-click verification and limits](docs/ONE_CLICK_LAUNCHERS_VERIFICATION.md) and the [university demonstration guide](docs/UNIVERSITY_DEMONSTRATION_GUIDE.md).
+
+## AWS EC2 deployment (Session A, 27 Nov 2026)
+
+The full application (React/Express/PostgreSQL, FastAPI + MiniLM, Ollama + Qwen2.5 3B on CPU) runs on one encrypted, inbound-port-free `m7i-flex.large` in Sydney, reusing the existing S3/EventBridge/SQS/Lambda/Step Functions/DynamoDB stack. Private access only: `npm run aws:start`, `npm run aws:connect` Ã¢â€ â€™ `http://127.0.0.1:3200`, `npm run aws:warmup`, `npm run aws:stop`. Each new session needs explicit approval. Results: 64/64 EC2 application checks, 54/54 browser, 84-query search at baseline, 40/40 Qwen. See `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` and `docs/UNIVERSITY_DEMONSTRATION_GUIDE.md`. The Windows standalone app (`npm start`, port 3100) is unchanged.
+
 
 > Independent audit update (27 November 2026): Latest independent audit completed:449 automated passes,84-query search evaluation and40/40 strict Qwen cases. [Current report, startup, AWS evidence and limitations](docs/INDEPENDENT_AUDIT_REPORT.md). Ordinary operation remains local MiniLM/Qwen; the single cloud write rehearsal must not be replayed without fresh approval.
 

@@ -1,3 +1,14 @@
+## Session B complete — 27 Nov 2026 ~12:45 UTC (supersedes everything below)
+Public URL https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com (API Gateway + VPC link + Cloud Map → EC2 private IP:8080). CloudFront blocked pending AWS Support account verification (VPC origin already Deployed). EC2 STOPPED 12:39 UTC; rule DISABLED, mapping Disabled; temporary S3 objects deleted. Startup failure (curl 56) fixed; 3 ordinary start cycles, watchdog and Scheduler stops verified live. Reports: `docs/AWS_FINAL_DEPLOYMENT_REPORT.md` (Session B section), `docs/PUBLIC_DEPLOYMENT_GUIDE.md`. A separate tool (likely Codex) added `.bat` launchers in parallel; its 11:38 UTC launcher-stop interrupted tests — never run both against EC2 at once. Next: CloudFront after verification (approval needed); optional cleanup.
+
+---
+
+## Session B planning — 27 Nov 2026 ~11:15 UTC (no AWS changes)
+
+User's later `aws:start` (10:46:43 UTC) failed: readiness curl exit 56 (connection reset from Docker port proxy 21 s after boot; curl does not retry 56) → script stopped the instance as designed. User now requires an AWS-generated public HTTPS URL (CloudFront `*.cloudfront.net`), no third-party DNS. Proposal: `docs/PUBLIC_DEPLOYMENT_PROPOSAL.md` (VPC origin first, API Gateway VPC-link fallback, async AI, public abuse limits, robust readiness, tag-based session deadlines). Fresh Trivy rescan: same 23 IDs (`.runtime/public-deployment/`). **Awaiting explicit approval + visitor-access policy choice. EC2 stopped.**
+
+---
+
 ## Claude — AWS Session A complete — 27 November 2026 (supersedes everything below)
 
 Read `docs/AWS_FINAL_DEPLOYMENT_REPORT.md`. Session A (`session-a-1acdcb4a`) deployed and accepted on EC2 `i-0569d222e63fc7f36` (m7i-flex.large, 30 GiB encrypted gp3, Sydney); **instance STOPPED and verified 10:34 UTC**; rule DISABLED, mapping Disabled, queue 0, DLQ 1; temporary S3 bundle objects deleted. Session A approval expired 13:25:30 UTC — **any further AWS work needs new user approval**. Resources: `.runtime/aws-deployment/resource-ledger.json`. Results: 64/64 app, 54/54 browser, search 84 at baseline, Qwen 40/40, native workflow SUCCEEDED, stop/start + backup verified; laptop regression 298/59/83/22. Next actions (all need approval): optional S3 original export; optional future demo session; optional cleanup of instance/volume/roles/SG/schedules. No GitHub push.

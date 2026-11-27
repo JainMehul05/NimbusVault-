@@ -1,3 +1,8 @@
+## Session B (27 Nov 2026)
+≈72 instance-minutes across 4 starts ≈ USD 0.15 (EC2 + IPv4) + API Gateway (a few thousand requests ≈ USD 0.01) + Cloud Map USD 0.10/month; the CloudFront VPC origin has no charge and no distribution exists. Public hosting rates: 1 h 0.12 · 4 h 0.50 · 8 h 1.00 · 24 h 2.99 · 30 days 24/7 ≈ 92.7 (not authorized) · stopped EBS 2.88/month. With ≈ USD 140 credits and plan expiry 24 May 2027: after ≈ USD 17 of EBS, ≈ 960 running hours remain. Credits read 139.997804 (billing lag).
+
+---
+
 ## Actual Session A outcome — 27 November 2026
 
 Approved limits: 1 × m7i-flex.large, 30 GiB encrypted gp3, ≤4 h, ≤USD 10 credits, ≥USD 10 reserve. Actual runtime ≈58 min (09:35:30–10:34 UTC incl. restart test). Live Sydney prices rechecked: USD 0.1197/h compute, 0.005/h public IPv4 (released when stopped), 0.096/GiB-month gp3.

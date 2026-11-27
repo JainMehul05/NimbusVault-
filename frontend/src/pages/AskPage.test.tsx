@@ -25,6 +25,9 @@ const citation = {
 };
 
 const ok = (data: unknown) => Promise.resolve({ data: { success: true, data } });
+/** These page tests exercise the synchronous fallback: the async job endpoint reports 404. */
+const noAsync = (impl: (url: string) => unknown) => (url: string) =>
+  (url === '/ai/ask/async' ? Promise.reject({ response: { status: 404 } }) : impl(url)) as never;
 
 function mockApi(statusData: unknown, handlers: { ask?: unknown; search?: unknown } = {}) {
   vi.mocked(api.get).mockImplementation((url: string) => {
@@ -33,11 +36,11 @@ function mockApi(statusData: unknown, handlers: { ask?: unknown; search?: unknow
     if (url.startsWith('/ai/files/')) return ok({}) as never;
     return ok({}) as never;
   });
-  vi.mocked(api.post).mockImplementation((url: string) => {
+  vi.mocked(api.post).mockImplementation(noAsync((url: string) => {
     if (url === '/ai/ask') return (handlers.ask instanceof Error ? Promise.reject(handlers.ask) : ok(handlers.ask)) as never;
     if (url === '/ai/search') return ok(handlers.search) as never;
     return ok({}) as never;
-  });
+  }));
 }
 
 const renderPage = () =>
@@ -56,13 +59,14 @@ describe('AskPage', () => {
   it('keeps conversation controls stable while generation is pending',async()=>{
     mockApi(caps());
     let resolveAsk!:(value:unknown)=>void;
-    vi.mocked(api.post).mockImplementation(()=>new Promise(resolve=>{resolveAsk=resolve}) as never);
+    vi.mocked(api.post).mockImplementation(noAsync(()=>new Promise(resolve=>{resolveAsk=resolve})));
     renderPage();
     fireEvent.change(await screen.findByLabelText(/your question/i),{target:{value:'What is the hotel cap?'}});
     fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
     expect(screen.getByRole('button',{name:'New conversation'})).toBeDisabled();
     expect(screen.getByRole('button',{name:'History'})).toBeDisabled();
     expect(screen.getByLabelText('Document folder scope')).toBeDisabled();
+    await waitFor(()=>expect(typeof resolveAsk).toBe('function'));
     await act(async()=>{resolveAsk({data:{success:true,data:{status:'insufficient_evidence',answer:null,citations:[],sourcesConsidered:0,model:null}}})});
     await waitFor(()=>expect(screen.getByRole('button',{name:'New conversation'})).toBeEnabled());
   });
@@ -70,7 +74,7 @@ describe('AskPage', () => {
   it('does not attach a late answer or conversation to a changed document scope',async()=>{
     mockApi(caps());
     let resolveAsk!:(value:unknown)=>void;
-    vi.mocked(api.post).mockImplementation(()=>new Promise(resolve=>{resolveAsk=resolve}) as never);
+    vi.mocked(api.post).mockImplementation(noAsync(()=>new Promise(resolve=>{resolveAsk=resolve})));
     render(<MemoryRouter><AuthProvider><Link to="/ask?fileId=f2">Next document</Link><AskPage /></AuthProvider></MemoryRouter>);
     fireEvent.change(await screen.findByLabelText(/your question/i),{target:{value:'Original question'}});
     fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
@@ -78,11 +82,32 @@ describe('AskPage', () => {
     await screen.findByText('Selected document only');
     await act(async()=>{resolveAsk({data:{success:true,data:{status:'answered',answer:'Late answer from the old scope.',citations:[],conversationId:'old-conversation',sourcesConsidered:0,model:'local'}}})});
     expect(screen.queryByText(/Late answer from the old scope/)).not.toBeInTheDocument();
-    vi.mocked(api.post).mockImplementation(()=>ok({status:'insufficient_evidence',answer:null,citations:[],sourcesConsidered:0,model:null}) as never);
+    vi.mocked(api.post).mockImplementation(noAsync(()=>ok({status:'insufficient_evidence',answer:null,citations:[],sourcesConsidered:0,model:null})));
     fireEvent.change(screen.getByLabelText(/your question/i),{target:{value:'New scope question'}});
     fireEvent.click(screen.getByRole('button',{name:/^ask$/i}));
     await waitFor(()=>expect(api.post).toHaveBeenLastCalledWith('/ai/ask',expect.objectContaining({question:'New scope question',conversationId:undefined,fileIds:['f2']})));
   });
+
+  it('prepares answers as a polled background job when the server supports it', async () => {
+    mockApi(caps());
+    vi.mocked(api.post).mockImplementation(((url: string) =>
+      url === '/ai/ask/async' ? ok({ jobId: '11111111-1111-4111-8111-111111111111', state: 'running' }) : ok({})) as never);
+    let polls = 0;
+    vi.mocked(api.get).mockImplementation(((url: string) => {
+      if (url === '/ai/status') return ok(caps());
+      if (url.startsWith('/ai/ask/async/')) {
+        polls += 1;
+        return ok(polls < 2 ? { state: 'running' } : { state: 'done', result: { status: 'answered', answer: 'Polled answer about hotels [S1].', citations: [citation], sourcesConsidered: 1, model: 'local' } });
+      }
+      return ok({});
+    }) as never);
+    renderPage();
+    fireEvent.change(await screen.findByLabelText(/your question/i), { target: { value: 'What is the hotel cap?' } });
+    fireEvent.click(screen.getByRole('button', { name: /^ask$/i }));
+    expect(await screen.findByText(/Polled answer about hotels/, {}, { timeout: 8000 })).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledWith('/ai/ask/async', expect.objectContaining({ question: 'What is the hotel cap?' }));
+    expect(polls).toBeGreaterThanOrEqual(2);
+  }, 12000);
 
   it('explains when AI is not configured instead of showing fake results', async () => {
     mockApi(caps({ enabled: false, features: { indexing: false, semanticSearch: false, summaries: false, questionAnswering: false, ocr: false } }));

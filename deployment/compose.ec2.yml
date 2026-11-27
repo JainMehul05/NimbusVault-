@@ -53,7 +53,9 @@ services:
       NODE_OPTIONS: --max-old-space-size=384
       AWS_EC2_METADATA_DISABLED: "true"
       NIMBUS_RUNTIME_HOST: ec2
-    ports: ["127.0.0.1:${HOST_APP_PORT:-3100}:3100"]
+    # 3100: private administration (SSM). 3101: CloudFront VPC-origin listener, published only on
+    # the instance private IP; it rejects requests without the distribution's secret header.
+    ports: ["127.0.0.1:${HOST_APP_PORT:-3100}:3100", "${PUBLIC_BIND_IP:-127.0.0.1}:8080:3101"]
     networks: [application, access]
     read_only: true
     tmpfs: ["/tmp:size=128m,mode=1777"]

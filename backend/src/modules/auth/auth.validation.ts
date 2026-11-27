@@ -21,6 +21,7 @@ export const registerSchema = z.object({
     name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name too long'),
     email: emailSchema,
     password: newPasswordSchema,
+    inviteCode: z.string().trim().max(128).optional(),
   }),
 });
 

@@ -91,6 +91,36 @@ export interface Passage {
 
 const data = <T,>(p: Promise<{ data: ApiResponse<T> }>) => p.then((r) => r.data.data as T);
 
+
+/**
+ * Answers are prepared as a background job and polled, so slow CPU inference is never cut off by
+ * CloudFront or proxy time limits. Falls back to the synchronous endpoint on older servers.
+ */
+const ASK_POLL_MS = 2000
+const ASK_MAX_WAIT_MS = 10 * 60 * 1000
+async function askAsync(body: Record<string, unknown>): Promise<AnswerResult> {
+  let jobId: string
+  try {
+    const started = await api.post('/ai/ask/async', body)
+    jobId = started.data.data.jobId
+  } catch (error) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) return data<AnswerResult>(api.post('/ai/ask', body))
+    throw error
+  }
+  const deadline = Date.now() + ASK_MAX_WAIT_MS
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, ASK_POLL_MS))
+    const poll = await api.get(`/ai/ask/async/${jobId}`)
+    const job = poll.data.data as { state: string; result?: AnswerResult; error?: { status: number; code: string; message: string } }
+    if (job.state === 'done') return job.result as AnswerResult
+    if (job.state === 'error') {
+      // Shaped like an Axios error so existing error handling (cancellation 499, 409, 429) is unchanged.
+      throw { response: { status: job.error?.status ?? 500, data: { success: false, message: job.error?.message, error: { code: job.error?.code } } } }
+    }
+  }
+  throw { response: { status: 504, data: { success: false, message: 'The answer took too long. Try again or ask a narrower question.', error: { code: 'AI_TIMEOUT' } } } }
+}
+
 export const aiApi = {
   status: () => data<AiCapabilities>(api.get('/ai/status')),
   document: (fileId: string) => data<AiDocument>(api.get(`/ai/files/${fileId}`)),
@@ -103,7 +133,7 @@ export const aiApi = {
   summarize: (fileId: string) => data<AiDocument['summary']>(api.post(`/ai/files/${fileId}/summary`)),
   search: (query: string, opts: { limit?: number; fileIds?: string[]; mode?: string;folderId?:string;category?:string } = {}) =>
     data<{ results: SearchResult[]; model: string;retrievalMs?:number;resultCount?:number }>(api.post('/ai/search', { query, ...opts })),
-  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string;folderId?:string } = {}) => data<AnswerResult>(api.post('/ai/ask', { question, ...opts })),
+  ask: (question: string, opts: { fileIds?: string[]; conversationId?: string; requestId?: string;folderId?:string } = {}) => askAsync({ question, ...opts }),
   cancel: (requestId: string) => api.post('/ai/cancel', { requestId }),
   conversations: () => data<Array<{ id: string; title: string }>>(api.get('/ai/conversations')),
   conversation: (id: string) => data<{exchanges:Array<{question:string;response:AnswerResult}>}>(api.get(`/ai/conversations/${id}`)),

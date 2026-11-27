@@ -17,6 +17,7 @@ import { aiIndexingService } from '@modules/ai/indexing.service';
 import { fileService } from './files.service';
 import { uploadService } from './uploads.service';
 import type { FileUploadInput, FileListQuery, FileDownloadQuery, FilePresignedUploadInput } from './files.validation';
+import { assertUploadAllowed } from '@common/public-limits';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -114,6 +115,7 @@ export const filesController = {
     }
 
     const size = BigInt(file.size);
+    await assertUploadAllowed(target.ownerId, filename, size);
     await fileService.reserveQuota(target.ownerId, size, requestId);
 
     // Upload to storage

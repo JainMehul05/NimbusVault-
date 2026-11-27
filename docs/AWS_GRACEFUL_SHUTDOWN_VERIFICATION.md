@@ -1,3 +1,8 @@
+## Session B: startup repair and restart cycles
+The old readiness failure was reproduced (exit 56 during API start) and fixed (`deployment/ec2-ready.sh`). Ordinary cycles 40 / 45 / 46 s; `aws:stop` 28 s with session closure; watchdog-initiated shutdown on expired authorization (34 s); external Scheduler stop of a running instance; the public URL returns 503 while stopped and works unchanged after restart.
+
+---
+
 # Graceful shutdown and restart on EC2
 
 | Test (27 Nov 2026, UTC) | Result |

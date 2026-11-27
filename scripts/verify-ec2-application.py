@@ -8,6 +8,7 @@ Stages (run in order, state kept privately in .runtime/aws-deployment/ec2-accept
 Each stage appends evidence to ec2-application.json. Uses only synthetic accounts and documents.
 """
 import hashlib
+import os
 import http.cookiejar
 import json
 import secrets
@@ -20,10 +21,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIVATE = ROOT / '.runtime/aws-deployment'
-ORIGIN = 'http://127.0.0.1:3200'
+ORIGIN = os.environ.get('NIMBUS_ORIGIN', 'http://127.0.0.1:3200').rstrip('/')
 BASE = ORIGIN + '/api/v1'
 STATE = PRIVATE / 'ec2-acceptance-state.json'
-REPORT = PRIVATE / 'ec2-application.json'
+REPORT = PRIVATE / os.environ.get('NIMBUS_REPORT', 'ec2-application.json')
 state = json.loads(STATE.read_text()) if STATE.exists() else {'users': {}, 'files': {}}
 report = json.loads(REPORT.read_text()) if REPORT.exists() else {
     'environment': 'actual_ec2_application_via_ssm_port_forwarding', 'checks': {}, 'measurements': {}}
@@ -117,12 +118,13 @@ def stage_accounts():
     s, b, h = call('OPTIONS', '/files', headers={'Origin': 'http://evil.example', 'Access-Control-Request-Method': 'GET'})
     check('cors_denies_foreign_origin', 'http://evil.example' not in str(h.get('Access-Control-Allow-Origin')), h.get('Access-Control-Allow-Origin'))
     token, opener, jar = login('owner')
-    s, b, _ = call('POST', '/folders', {'name': 'EC2 Acceptance'}, token=token)
+    suffix = uuid.uuid4().hex[:5]
+    s, b, _ = call('POST', '/folders', {'name': f'EC2 Acceptance {suffix}'}, token=token)
     parent = b['data']['id']
-    s2, b2, _ = call('POST', '/folders', {'name': 'Nested Evidence', 'parentId': parent}, token=token)
+    s2, b2, _ = call('POST', '/folders', {'name': f'Nested Evidence {suffix}', 'parentId': parent}, token=token)
     check('nested_folder_creation', s == 201 and s2 == 201, [s, s2])
-    state['folders'] = {'parent': parent, 'child': b2['data']['id']}
-    s, b, _ = call('PATCH', f'/folders/{parent}/rename', {'name': 'EC2 Acceptance Folder'}, token=token)
+    state.setdefault('folders', {'parent': parent, 'child': b2['data']['id']})
+    s, b, _ = call('PATCH', f'/folders/{parent}/rename', {'name': f'EC2 Acceptance Folder {suffix}'}, token=token)
     check('folder_rename', s == 200, s)
     other, _, _ = login('other')
     s, _, _ = call('GET', f'/folders/{parent}/contents', token=other)
@@ -140,6 +142,8 @@ def stage_accounts():
 DOCUMENTS = {
     # Hash-approved fixture: the only content the cloud worker may extract (Lambda allowlist).
     'canary': ('owner', 'cloud-stage-canary.txt', (ROOT / 'samples/cloud-stage-canary.txt').read_bytes(), 'child'),
+    # Same approved fixture bytes (allow-listed hash), uploaded fresh through the public website.
+    'canary_public': ('owner', 'cloud-stage-canary-public.txt', (ROOT / 'samples/cloud-stage-canary.txt').read_bytes(), 'child'),
     'docB': ('owner', 'session-a-acceptance-note.txt', (
         'NimbusVault Session A acceptance note.\n'
         'The Session A deployment runs on a single m7i-flex.large instance in the Sydney region.\n'
@@ -203,8 +207,23 @@ def ask(token, question, file_ids=None, conversation=None):
     if conversation:
         body['conversationId'] = conversation
     started = time.time()
-    s, b, _ = call('POST', '/ai/ask', body, token=token, timeout=600)
-    return s, (b.get('data') if isinstance(b, dict) else None), round(time.time() - started, 2)
+    if os.environ.get('NIMBUS_ASYNC_ASK') != '1':
+        s, b, _ = call('POST', '/ai/ask', body, token=token, timeout=600)
+        return s, (b.get('data') if isinstance(b, dict) else None), round(time.time() - started, 2)
+    # Public path: start a job and poll, exactly as the browser does.
+    s, b, _ = call('POST', '/ai/ask/async', body, token=token)
+    if s != 202:
+        return s, (b.get('data') if isinstance(b, dict) else None), round(time.time() - started, 2)
+    job = b['data']['jobId']
+    while time.time() - started < 600:
+        time.sleep(2)
+        s, b, _ = call('GET', f'/ai/ask/async/{job}', token=token)
+        d = b.get('data', {}) if isinstance(b, dict) else {}
+        if d.get('state') == 'done':
+            return 200, d.get('result'), round(time.time() - started, 2)
+        if d.get('state') == 'error':
+            return d['error']['status'], {'mode': None, 'error': d['error']}, round(time.time() - started, 2)
+    return 504, None, round(time.time() - started, 2)
 
 
 def stage_rag():
@@ -330,7 +349,7 @@ def stage_cloud(action='status'):
               b.get('data') if isinstance(b, dict) else b)
         report['vector_demo'] = b.get('data') if isinstance(b, dict) else None
     elif action == 'complete':
-        file_id = state['files']['canary']['id']
+        file_id = state['files'][os.environ.get('NIMBUS_NATIVE_LABEL', 'canary')]['id']
         s, b, _ = call('POST', '/ai/cloud/complete', {'fileId': file_id}, token=token)
         check('ec2_reconciles_native_job_to_searchable', s == 200 and b['data'].get('completed') == 1, b.get('data') if isinstance(b, dict) else b)
     save()
@@ -375,8 +394,86 @@ def stage_probe_unavailable(kind):
         check('rag_works_when_cloud_paused', s == 200 and a['mode'] == 'generated', {'mode': (a or {}).get('mode'), 'seconds': t})
 
 
+def stage_invite():
+    code = json.loads((ROOT / '.runtime/public-deployment/public-secrets.json').read_text())['invite_code']
+    base = {'name': 'Probe Visitor', 'password': secrets.token_urlsafe(18) + 'Aa1!'}
+    s, b, _ = call('POST', '/auth/register', {**base, 'email': f'probe-{uuid.uuid4().hex[:8]}@nimbus.invalid'})
+    check('public_registration_requires_invite', s == 403 and b['error']['code'] == 'INVITE_REQUIRED', s)
+    s, b, _ = call('POST', '/auth/register', {**base, 'email': f'probe-{uuid.uuid4().hex[:8]}@nimbus.invalid', 'inviteCode': 'nimbus-00000000'})
+    check('public_registration_rejects_wrong_invite', s == 403, s)
+    state.setdefault('demo', {})
+    for n in (1, 2):
+        key = f'demo{n}'
+        if key in state['demo']:
+            continue
+        user = {'name': f'NimbusVault Demo {n}', 'email': f'demo{n}-{uuid.uuid4().hex[:6]}@nimbus.invalid',
+                'password': secrets.token_urlsafe(14) + 'Aa1!'}
+        s, b, _ = call('POST', '/auth/register', {**user, 'inviteCode': code})
+        check(f'demo_account_{n}_registered_with_invite', s == 201, s)
+        state['demo'][key] = user
+        state['users'][key] = user
+        save()
+    token, _, _ = login('demo1')
+    s, b, _ = call('GET', '/files/storage/info', token=token)
+    check('public_account_gets_20mb_quota', s == 200 and b['data']['quota'] == '20971520', b.get('data'))
+    s, b, _ = call('GET', '/ai/cloud', token=token)
+    check('demo_user_cannot_read_infrastructure', s == 403, s)
+
+
+def stage_concurrency_async():
+    token, _, _ = login('owner')
+    note = state['files']['docB']['id']
+    s, b, _ = call('POST', '/ai/ask/async', {'question': 'Summarize the Session A acceptance note excerpt.', 'fileIds': [note]}, token=token)
+    first = b['data']['jobId'] if s == 202 else None
+    s2, b2, _ = call('POST', '/ai/ask/async', {'question': 'What is the retention code?', 'fileIds': [note]}, token=token)
+    timings = []
+    for _ in range(5):
+        started = time.time()
+        s3, _, _ = call('GET', '/files', token=token)
+        timings.append(round((time.time() - started) * 1000, 1))
+    other, _, _ = login('other')
+    s4, _, _ = call('GET', f'/ai/ask/async/{first}', token=other)
+    deadline, state_ = time.time() + 600, 'running'
+    while time.time() < deadline and state_ == 'running':
+        time.sleep(3)
+        _, poll, _ = call('GET', f'/ai/ask/async/{first}', token=token)
+        state_ = poll['data']['state']
+    check('public_async_job_accepted', s == 202 and first, s)
+    check('public_concurrent_generation_limited', s2 == 409, {'second_status': s2})
+    check('public_file_management_responsive_during_inference', s3 == 200 and max(timings) < 3000, {'ms': timings})
+    check('public_async_job_isolated_from_other_user', s4 == 404, s4)
+    check('public_long_answer_completed_beyond_gateway_timeout', state_ == 'done' and time.time() > 0,
+          {'state': state_, 'result_mode': poll['data'].get('result', {}).get('mode')})
+    report['measurements']['public_file_list_during_inference_ms'] = timings
+
+
+def stage_security():
+    token, _, _ = login('owner')
+    s, b, _ = call('POST', '/ai/search', {'query': "' OR 1=1; DROP TABLE users; --", 'mode': 'hybrid'}, token=token)
+    check('sql_injection_search_harmless', s == 200 and isinstance(b['data']['results'], list), s)
+    s, _, _ = call('GET', '/files/..%2F..%2Fetc%2Fpasswd/download', token=token)
+    check('path_traversal_id_rejected', s in (400, 404), s)
+    s, _, _ = call('GET', '/files', headers={'Authorization': 'Bearer eyJhbGciOiJub25lIn0.eyJ1c2VySWQiOiJ4In0.'})
+    check('alg_none_jwt_rejected', s == 401, s)
+    body, headers = multipart({}, 'payload.exe', b'MZ\x90\x00 not really a program', 'application/octet-stream')
+    s, b, _ = call('POST', '/files', token=token, raw=body, headers=headers)
+    check('unsupported_type_rejected_before_storage', s in (400, 415), {'status': s, 'code': b.get('error', {}).get('code') if isinstance(b, dict) else None})
+    body, headers = multipart({}, 'too-big.txt', b'a' * (5 * 1024 * 1024 + 10), 'text/plain')
+    s, b, _ = call('POST', '/files', token=token, raw=body, headers=headers)
+    check('oversize_upload_rejected_before_storage', s in (400, 413), s)
+    s, b, h = call('GET', '/auth/me', token=token, headers={'Origin': 'https://evil.example'})
+    check('foreign_origin_not_reflected_in_cors', 'evil.example' not in str(h.get('Access-Control-Allow-Origin', '')), h.get('Access-Control-Allow-Origin'))
+    report['security_headers'] = {k: v for k, v in h.items() if k.lower() in (
+        'strict-transport-security', 'content-security-policy', 'x-frame-options', 'x-content-type-options', 'referrer-policy')}
+    lower = {k.lower() for k in h}
+    check('security_headers_present', {'strict-transport-security', 'content-security-policy'} <= lower, sorted(report['security_headers']))
+
+
 if __name__ == '__main__':
     stage = sys.argv[1]
+    if stage in ('invite', 'concurrency_async', 'security'):
+        {'invite': stage_invite, 'concurrency_async': stage_concurrency_async, 'security': stage_security}[stage]()
+        raise SystemExit(0)
     if stage == 'concurrency':
         stage_concurrency()
         raise SystemExit(0)

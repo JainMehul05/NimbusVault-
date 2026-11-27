@@ -1,3 +1,8 @@
+## Public endpoint measurements (Session B)
+Start→ready including public HTTPS 40–46 s · readiness stages 12–26 s after SSM · public health 0.5–2.3 s · landing page TTFB 0.47 s, DOM ready ≈1.0 s · API calls through the gateway ≈1.2–1.5 s from India to Sydney · search 1.2–1.6 s end-to-end (server hybrid median 6.6 ms) · first semantic search after boot 12.4 s · Qwen cold 62–75 s, warm 25–39 s through async jobs · file listing during inference 1.2–1.4 s · RAM available 4.1 GiB with the model loaded, 0 OOM · disk 9.2/29 GiB.
+
+---
+
 # EC2 performance report — m7i-flex.large (2 vCPU, 7.6 GiB usable, CPU only)
 
 All values measured 27 Nov 2026 on instance i-0569d222e63fc7f36. "Via tunnel" includes ≈0.4 s SSM round trip from the laptop.

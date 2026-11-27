@@ -6,6 +6,7 @@ import { userService } from '@modules/users/user.service';
 import { activityLogService } from '@modules/activity/activity.service';
 import { tokenService } from './token.service';
 import { generateAccessToken } from './jwt.utils';
+import { assertRegistrationAllowed, applyDefaultQuota } from '@common/public-limits';
 
 export interface RequestMeta {
   ipAddress?: string;
@@ -17,6 +18,7 @@ export interface RegisterInput {
   name: string;
   email: string;
   password: string;
+  inviteCode?: string;
 }
 
 export interface LoginInput {
@@ -65,8 +67,10 @@ export class AuthService {
   }
 
   async register(input: RegisterInput, meta: RequestMeta = {}): Promise<AuthResult> {
+    await assertRegistrationAllowed(input.inviteCode);
     const passwordHash = await bcrypt.hash(input.password, config.bcrypt.rounds);
     const user = await userService.create({ name: input.name, email: input.email, passwordHash });
+    await applyDefaultQuota(user.id);
     return this.openSession(user, meta);
   }
 

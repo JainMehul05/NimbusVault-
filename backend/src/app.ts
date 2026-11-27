@@ -21,6 +21,7 @@ import activityRoutes from '@modules/activity/activity.routes';
 import aiRoutes from '@modules/ai/ai.routes';
 import { getAiStatus } from '@modules/ai/ai.status';
 import path from 'path';
+import { gatewayClientIp, originSecretValid, publicLimits } from '@common/public-limits';
 
 /** Removes query strings and share-link tokens, both of which can grant access, from logged URLs. */
 export const safeUrl = (url: string) =>
@@ -29,6 +30,22 @@ export const safeUrl = (url: string) =>
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', config.trustProxy);
+
+// The public origin port (CloudFront VPC origin) only accepts requests carrying the secret header
+// that the distribution adds; the private loopback port (SSM administration) is unaffected.
+const publicPort = Number.parseInt(process.env.PUBLIC_PORT || '', 10);
+if (publicPort) {
+  app.use((req, res, next) => {
+    if (req.socket.localPort !== publicPort) return next();
+    if (originSecretValid(req.get('x-nimbus-origin-verify'))) {
+      // Verified gateway request: its client-IP header is authoritative for rate limiting and logs.
+      const client = gatewayClientIp(req.get('x-nimbus-client-ip'));
+      if (client) req.headers['x-forwarded-for'] = client;
+      return next();
+    }
+    res.status(403).json({ success: false, message: 'Direct origin access is not permitted', error: { code: 'ORIGIN_FORBIDDEN' } });
+  });
+}
 
 // Request ID middleware. Client-supplied ids are only echoed when they are plainly harmless.
 app.use((req, res, next) => {
@@ -85,6 +102,7 @@ app.get(`/api/${config.apiPrefix}/health`, (req, res) => {
     service: 'nimbusvault-backend',
     // Public, non-sensitive: lets the UI describe where processing runs truthfully.
     host: process.env.NIMBUS_RUNTIME_HOST === 'ec2' ? 'ec2' : 'local',
+    registration: publicLimits.registrationMode(),
     version: process.env.APP_VERSION || process.env.npm_package_version || '1.0.0',
   }, 'NimbusVault backend running', req.requestId));
 });

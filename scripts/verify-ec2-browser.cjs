@@ -4,15 +4,15 @@ const {expect}=require('@playwright/test');
 const fs=require('node:fs'),path=require('node:path');
 const directory=path.resolve('.runtime/aws-deployment');
 const state=JSON.parse(fs.readFileSync(path.join(directory,'ec2-acceptance-state.json'),'utf8'));const user=state.users.owner;
-const prior=JSON.parse(fs.readFileSync(path.join(directory,'ec2-application.json'),'utf8'));
-const base='http://127.0.0.1:3200';
+const reportName=process.env.NIMBUS_REPORT||'ec2-application.json';const prior=JSON.parse(fs.readFileSync(path.join(directory,reportName),'utf8'));
+const base=(process.env.NIMBUS_ORIGIN||'http://127.0.0.1:3200').replace(/\/$/,'');
 (async()=>{
- const report={environment:'actual_ec2_application_via_ssm_port_forwarding',responsive:[],checks:[],pageErrors:[],aws_mutations:[]};
+ const report={environment:base.startsWith('https://')?'public_aws_https_endpoint':'actual_ec2_application_via_ssm_port_forwarding',responsive:[],checks:[],pageErrors:[],aws_mutations:[]};
  const screenshots=path.join(directory,'screenshots');fs.mkdirSync(screenshots,{recursive:true});
  const browser=await chromium.launch({headless:true,executablePath:process.env.NIMBUS_BROWSER||path.join(process.env.PROGRAMFILES,'BraveSoftware/Brave-Browser/Application/brave.exe')});
  const page=await browser.newPage({viewport:{width:1366,height:768},reducedMotion:'reduce'});
- page.on('pageerror',e=>report.pageErrors.push(e.message));
- const save=()=>fs.writeFileSync(path.join(directory,'ec2-browser.json'),JSON.stringify(report,null,2));
+ page.on('pageerror',e=>report.pageErrors.push(e.message));report.consoleErrors=[];report.failedRequests=[];page.on('console',m=>{if(m.type()==='error')report.consoleErrors.push(m.text().slice(0,200))});page.on('requestfailed',r=>report.failedRequests.push(r.url().slice(0,120)+' '+(r.failure()?.errorText||'')));page.on('response',r=>{if(r.url().startsWith('http://'))report.failedRequests.push('mixed-content '+r.url().slice(0,80))});
+ const save=()=>fs.writeFileSync(path.join(directory,(process.env.NIMBUS_BROWSER_REPORT||'ec2-browser.json')),JSON.stringify(report,null,2));
  try {
   const sentinel='11111111-1111-4111-8111-111111111111.windows-sentinel';
   await page.context().addCookies([{name:'refreshToken',value:sentinel,url:base+'/api/v1/auth',httpOnly:true,sameSite:'Lax'}]);
@@ -39,30 +39,30 @@ const base='http://127.0.0.1:3200';
   }
   await page.setViewportSize({width:1366,height:768});
   await page.evaluate(()=>{history.pushState({},'','/dashboard');dispatchEvent(new PopStateEvent('popstate'));});
-  await page.waitForTimeout(300);await page.screenshot({path:path.join(screenshots,'ec2-dashboard.png'),fullPage:true});
+  await page.waitForTimeout(300);await page.screenshot({path:path.join(screenshots,(process.env.NIMBUS_SHOT_PREFIX||'ec2')+'-dashboard.png'),fullPage:true});
   await page.evaluate(()=>{history.pushState({},'','/ask');dispatchEvent(new PopStateEvent('popstate'));});
   await page.getByRole('button',{name:'History',exact:true}).click();
   await page.getByLabel('Continue conversation').selectOption(prior.multi_document_answer.conversationId);
   await expect(page.getByRole('button',{name:/Source S1:/}).first()).toBeVisible({timeout:15000});
   await page.getByRole('button',{name:/Source S1:/}).first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.screenshot({path:path.join(screenshots,'ec2-citation.png'),fullPage:true});
+  await page.screenshot({path:path.join(screenshots,(process.env.NIMBUS_SHOT_PREFIX||'ec2')+'-citation.png'),fullPage:true});
   report.checks.push('Persisted real Qwen answer and clickable citation displayed');
   await page.keyboard.press('Escape');
   await page.evaluate(()=>{history.pushState({},'','/files');dispatchEvent(new PopStateEvent('popstate'));});
   await page.getByText('EC2 Acceptance Folder').first().waitFor({timeout:15000});
   report.checks.push('File explorer shows EC2 folders');
-  await page.screenshot({path:path.join(screenshots,'ec2-files.png'),fullPage:true});
+  await page.screenshot({path:path.join(screenshots,(process.env.NIMBUS_SHOT_PREFIX||'ec2')+'-files.png'),fullPage:true});
   await page.evaluate(()=>{history.pushState({},'','/cloud');dispatchEvent(new PopStateEvent('popstate'));});
   await page.getByRole('heading',{level:1}).first().waitFor();
   await page.getByText('On the AWS EC2 host').first().waitFor({timeout:15000});
   report.checks.push('Cloud page truthfully labels processing as EC2-hosted');
   await page.getByRole('button',{name:/Refresh administrator snapshot/}).click();await page.waitForTimeout(6000);
-  await page.screenshot({path:path.join(screenshots,'ec2-cloud.png'),fullPage:true});
+  await page.screenshot({path:path.join(screenshots,(process.env.NIMBUS_SHOT_PREFIX||'ec2')+'-cloud.png'),fullPage:true});
   const cloudText=await page.locator('main').innerText();
   report.cloud_page_mentions={free_plan:/FREE/.test(cloudText),active:/ACTIVE/i.test(cloudText),local_default:/local/i.test(cloudText)};
   report.checks.push('Cloud Infrastructure page rendered for admin');
-  for(const theme of ['dark','light']){await page.emulateMedia({colorScheme:theme});await page.evaluate(()=>{history.pushState({},'','/dashboard');dispatchEvent(new PopStateEvent('popstate'));});await page.waitForTimeout(400);await page.screenshot({path:path.join(screenshots,'ec2-dashboard-'+theme+'.png')});}
+  for(const theme of ['dark','light']){await page.emulateMedia({colorScheme:theme});await page.evaluate(()=>{history.pushState({},'','/dashboard');dispatchEvent(new PopStateEvent('popstate'));});await page.waitForTimeout(400);await page.screenshot({path:path.join(screenshots,(process.env.NIMBUS_SHOT_PREFIX||'ec2')+'-dashboard-'+theme+'.png')});}
   report.checks.push('Light and dark themes rendered');
   report.s3_download='Verified separately by SHA-256 through the API (ec2-application.json)';
   if(report.pageErrors.length)throw new Error('Browser page errors');

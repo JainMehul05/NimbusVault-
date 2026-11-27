@@ -8,6 +8,7 @@ import { contentProblem } from '@common/file-signature';
 import { STAGING_PREFIX, storageService } from '@common/storage';
 import { fileService } from './files.service';
 import { releaseQuota, reserveQuota } from './quota.service';
+import { assertUploadAllowed } from '@common/public-limits';
 
 const log = createChildLogger({ module: 'uploads' });
 
@@ -45,6 +46,7 @@ export class UploadService {
     const stagingKey = `${STAGING_PREFIX}${userId}/${randomUUID()}`;
     const expiresIn = config.storage.uploadUrlTtlSeconds;
 
+    await assertUploadAllowed(target.ownerId, input.filename, BigInt(sizeBytes));
     const file = await this.prismaClient.$transaction(async (tx) => {
       await reserveQuota(tx, target.ownerId, BigInt(sizeBytes), input.requestId);
       return fileService.insertWithFreeName(tx, {

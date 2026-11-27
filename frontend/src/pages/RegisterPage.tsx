@@ -7,6 +7,7 @@ import { getErrorMessage } from '@lib/format'
 import { passwordProblem } from '@lib/password'
 import { cn } from '@lib/utils'
 import { AuthAlert, AuthField, AuthShell, EMAIL_RE, PasswordField } from '@components/auth/AuthShell'
+import { api } from '@services/api'
 
 type Errors = { name?: string; email?: string; password?: string }
 
@@ -24,6 +25,8 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteRequired, setInviteRequired] = useState(false)
   const [errors, setErrors] = useState<Errors>({})
   const [serverError, setServerError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -35,6 +38,21 @@ export default function RegisterPage() {
   useEffect(() => {
     if (isAuthenticated && !busy) navigate('/dashboard', { replace: true })
   }, [isAuthenticated, busy, navigate])
+
+  // Public demonstrations may require an invitation code; the server is the authority either way.
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      try {
+        const response = await api.get('/health')
+        if (active && response?.data?.data?.registration === 'invite') setInviteRequired(true)
+      } catch {
+        // Unknown policy: show no field; the server still enforces its rule.
+      }
+    }
+    void load()
+    return () => { active = false }
+  }, [])
 
   const strength = passwordStrength(password)
 
@@ -58,7 +76,7 @@ export default function RegisterPage() {
     if (firstInvalid) return refs[firstInvalid].current?.focus()
     setBusy(true)
     try {
-      await register(name.trim(), email.trim(), password)
+      await register(name.trim(), email.trim(), password, inviteRequired ? inviteCode.trim() : undefined)
       setSuccess(true)
       navigate('/dashboard', { replace: true })
     } catch (error) {
@@ -126,6 +144,18 @@ export default function RegisterPage() {
             </p>
           }
         />
+        {inviteRequired && (
+          <AuthField
+            id="register-invite"
+            label="Invitation code"
+            type="text"
+            autoComplete="off"
+            value={inviteCode}
+            onChange={(e) => { setInviteCode(e.target.value); setServerError('') }}
+            placeholder="Code from the NimbusVault demonstration organiser"
+            disabled={busy}
+          />
+        )}
         <button className="auth-submit" disabled={busy} type="submit">
           {busy ? <><Loader2 size={16} className="animate-spin" aria-hidden="true" /> Creating account…</> : <>Create account <ArrowRight size={15} aria-hidden="true" /></>}
         </button>

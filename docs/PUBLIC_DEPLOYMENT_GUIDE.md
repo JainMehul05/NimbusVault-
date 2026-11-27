@@ -1,0 +1,53 @@
+# NimbusVault public website — guide
+
+## Public URL (AWS-generated, valid AWS certificate)
+**https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com**
+
+- Issued by AWS (Amazon API Gateway, Sydney); certificate `*.execute-api.ap-southeast-2.amazonaws.com` from Amazon's CA, renewed by AWS. No domain or third-party DNS.
+- **The URL stays the same across EC2 stop/start** (verified over 4 start cycles). It serves the app only while an authorized session is running; while stopped it returns HTTP 503.
+- Visitors need only a browser: no AWS account, CLI, SSM, plugin or VPN.
+- CloudFront (`*.cloudfront.net`) is ready to add in front once AWS verifies the account (see "CloudFront status").
+
+## Start / stop (Windows, project folder)
+| Action | Command |
+|---|---|
+| Start a bounded session (asks for hours ≤4 and **YES**) | `npm run aws:start -- --hours 2` |
+| Warm up MiniLM + Qwen (do this before a demo) | `npm run aws:warmup` |
+| Show the URL | `npm run aws:url` |
+| Diagnose (read-only) | `npm run aws:doctor` |
+| Status | `npm run aws:status` |
+| Stop (verifies `stopped`, closes the session) | `npm run aws:stop` |
+| Private admin tunnel (optional, not for visitors) | `npm run aws:connect` → http://127.0.0.1:3200 |
+The one-click `Start NimbusVault AWS.bat` / `Stop NimbusVault AWS.bat` launchers wrap the same commands.
+
+`aws:start` checks identity, FREE/ACTIVE plan, expiry and the USD 10 reserve; shows the estimate (≈ USD 0.125/h); writes the absolute deadline to the instance; creates a fresh independent stop schedule; starts the existing instance; waits for every service (database, backend, intelligence, Ollama, origin protection) and finally the public HTTPS URL; prints the URL. On any failure it prints labelled diagnostics and stops the instance. Typical: ready in 40–46 s.
+
+## Visitor accounts
+- **Invite-code registration**: visitors open the URL → *Create account* → enter the invitation code. Codes are kept privately in `.runtime/public-deployment/public-secrets.json` (one general code, one separate professor code); each can be revoked by removing it from `REGISTRATION_INVITE_CODE` on the host.
+- **Demo accounts**: two pre-created synthetic accounts (credentials in `.runtime/aws-deployment/ec2-acceptance-state.json`) sign in without a code.
+- Limits per account: 20 MB storage, 25 files, 5 MB per file (txt, md, pdf, docx), 10 questions/10 min and 40/day; global: 50 accounts, 500 MB, one answer generated at a time, API Gateway 20 req/s (burst 40). Registration: 5 per hour per IP. No admin access for visitors.
+
+## AI behaviour on the public site
+Answers run on the EC2 CPU (≈30 s warm, ≈60–75 s first answer after start). The browser starts an answer job and polls it, so API Gateway's 30-second limit never cuts an answer. Only one answer is generated at a time; others get "already being prepared".
+
+## Availability and cost
+Public URL ≠ 24/7. Each running hour ≈ USD 0.125 of AWS credits (EC2 + public IPv4); stopped storage ≈ USD 2.88/month; API Gateway ≈ USD 1 per million requests; Cloud Map USD 0.10/month. 24/7 would use ≈ USD 93/month — not authorized. Plan: start for demonstrations, stop afterwards. Out-of-pocket ₹0; the Free plan is never upgraded.
+
+## Safeguards (all verified live on 27 Nov 2026)
+On-instance absolute deadline (tag-based; restarts cannot extend it) · independent EventBridge Scheduler stop · credit/authorization watchdog every 2 min (live test: expired authorization → instance powered itself off in 34 s) · `aws:stop`.
+
+## Troubleshooting
+| Symptom | Action |
+|---|---|
+| URL shows `{"message":"Service Unavailable"}` | The instance is stopped → `npm run aws:start` |
+| `aws:start` says AWS authentication failure | Sign in to AWS CLI profile `default` again |
+| "Financial guard failure" | Credits/plan check failed; nothing was started |
+| Stage FAIL in start output | Read the labelled stage and diagnostics; the instance was stopped for you |
+| First answer slow | `npm run aws:warmup` after start |
+| Registration "invitation code is required" | Enter a valid code, or sign in with a demo account |
+
+## CloudFront status
+CloudFront distribution creation was refused: "Your account must be verified before you can add new CloudFront resources" (AWS Support). The CloudFront VPC origin for the instance is already **Deployed** and the security group already admits it, so after AWS verifies the account a `*.cloudfront.net` URL can be added with `scripts/aws-public-setup.py` (needs your approval).
+
+## Residual security risks
+23 upstream container CVE identifiers without stable fixes (1 scanner-critical libxml2 inside PostgreSQL, not reachable through the app). API Gateway→EC2 traffic is private inside the VPC but plain HTTP (origin protected by a secret header and a security group admitting only the VPC link). Demonstration with synthetic data; not production-certified.

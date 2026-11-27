@@ -1,3 +1,5 @@
+> **Public access (Session B):** Visitor → HTTPS https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com (API Gateway HTTP API, AWS certificate, throttled) → VPC link (private ENIs) → Cloud Map → EC2 private IP 172.31.0.254:8080 → Express second listener (secret header required) → existing private services. CloudFront VPC origin prepared; distribution pending AWS account verification.
+
 > **Deployed 27 Nov 2026 (Session A).** As-built diagram, networks and evidence: `AWS_FINAL_DEPLOYMENT_REPORT.md` §3 and `AWS_CLOUD_ACCEPTANCE_MATRIX.md`. Differences from the plan below: 30 GiB volume (user choice), AWS CLI v2 installed with signature check, absolute tag-based deadline added, sshd disabled, thin patch layers for the evidence-path and EC2-label fixes.
 
 # Prepared AWS architecture — not yet provisioned

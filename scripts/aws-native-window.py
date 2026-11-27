@@ -9,6 +9,7 @@
 Never sends messages to SQS, never receives/purges queues, never touches the DLQ.
 """
 import json
+import os
 import subprocess
 import sys
 import time
@@ -29,7 +30,7 @@ logs, cw = session.client('logs', config=cfg), session.client('cloudwatch', conf
 account = session.client('sts').get_caller_identity()['Account']
 iso = lambda d=None: (d or datetime.now(timezone.utc)).strftime('%Y-%m-%dT%H:%M:%SZ')
 evidence = {'environment': 'actual_aws_native_workflow_from_ec2_application', 'timeline': [], 'restored': {}}
-out = PRIVATE / 'ec2-native-workflow.json'
+out = PRIVATE / os.environ.get('NIMBUS_NATIVE_REPORT', 'ec2-native-workflow.json')
 
 
 def note(event, **detail):
@@ -90,9 +91,10 @@ try:
     events.enable_rule(Name=RULE)
     note('window_open', rule=events.describe_rule(Name=RULE)['State'], mapping=lam.get_event_source_mapping(UUID=MAPPING)['State'])
     upload_started = datetime.now(timezone.utc)
-    subprocess.run([sys.executable, str(ROOT / 'scripts/verify-ec2-application.py'), 'upload', 'canary'], check=True)
+    label = os.environ.get('NIMBUS_NATIVE_LABEL', 'canary')
+    subprocess.run([sys.executable, str(ROOT / 'scripts/verify-ec2-application.py'), 'upload', label], check=True)
     state = json.loads((PRIVATE / 'ec2-acceptance-state.json').read_text())
-    file_id = state['files']['canary']['id']
+    file_id = state['files'][label]['id']
     note('canary_uploaded_via_ec2', file_id=file_id)
     execution = None
     for _ in range(60):
@@ -117,7 +119,7 @@ try:
         job = ddb.get_item(TableName='cloudvault-v3-dev', Key={'pk': {'S': 'WORKSPACE#default'}, 'sk': {'S': 'JOB#' + execution['name']}})
         payload = json.loads(job['Item']['payload']['S']) if 'Item' in job else {}
         note('dynamodb_job', state=job.get('Item', {}).get('state', {}).get('S'), cloud_extraction=payload.get('cloud_extraction'),
-             sha256_matches=payload.get('sha256') == state['files']['canary']['sha256'], history=[h['stage'] for h in payload.get('history', [])],
+             sha256_matches=payload.get('sha256') == state['files'][label]['sha256'], history=[h['stage'] for h in payload.get('history', [])],
              artifact_key_prefix=(payload.get('artifact_key') or '')[:20])
         evidence['execution_name'] = execution['name']
     evidence['file_id'] = file_id

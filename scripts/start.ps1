@@ -4,6 +4,14 @@ Set-Location -LiteralPath $root
 if(-not(Test-Path '.env')){throw 'Run scripts/setup.ps1 first.'}
 foreach($line in Get-Content '.env'){if($line -match '^([A-Z_][A-Z0-9_]*)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}}
 New-Item -ItemType Directory -Force '.runtime' | Out-Null
+New-Item -ItemType Directory -Force '.runtime/launcher-control' | Out-Null
+$controlAcl=New-Object Security.AccessControl.DirectorySecurity
+$controlAcl.SetAccessRuleProtection($true,$false)
+$controlAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule(
+  [Security.Principal.WindowsIdentity]::GetCurrent().User,'FullControl','ContainerInherit,ObjectInherit','None','Allow')))
+if($PSVersionTable.PSEdition -eq 'Desktop'){
+  [IO.Directory]::SetAccessControl((Join-Path $root '.runtime/launcher-control'),$controlAcl)
+} else {Set-Acl -LiteralPath '.runtime/launcher-control' -AclObject $controlAcl}
 $owned=@()
 if(Test-Path '.runtime/processes.json'){
   foreach($entry in (Get-Content '.runtime/processes.json' | ConvertFrom-Json)){
@@ -32,8 +40,8 @@ try {
       Launch $ai.binary @('serve') $root 'ollama'
     }else{Write-Warning 'Ollama unavailable; cited extractive fallback remains enabled.'}
   }
-  Launch "$root/intelligence/.venv/Scripts/python.exe" @('-m','uvicorn','app.internal:app','--host','127.0.0.1','--port','8101','--no-access-log') "$root/intelligence" 'intelligence'
-  Launch (Get-Command node).Source @('dist/main.js') "$root/backend" 'api'
+  Launch "$root/intelligence/.venv/Scripts/python.exe" @('"'+"$PSScriptRoot/local-intelligence-host.py"+'"') "$root/intelligence" 'intelligence'
+  Launch (Get-Command node).Source @('"'+"$PSScriptRoot/local-api-host.cjs"+'"') "$root/backend" 'api'
   $ready=$false
   for($i=0;$i -lt 40;$i++){
     try{

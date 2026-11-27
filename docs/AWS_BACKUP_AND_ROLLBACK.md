@@ -1,3 +1,8 @@
+## Session B resource inventory (tagged NimbusVaultDeployment; ledger `.runtime/aws-deployment/resource-ledger.json`)
+Created: CloudFront VPC origin `vo_2c3gnAzOKMfBMVqPUe7ZaV`; SG `nimbusvault-apigw-vpclink`; Cloud Map HTTP namespace `nimbusvault`, service `web` and the instance registration; API Gateway VPC link `nimbusvault-vpclink`; HTTP API `d00xx7hyr7` ($default route and stage); stop schedules created and removed per session. Modified: app SG +8080 from the VPC-origin SG and from the VPC-link SG; instance tags. Temporary S3 patch objects deleted. Rollback (needs approval): delete the HTTP API, VPC link, Cloud Map instance/service/namespace, VPC-link SG and VPC origin; revoke both 8080 rules; run `ec2-public-config.sh private` on the host. `aws:backup` re-run 12:25 UTC (Success).
+
+---
+
 # AWS backup, recovery, rollback and cleanup
 
 ## EC2 application backup (verified)

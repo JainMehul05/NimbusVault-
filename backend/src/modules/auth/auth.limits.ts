@@ -24,6 +24,13 @@ const accountKey = (req: Request) =>
 /** Per IP, across every credential endpoint. */
 export const credentialLimiter = limiter(config.rateLimit.authMax, 'Too many attempts. Please wait and try again.');
 
+/** New accounts per IP per hour (public deployments set REGISTER_RATE_LIMIT; default is permissive). */
+export const registerLimiter = limiter(
+  Number.parseInt(process.env.REGISTER_RATE_LIMIT || '', 10) || 1000,
+  'Too many new accounts from this address. Please try again later.',
+  { windowMs: 60 * 60 * 1000 },
+);
+
 /** Token refresh and sign-out, which browsers call routinely. */
 export const refreshLimiter = limiter(config.rateLimit.refreshMax, 'Too many attempts. Please wait and try again.');
 

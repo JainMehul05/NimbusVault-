@@ -1,3 +1,28 @@
+# Session B — public AWS website and startup repair (27 Nov 2026)
+
+**Status: public website working; EC2 now STOPPED (verified 12:39 UTC).** Public URL (AWS-generated, AWS certificate): **https://d00xx7hyr7.execute-api.ap-southeast-2.amazonaws.com** — the same URL after every authorized stop/start. Start `npm run aws:start -- --hours 2` · warm `npm run aws:warmup` · stop `npm run aws:stop`. Visitors need no AWS credentials. Guide: `PUBLIC_DEPLOYMENT_GUIDE.md`.
+
+| Item | Result | Class |
+|---|---|---|
+| Startup failure root cause | Readiness curl ran 21 s after boot; Docker's port proxy reset the connection (curl exit 56), which `--retry-connrefused` never retries. Reproduced live: probes `56 56 0`; old command exit 56; new `ec2-ready.sh` READY after 3 s | Live EC2 |
+| Startup repair | Staged bounded readiness (service, DB, backend JSON, intelligence, Ollama, origin guard, public HTTPS), consistent timeouts, labelled diagnostics before safe stop, session workflow (`--hours`, YES, deadline tag, fresh schedule) | Code + live |
+| Ordinary start cycles | 3 ordinary cycles + 1 bootstrap: ready in 40 / 45 / 46 s (end-to-end 52–60 s); users, files, conversations, index and models persisted | Live EC2 |
+| CloudFront | VPC origin **Deployed**; distribution **refused** by AWS ("account must be verified … contact AWS Support") — pending verification | Live AWS |
+| Public endpoint | API Gateway HTTP API → VPC link → Cloud Map → EC2 private IP:8080 (no public inbound); secret origin header; true client IP header; 20 rps / 40 burst | Live AWS |
+| Public application checks | All passed (invite registration, demo accounts, auth/CSRF/CORS/rotation, folders, isolation, all search modes, Qwen single/multi/follow-up/abstain, grounded citations, SHA-256 downloads, sharing/revocation, prompt injection, trash/restore, async concurrency, security probes) | Public HTTPS |
+| Native AWS workflow from the public site | S3 → EventBridge → SQS → Lambda → Step Functions SUCCEEDED → DynamoDB → EC2 reconciliation → searchable → semantic rank 1 → cited Qwen answer → SHA-256 match; window 0.81 min; idle restored | Live AWS |
+| Browser (public URL) | 54/54 responsive + 7 workflows, 0 console errors, 0 failed requests, 0 mixed content | Public HTTPS |
+| External network | Your iPhone on mobile data (152.59.x.x): site, assets, invite registration 201, authenticated file APIs 200 | Public HTTPS (server-log evidence) |
+| Search 84 (final runtime) | Hybrid 69/69, 15/15 negatives, Recall@3 98.55 %, MRR 1.0, 0 leaks | Live EC2 |
+| Safeguards | Watchdog: expired authorization → instance-initiated shutdown in 34 s (journal "Authorization expired"). External Scheduler: StopInstances by the safety role (CloudTrail) 24 s after schedule; schedule auto-deleted | Live AWS |
+| Regression (laptop) | Backend 309 (11 new), frontend 60, Python 83 + 2 real-Qwen (Windows GPU), infra 22, launcher 10 | Windows local |
+| Qwen 40-case | Not rerun: intelligence/Ollama unchanged since Session A's 40/40; the new async request path is covered by the public checks | Historical |
+
+Defects fixed in Session B: startup readiness (curl 56); manual-JSON session authorization → `--hours`/YES workflow; boot-only deadline → tag-based watchdog; API Gateway reserves `X-Forwarded-For` → secret-gated client-IP header; long AI requests vs gateway timeouts → async jobs; open registration with 5 GiB quota → invite codes, quotas and caps; one-click launcher accepted only CloudFront → also accepts the AWS API Gateway URL.
+Credits still read USD 139.997804 (billing lag); Session B ≈ 72 instance-minutes ≈ USD 0.15 plus API Gateway/Cloud Map cents. ₹0 out-of-pocket.
+
+---
+
 # NimbusVault — AWS Session A final deployment report
 
 27 November 2026 · Claude Opus 5.5 (continuing Codex) · Approved Session A (`session-a-1acdcb4a`).

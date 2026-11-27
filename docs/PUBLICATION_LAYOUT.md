@@ -39,3 +39,5 @@ The GitHub Pages workflow builds on the actual default branch (`main`) and uses 
 ## Structural release and subsequent implementation update
 
 The user explicitly authorized publishing this verified structure without waiting for AWS Session C. This structural release contains the previously published Session B application, the restored original submissions and the historical final-report snapshot. Unfinished Groq changes are excluded. After the completed verification report/checkpoint is provided, import that verified source into the same mapping, update the final report with actual evidence and repeat applicable checks for a subsequent commit. No force push, working-directory reset or AWS operation is part of this publication.
+
+Current update: all `project-report-final/` contents were removed at the owner's explicit request. Previous descriptions above record the structural release. The original proposal/prototype and Git history remain preserved. Git does not display empty directories.

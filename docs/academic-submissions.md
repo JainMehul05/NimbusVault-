@@ -16,8 +16,4 @@ The two historical submissions below were recovered from genuine NimbusVault Git
 
 ## Final report
 
-- [Existing completed report snapshot](academic/project-report-final/NimbusVault_Final_Project_Report.pdf)
-- [Editable LaTeX source](academic/project-report-final/NimbusVault_Final_Project_Report.tex)
-- [Build instructions](academic/project-report-final/README.md)
-
-The existing 70-page report predates completed EC2/public deployment. It is preserved, but its final university revision must incorporate the verified public deployment and the Groq integration only after that integration's final verification/checkpoint is available. The reorganized repository is not ready for final publication until that revision and its PDF build are verified.
+All final-report contents were removed from the current tree at the owner's request. The original proposal and prototype submissions are unchanged. Earlier final-report versions remain recoverable from Git history.

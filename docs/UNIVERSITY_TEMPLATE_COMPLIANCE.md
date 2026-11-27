@@ -55,3 +55,5 @@ Historical recovery paths have explicit `-text` Git attributes. This prevents ne
 The user explicitly approved publishing the prepared structural snapshot to `main`, subject to integrity, security and remote-compatibility checks. Local Groq checkpoint `caa4548` is not evidence that AWS Session C is complete. Further deployment changes remain in the active development checkout and are not copied here.
 
 [Complete baseline file migration record](repository-file-migration.json). Documentation build and verification helpers live in `docs/tools/`, keeping the root restricted to university folders and necessary configuration. `.gitattributes` preserves exact historical file bytes; `LICENSE.template` preserves the upstream documentation attribution.
+
+Current update: all `project-report-final/` contents were removed at the owner's explicit request. Previous descriptions above record the structural release. The original proposal/prototype and Git history remain preserved. Git does not display empty directories.

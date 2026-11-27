@@ -1,9 +1,0 @@
-\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
-\node[box] (p) at (0,0) {October proposal\\Generic vector DB; EC2 intent};
-\node[box] (i) at (4.7,0) {Implemented platform\\PostgreSQL + SQLite + S3};
-\node[box] (l) at (4.7,-2) {Verified Linux rehearsal\\CPU inference; isolated fixtures};
-\node[box] (c) at (0,-2) {EC2 deployment\\Pending approval and acceptance};
-\draw[line] (p) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Implement} (i);
-\draw[line] (i) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Portability tests} (l);
-\draw[control] (l) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Proposed next step} (c);
-\end{tikzpicture}

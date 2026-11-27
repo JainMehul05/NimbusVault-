@@ -6,7 +6,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 REQUIRED = ("assets", "code", "docs", "journals", "project-proposal",
-            "project-report-prototype-stage", "project-report-final", ".github/workflows")
+            "project-report-prototype-stage", ".github/workflows")
 for name in REQUIRED:
     path = ROOT / name
     assert path.is_dir() and any(p.is_file() for p in path.rglob("*")), name

@@ -22,5 +22,5 @@ def publish_tree(source, destination):
 
 publish_tree("assets", "assets")
 publish_tree("journals", "journals")
-for folder in ("project-proposal", "project-report-prototype-stage", "project-report-final"):
+for folder in ("project-proposal", "project-report-prototype-stage"):
     publish_tree(folder, "academic/" + folder)

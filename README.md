@@ -19,10 +19,10 @@ Supervisor: **Dr. Paramveer Sidhu**. Names, roll numbers and university details 
 
 1. [Original project proposal](project-proposal/README.md) · [PDF](project-proposal/NimbusVault_Project_Proposal.pdf) · [LaTeX](project-proposal/main%20%283%29.tex)
 2. [Original prototype-stage report](project-report-prototype-stage/README.md) · [PDF](project-report-prototype-stage/NimbusVault_Project_report.pdf) · [LaTeX](project-report-prototype-stage/NimbusVault_Project_report.tex)
-3. [Final-report source and build instructions](project-report-final/README.md) · [existing report snapshot PDF](project-report-final/NimbusVault_Final_Project_Report.pdf)
+3. Final-report contents removed from the current repository at the owner's request.
 4. [Individual team-member journals](journals/index.md) · [Saras](journals/1024030021-saras/index.md) · [Mehul Jain](journals/1024030020-mehul-jain/index.md) · [Mansimar Kaur](journals/1024030012-mansimar-kaur/index.md)
 
-The original submissions are byte-for-byte historical recoveries. No genuine authored journal entries for these students were found; that gap is stated explicitly, while original template examples are preserved separately. The existing final report predates completed public deployment; its final revision is pending the completed Groq verification/checkpoint. This structural release restores the university layout; it does not certify the pending Groq deployment or revised final report.
+The original submissions are byte-for-byte historical recoveries. No genuine authored journal entries for these students were found; that gap is stated explicitly, while original template examples are preserved separately. The historical final report has been removed from the current tree at the owner's request; prior Git history remains recoverable. This structural release restores the university layout; it does not certify the pending Groq deployment or revised final report.
 
 ## Objectives and implemented features
 
@@ -70,7 +70,6 @@ docs/                              Technical documentation and recovery evidence
 journals/                          Team recovery-status pages and historical examples
 project-proposal/                  Exact original proposal and later original revision
 project-report-prototype-stage/    Exact original prototype submission
-project-report-final/              Final report source/assets; verified update pending
 Makefile  pyproject.toml  uv.lock   Reproducible documentation build
 mkdocs.yml  .gitignore  LICENSE    University scaffold and publication protections
 ```

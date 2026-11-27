@@ -1,0 +1,19 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (n0) at (0.0,0.0) {JWT and resource authorisation};
+\node[box] (n1) at (4.7,0.0) {Private actor + scoped file IDs};
+\node[box] (n2) at (9.4,0.0) {Hybrid evidence retrieval};
+\node[box] (n3) at (9.4,-2.0) {Bounded context and instruction isolation};
+\node[box] (n4) at (4.7,-2.0) {Genuine Qwen JSON claims};
+\node[box] (n5) at (0.0,-2.0) {Exact quote / citation validation};
+\node[box] (n6) at (0.0,-4.0) {One bounded correction if needed};
+\node[box] (n7) at (4.7,-4.0) {Generated / labelled fallback / abstain};
+\node[box] (n8) at (9.4,-4.0) {Persist owned conversation};
+\draw[line] (n0) -- (n1);
+\draw[line] (n1) -- (n2);
+\draw[line] (n2) -- (n3);
+\draw[line] (n3) -- (n4);
+\draw[line] (n4) -- (n5);
+\draw[line] (n5) -- (n6);
+\draw[line] (n6) -- (n7);
+\draw[line] (n7) -- (n8);
+\end{tikzpicture}

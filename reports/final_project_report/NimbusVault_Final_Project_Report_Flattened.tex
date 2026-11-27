@@ -1,0 +1,1000 @@
+\documentclass[11pt,a4paper,oneside]{report}
+\usepackage[left=28mm,right=24mm,top=25mm,bottom=25mm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath,microtype}
+\usepackage{graphicx,xcolor,booktabs,tabularx,longtable,array}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{amsmath,setspace,fancyhdr,titlesec,caption,float,placeins,enumitem,listings}
+\usepackage[hidelinks,breaklinks]{hyperref}
+\definecolor{navy}{HTML}{243D56}
+\definecolor{slate}{HTML}{62788A}
+\newcommand{\SubmissionDate}{November 27, 2026} % Edit this variable for resubmission.
+\newcommand{\EvidenceDate}{27 November 2026}
+\hypersetup{pdftitle={NimbusVault: AI-Powered Cloud Storage and Document Intelligence Platform},pdfauthor={Saras; Mehul Jain; Mansimar Kaur},pdfsubject={UCS503P Final Project Report},pdfkeywords={AWS, MiniLM, BM25, Qwen, RAG, document intelligence}}
+\setstretch{1.15}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5.5pt}
+\setlength{\emergencystretch}{2em}
+\setcounter{tocdepth}{0}\setcounter{secnumdepth}{2}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\large Chapter \thechapter}{6pt}{\huge}
+\titlespacing*{\chapter}{0pt}{4pt}{17pt}
+\titleformat{\section}{\large\bfseries\color{navy}}{\thesection}{.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{.6em}{}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small NimbusVault -- Final Project Report}\fancyhead[R]{\small UCS503P}
+\fancyfoot[L]{\footnotesize Thapar Institute of Engineering and Technology}\fancyfoot[R]{\small\thepage}
+\renewcommand{\headrulewidth}{.4pt}\renewcommand{\footrulewidth}{.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyhead[L]{\small NimbusVault -- Final Project Report}\fancyhead[R]{\small UCS503P}\fancyfoot[L]{\footnotesize Thapar Institute of Engineering and Technology}\fancyfoot[R]{\small\thepage}}
+\captionsetup{font=small,labelfont=bf,justification=raggedright,singlelinecheck=false}
+\setlist{nosep,leftmargin=*}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newsavebox{\DiagramBox}
+\newcommand{\ShortCaption}[1]{\csname ShortCaption#1\endcsname}
+\input{short_captions.tex}
+\newcommand{\diagram}[3]{\par\begin{figure}[htbp]\centering\sbox{\DiagramBox}{\input{diagram_sources/#1.tex}}\ifdim\wd\DiagramBox>\linewidth\resizebox{\linewidth}{!}{\usebox{\DiagramBox}}\else\usebox{\DiagramBox}\fi\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\newcommand{\chart}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=.95\linewidth]{figures/charts/#1.pdf}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\newcommand{\screen}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=\linewidth,height=.42\textheight,keepaspectratio]{figures/screenshots/#1.png}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\setlength{\textfloatsep}{12pt}\setlength{\floatsep}{9pt}\setlength{\intextsep}{10pt}
+\newcommand{\sourcepath}[1]{{\footnotesize\path{#1}}}
+\renewcommand{\topfraction}{.92}\renewcommand{\bottomfraction}{.90}
+\renewcommand{\textfraction}{.06}\renewcommand{\floatpagefraction}{.80}
+\setcounter{topnumber}{4}\setcounter{bottomnumber}{4}\setcounter{totalnumber}{6}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,columns=fullflexible,frame=single,rulecolor=\color{slate},showstringspaces=false}
+\raggedbottom
+\begin{document}
+\begin{titlepage}\centering\setstretch{1.0}
+\vspace*{4mm}
+{\large\bfseries THAPAR INSTITUTE OF ENGINEERING AND TECHNOLOGY\par}
+\vspace{2mm}{(Deemed to be University), Patiala\par}
+\vspace{6mm}\noindent\rule{\linewidth}{.7pt}\par
+\vspace{10mm}{\large\bfseries Department of Computer Science and Engineering\par}
+\vspace{6mm}{\large UCS503P\par}
+\vfill{\Huge\bfseries\color{navy} NimbusVault\par}
+\vspace{5mm}{\Large AI-Powered Cloud Storage\par\vspace{1mm}\& Document Intelligence Platform\par}
+\vspace{10mm}{\Large\bfseries Final Project Report\par}
+\vspace{6mm}{B.E./B.Tech. Computer Engineering, Third Year\par}
+\vfill{\bfseries Submitted by\par}\vspace{3mm}
+\begin{tabular}{ll}\texttt{1024030021}&Saras\\\texttt{1024030020}&Mehul Jain\\\texttt{1024030012}&Mansimar Kaur\end{tabular}\par
+\vspace{9mm}{\bfseries Submitted to\par}\vspace{3mm}{Dr. Paramveer Sidhu\par}
+\vfill\noindent\rule{\linewidth}{.4pt}\par\vspace{5mm}{\SubmissionDate\par}
+\end{titlepage}
+\pagenumbering{roman}
+\chapter*{Authorship and Acknowledgement}\addcontentsline{toc}{chapter}{Authorship and Acknowledgement}
+This report records the implementation and evidence available for NimbusVault as of \EvidenceDate. It distinguishes completed application work, historical authorised AWS demonstrations, local Linux verification and cloud deployment work that remains pending. Benchmarks are reported with their tested scope; no claim of universal reliability or production-scale validation is made.
+
+The authors acknowledge the academic framework provided by the Department of Computer Science and Engineering at Thapar Institute of Engineering and Technology, and identify Dr. Paramveer Sidhu as the project supervisor, as in the original proposal. The implementation builds on publicly documented open-source software, model releases and AWS service interfaces. Their respective contributions are identified in the references. This acknowledgement does not imply an institutional security certification or a signed assessment of the results.
+
+The original proposal is retained separately. No supervisor signature or certificate has been fabricated. If the department requires a prescribed declaration or certificate, it should be supplied and signed through the institutional process before submission.
+
+\vspace{12mm}\begin{tabularx}{\linewidth}{YYY}\toprule Saras&Mehul Jain&Mansimar Kaur\\1024030021&1024030020&1024030012\\\addlinespace[12mm]\hrulefill&\hrulefill&\hrulefill\\Author signature&Author signature&Author signature\\\bottomrule\end{tabularx}
+\chapter*{Abstract}\addcontentsline{toc}{chapter}{Abstract}
+Cloud storage separates durable file retention from the physical limits of a personal device, but does not by itself solve document discovery, controlled sharing or evidence-grounded question answering. NimbusVault combines these concerns in an implemented storage and document-intelligence platform. A React and TypeScript interface communicates with an Express application that controls authentication, folder organisation, ownership and sharing through PostgreSQL and Prisma. Private Amazon S3 stores original bytes. Existing AWS services provide event routing, queueing, lightweight validation, workflow orchestration and processing metadata without moving heavy language-model computation into Lambda.
+
+The private FastAPI intelligence service extracts document text, creates overlapping token-bounded passages and generates normalised 384-dimensional MiniLM embeddings. SQLite persists passages, vectors, full-text indexes and owned conversations. Dense semantic retrieval is combined with BM25 through reciprocal rank fusion and explicit relevance gates. Ollama runs Qwen2.5 3B with Q4\_K\_M quantisation. Retrieved evidence, exact-quotation checks, scoped citations and bounded correction support generated answers; insufficient evidence produces abstention or an explicitly labelled fallback.
+
+Local evaluation recorded 460 passes across separately executed backend, frontend, Python and infrastructure suites, together with 54 responsive browser checks. On a curated 84-query regression corpus, hybrid retrieval ranked a relevant document first for all 69 positive queries and rejected all 15 negative queries; mean Recall@3 was 98.55\%. A 40-case Linux CPU evaluation accepted all 31 answerable generated responses and all nine required abstentions, with no tested quotation or permission-scope failures. Median adapter answer latency was 19.90 seconds. These results concern a small development corpus, not independent population-level accuracy.
+
+Standalone Windows portability, native Linux CPU inference, recoverable data backups and active-generation shutdown were demonstrated. Existing AWS integrations have historical application-level evidence and subsequent read-only checks. Complete EC2 hosting remains awaiting explicit authorisation and acceptance. Residual image vulnerabilities, finite credits, single-generation concurrency and incomplete cloud-host performance measurements remain documented limitations.
+
+\textbf{Keywords:} Cloud Computing; Amazon Web Services; Semantic Search; Retrieval-Augmented Generation; Hybrid Retrieval; Secure Cloud Storage; Document Intelligence.
+\begingroup\setcounter{tocdepth}{0}\tableofcontents\endgroup
+\setcounter{tocdepth}{1}\listoffigures\listoftables
+\chapter*{Abbreviations}\addcontentsline{toc}{chapter}{Abbreviations}
+\begin{tabularx}{\linewidth}{lY}\toprule API&Application Programming Interface\\ASL&Amazon States Language\\BM25&Best Matching 25\\DLQ&Dead-Letter Queue\\EBS&Elastic Block Store\\EC2&Elastic Compute Cloud\\FTS&Full-Text Search\\IAM&Identity and Access Management\\JWT&JSON Web Token\\LLM&Large Language Model\\MRR&Mean Reciprocal Rank\\RAG&Retrieval-Augmented Generation\\RRF&Reciprocal Rank Fusion\\SDK&Software Development Kit\\SSM&Systems Manager\\STS&Security Token Service\\VPC&Virtual Private Cloud\\\bottomrule\end{tabularx}
+\clearpage\pagenumbering{arabic}
+% BEGIN chapters/01_introduction
+\chapter{Introduction}
+\section{Motivation and problem statement}
+A useful document repository must do more than retain bytes. Users need to organise material, grant limited access and recover information when the exact filename or wording is unknown. A conventional file browser provides an explicit hierarchy, whereas document questions often concern relationships across passages and files. Combining these behaviours raises a practical engineering problem: the same access rules must govern a download, a search result, a retrieved context passage and a saved conversation.
+
+NimbusVault addresses this problem through a storage application with a private document-intelligence subsystem. PostgreSQL remains the authority for application identity and permissions; S3 holds original objects. The intelligence service receives an authorised file scope from the backend rather than deciding that scope from a natural-language request. A retrieved passage is therefore not automatically permission to expose its parent document.
+
+The original October proposal described a scalable cloud-storage architecture and an intended RAG layer. The implemented system retains that separation of concerns while making several choices more concrete: Express rather than NestJS, SQLite-backed private retrieval rather than a mandatory managed vector database, and self-hosted Qwen inference rather than a paid language-model API. Complete EC2 hosting is prepared but not yet accepted. These distinctions prevent the proposal's intentions from being mistaken for completed deployment evidence.
+\section{Objectives and realised scope}
+Table~\ref{tab:objectives} relates the initial objectives to observed outcomes. The evaluated unit is a bounded academic prototype with real integrations, not an independently audited commercial storage service.
+\par\begin{table}[htbp]\caption{Original objectives and evidence-backed outcomes}\label{tab:objectives}\small\begin{tabularx}{\linewidth}{p{.30\linewidth}YY}\toprule Objective&Implemented outcome&Qualification\\\midrule
+Secure cloud originals&Private S3 and authenticated adapters&Historical synthetic upload and hash readback\\
+Structured organisation&Folders, ownership, move, trash and restore&PostgreSQL-backed application tests\\
+Controlled sharing&User permissions and bounded share links&Revocation and inheritance tested\\
+Semantic discovery&MiniLM, BM25 and hybrid retrieval&84-query development regression\\
+Natural-language answers&Qwen-generated multi-document answers&40 strict local Linux cases\\
+Cloud deployment&Native Linux packaging and safeguards&EC2 provisioning/acceptance pending\\
+High availability&Separation of service responsibilities&No distributed-availability demonstration\\\bottomrule\end{tabularx}\end{table}\par
+\section{Contributions and report organisation}
+The principal engineering contributions are permission-preserving integration, evidence-grounded answer handling, a measured hybrid retriever, donor-independent model packaging and a cautious distinction between cloud processing and private AI computation. Later chapters examine each contribution through source structure and identifiable evidence. Requirements and architecture precede implementation; the evaluation then separates observed results from limitations, costs and future deployment work.
+\screen{public-landing}{The implemented public frontend, rendered from the verified static build. This interface view is not evidence of a running EC2 backend.}{landing}
+\FloatBarrier
+
+% END chapters/01_introduction
+% BEGIN chapters/02_background
+\chapter{Background and Related Work}
+\section{Storage, compute and event-driven systems}
+Object storage associates an opaque key with bytes and metadata, while a relational database represents structured application relationships. NimbusVault uses both because object durability does not establish who may rename a folder or read a shared file. Its asynchronous AWS path further separates event arrival from processing: a queue buffers delivery and a state machine records lightweight stages. Serverless execution is suitable for those bounded operations; the continuously loaded language model belongs in a separate runtime.
+
+Infrastructure as a Service would provide control over a Linux host and its persistent disk. That is the proposed role of EC2 and EBS, distinct from the existing serverless stack. A portable container image is preparation for such a host, not evidence that the host has been provisioned.
+\section{Sparse and dense information retrieval}
+BM25 scores lexical evidence using term frequency, inverse document frequency and document-length normalisation~\cite{bm25}. Sentence embedding systems map text to vectors so that a query and a passage can be compared geometrically. Sentence-BERT established a practical sentence-embedding approach~\cite{sbert}; MiniLM supplies a compact distilled Transformer family~\cite{minilm}. The selected all-MiniLM-L6-v2 model produces 384-dimensional sentence vectors~\cite{minilmcard}.
+
+These methods fail differently. A dense model can bridge paraphrases but may underweight an exact identifier. Sparse retrieval recognises literal terms yet may retrieve an unrelated passage sharing generic vocabulary. The implemented hybrid system therefore combines ranks and applies explicit evidence gates rather than presenting either method as universally superior.
+\section{Grounded generation and conceptual comparison}
+RAG retrieves evidence before generating a response~\cite{ragpaper}. NimbusVault adopts this general arrangement, but does not reproduce the training procedure of the original RAG paper. Its retrieved passages are supplied to a quantised local instruction model, followed by application-specific claim and citation checks. The checks reduce particular failure modes; they cannot prove every generated statement true.
+\par\begin{table}[htbp]\caption{Conceptual comparison, not a commercial feature benchmark}\small\begin{tabularx}{\linewidth}{p{.25\linewidth}YYY}\toprule Approach&Primary strength&Relevant limitation&Project role\\\midrule
+File browser&Explicit organisation&Requires location knowledge&Folders and metadata search\\
+Google Drive / Dropbox&Managed storage and collaboration&Product scope varies by plan and release&Architectural context only\\
+Keyword engine&Literal terminology&Vocabulary mismatch&BM25 baseline\\
+Vector platform&Embedding similarity&Permissions and grounding remain application duties&Optional S3 Vectors demonstration\\
+Document QA&Evidence-conditioned responses&Retrieval and generation can fail&Scoped Qwen RAG\\\bottomrule\end{tabularx}\end{table}\par
+No comparative test of commercial products was performed. Accordingly, this table describes problem categories rather than claiming that a competing product lacks a current capability.
+Figure~\ref{fig:evolution} distinguishes the implemented stages from the proposed host transition.
+\diagram{evolution}{Architecture progression: proposal, implemented platform, verified Linux rehearsal and pending EC2 deployment. Dashed arrows denote a proposed transition.}{evolution}
+\FloatBarrier
+
+% END chapters/02_background
+% BEGIN chapters/03_requirements
+\chapter{Requirements and Development Methodology}
+\section{Functional and non-functional requirements}
+The functional contract includes registration, login, file and folder operations, sharing, retrieval, question answering and citation inspection. A successful response must respect the current user and resource state. The non-functional contract concerns confidentiality, recoverability, bounded resource use and honest failure reporting. In particular, an unavailable model must not be silently represented as successful LLM generation.
+\par\begin{table}[htbp]\caption{Requirements and their verification boundaries}\small\begin{tabularx}{\linewidth}{lYY}\toprule ID&Requirement&Evidence or boundary\\\midrule
+FR1&Authenticate users and revoke sessions&Backend session tests; browser login\\
+FR2&Manage owned/shared resources&File, folder and sharing integration suites\\
+FR3&Retrieve only authorised indexed content&Trusted scope; search/permission tests\\
+FR4&Answer with supporting citations&Strict Qwen cases and citation UI\\
+FR5&Persist conversations and indexes&SQLite restart/history acceptance\\
+NFR1&Preserve originals and recovery data&Hashes, database integrity and restore comparison\\
+NFR2&Bound costly activity&Disabled idle triggers; financial guard design\\
+NFR3&Remain portable&Independent Windows assets; native Linux rehearsal\\
+NFR4&Complete cloud hosting&Pending explicit EC2 approval and acceptance\\\bottomrule\end{tabularx}\end{table}\par
+\section{Roles and access policy}
+An authenticated user owns resources or receives an explicit/inherited permission. Viewer and editor rights differ from ownership, and infrastructure diagnostics additionally require an application administrator. AWS IAM identity is separate from these application roles. An administrator status page must not turn every normal account into a cloud-global metadata reader.
+\par\begin{table}[htbp]\caption{Application role matrix (subject to resource policy)}\small\begin{tabularx}{\linewidth}{Ycccc}\toprule Operation&Owner&Editor&Viewer&Anonymous\\\midrule
+Read authorised file&Yes&Yes&Yes&Valid link only\\
+Rename/move editable resource&Yes&Policy&No&No\\
+Grant new access / create links&Yes&Yes&No&No\\
+Change or revoke existing grants&Yes&No&No&No\\
+Ask over readable indexed content&Yes&Yes&Yes&No\\
+Infrastructure diagnostics&Admin only&No&No&No\\\bottomrule\end{tabularx}\end{table}\par
+\section{Development sequence}
+The repository documents progression from the October 12 proposal to storage, authentication, sharing, cloud integration, private intelligence and retrieval repair. Historical AWS work on November 24--26 precedes the November 27 standalone and Linux verification. The exact date of every development phase is not independently documented, so no invented day-by-day schedule is supplied.
+
+The method is incremental: identify a reproducible behaviour, inspect its governing boundary, implement a bounded change and retain evidence. For example, semantic discovery and citation correction were evaluated against fixed synthetic cases, while actual application authorisation was exercised separately. This division avoids treating mocked requests or adapter tests as full browser-to-AWS acceptance.
+Figure~\ref{fig:usecases} locates the ordinary user functions and the separate diagnostic privilege.
+\diagram{usecases}{Principal use cases and the separate administrator diagnostic privilege.}{usecases}
+\FloatBarrier
+
+% END chapters/03_requirements
+% BEGIN chapters/04_architecture
+\chapter{Complete System Architecture}
+\section{Layered responsibilities}
+The browser presents the original React interface and holds transient interaction state. Express validates requests, authenticates users and resolves resource authority. Prisma connects this policy layer to PostgreSQL. The private intelligence service owns extraction, embedding, retrieval, generation validation and conversation persistence. S3 retains original bytes, while DynamoDB records cloud processing state rather than application ownership.
+
+Figure~\ref{fig:system} shows the principal boundaries. A backend request to intelligence carries an internal service token, actor identifier and authorised file IDs. The model receives selected evidence, not database credentials or a tool capable of browsing the cloud account. The backend rechecks returned source metadata before displaying a citation, so the authority of a cached index does not replace current permissions.
+\diagram{system}{Implemented storage/intelligence architecture. Dashed edges are asynchronous events or bounded reconciliation, not a continuously running cloud-to-laptop callback.}{system}
+\section{Data flow and control flow}
+Original bytes, metadata, extracted passages and model context are distinct data products. Upload completion establishes an authoritative file revision; indexing derives passages from that revision; retrieval chooses evidence within the trusted scope; generation produces structured claims. Renaming a PostgreSQL file must not leave a stale filename as the authority for discovery, and deleting or revoking a file must prevent later retrieval even if a vector still exists.
+
+Control paths include session rotation, job leases, cost guards, cancellation and explicit cloud diagnostics. Ordinary search and Ask requests use private local retrieval by default. An optional cloud-vector demonstration is separately guarded and restricted to a configured synthetic canary. It is not the normal multi-user corpus index.
+\section{Cloud execution boundary}
+The native serverless path validates and classifies an S3 event, persists metadata and reaches an awaiting-local-embedding marker. That task ends the Standard workflow. Private indexing later reconciles state through outbound requests; it does not resume a parked Step Functions callback token. This distinction is important when interpreting successful cloud-stage execution as opposed to completed document intelligence.
+
+The intended EC2 version would move the complete application runtime to one Linux host while retaining existing AWS resources. That topology is explicitly prospective. Its memory limits, networking files and SSM access design have local/configuration evidence, but no EC2 instance, cloud-host inference benchmark or final stopped-host acceptance is claimed here.
+\subsection{Retrieval subsystem}
+Figure~\ref{fig:hybrid} exposes the dense and sparse branches inside the private intelligence layer. Chapter 10 defines their scoring and eligibility rules.
+\diagram{hybrid}{Implemented hybrid candidate fusion and tie breaking. Scope and relevance checks remain mandatory.}{hybrid}
+\FloatBarrier
+
+% END chapters/04_architecture
+% BEGIN chapters/05_implementation
+\chapter{Technology Stack and Software Implementation}
+\section{Frontend and backend}
+React components implement the dashboard, file explorer, sharing, account, activity, cloud and Ask views. React Router handles navigation; Axios provides the client API layer; Tailwind utility classes and the existing design tokens support light/dark presentation. The dependency manifest does not establish React Query as the active state-management layer, despite its appearance in the proposal.
+
+The Node.js backend uses Express middleware for authentication, validation, rate limits and error handling. Zod validates request shapes; bcrypt verifies password hashes; jsonwebtoken handles access tokens; cookie-parser supports refresh-cookie transport. Prisma migrations and generated clients define the relational interface. Vite builds the frontend; TypeScript compilation and linting are separate checks from runtime acceptance.
+\par\begin{table}[htbp]\caption{Implemented technology stack and representative source locations}\small\begin{tabularx}{\linewidth}{p{.25\linewidth}Yp{.32\linewidth}}\toprule Technology / layer&Purpose&Source location\\\midrule
+React, TypeScript, Vite&SPA interface and production build&\sourcepath{frontend/src}\\
+Express, Zod, JWT, bcrypt&REST, validation and identity&\sourcepath{backend/src/modules}\\
+PostgreSQL / Prisma&Ownership, folders, grants and jobs&\sourcepath{backend/prisma}\\
+FastAPI / Pydantic&Authenticated private adapter&\sourcepath{intelligence/app/internal.py}\\
+MiniLM / PyTorch / NumPy&384D normalised embeddings&\sourcepath{intelligence/app/embeddings.py}\\
+SQLite / FTS5&Passages, vectors, BM25 and history&\sourcepath{intelligence/app/database.py}\\
+Ollama / Qwen2.5 3B&Local structured generation&\sourcepath{intelligence/app/llm.py}\\
+Docker Compose / Git&Runtime isolation and checkpoints&\sourcepath{deployment/}\\\bottomrule\end{tabularx}\end{table}\par
+\section{Version and reproducibility policy}
+The measured Linux stack uses Python 3.13.18 and Torch 2.15.0+cpu. The Node runtime observed in the workstation environment was 24.19.0; production images pin a Node 24 base digest. Package manifests contain version ranges, so a range such as React \texttt{\^{}18.2.0} is not presented as an installed-version measurement. The lockfiles and image digests are the reproducibility inputs. The 75-package Python lock and vendor CPU runtime archive are retained by the project.
+
+The application does not implement Kubernetes, ECS, RDS, a load balancer or CloudFront in its accepted runtime. A separate original CDK design exists, but its presence is not evidence that those resources are active. The deployed serverless stack is reviewed through its actual CloudFormation template and worker source~\cite{cloudformation}.
+\section{Implementation traceability}
+Key source paths are recorded throughout the report and in Appendix~\ref{app:source}. Framework documentation explains the tool contracts~\cite{react,express,fastapi,prisma}; implementation claims are grounded in repository code and tests. This distinction also avoids attributing a framework's possible scalability to a measured property of this particular deployment.
+\section{Generation-aware background work}
+The application also retains a durable PostgreSQL indexing-job subsystem. Jobs carry a file generation, attempt count, run-after time and lease owner. Claiming uses row locking with \texttt{SKIP LOCKED}, and a completed older generation cannot replace current index state. Repeated crashes become an explicit failed job rather than an indefinitely running success indicator. This queue is distinct from the private engine's single active question-generation lock and from the AWS SQS ingestion queue.
+Figure~\ref{fig:jobs} summarises the durable indexing-job lifecycle.
+\diagram{job_lifecycle}{Durable application indexing-job lifecycle. Generation checks and bounded attempts prevent stale work from becoming the current result.}{jobs}
+\FloatBarrier
+
+% END chapters/05_implementation
+% BEGIN chapters/06_database
+\chapter{Database Design and Data Management}
+\section{Application metadata}
+The Prisma schema contains eleven application models. \texttt{User} owns files and folders and relates to sessions, refresh tokens, grants and activity. \texttt{Folder} uses a self-reference for hierarchy; \texttt{File.folderId} becomes null if its folder is removed, whereas file-dependent indexes, chunks, jobs and share links cascade with the file. These schema behaviours do not themselves authorise a destructive user operation: policy is checked before such changes.
+
+\texttt{Permission} uses a resource type and resource ID together with a grantee, rather than a database foreign key to every resource type. Its unique composite key prevents duplicate grants to the same user/resource pair. \texttt{ActivityLog} keeps a nullable actor and target owner so that anonymous link actions and events caused by collaborators can be represented. An account's storage counter uses a database non-negative constraint in addition to application accounting.
+Figures~\ref{fig:er-app} and~\ref{fig:er-ai} separate application ownership relations from derived evidence and conversation persistence.
+\diagram{er_application}{Application entity relationships. Solid edges denote schema relations; the permission resource reference is polymorphic rather than a direct foreign key.}{er-app}
+\par\begin{table}[htbp]\caption{Persistent application entities}\small\begin{tabularx}{\linewidth}{p{.30\linewidth}Y}\toprule Prisma model(s)&Stored responsibility\\\midrule
+User&Unique email, password hash, account state and quota\\
+UserSession / RefreshToken&Device session, hashed token family, expiry and revocation\\
+Folder / File&Hierarchy, ownership, object key, checksum and lifecycle state\\
+ShareLink / Permission&Bounded link access and user/resource grants\\
+ActivityLog&Actor, target owner, action and filtered metadata\\
+DocumentIndex&Current generation, extractor, checksum and index/summary status\\
+DocumentChunk&Generation-specific text and optional pgvector representation\\
+AiJob&Durable queue, lease, attempts and retry schedule\\\bottomrule\end{tabularx}\end{table}\par
+\section{Intelligence persistence and derived state}
+The integrated private engine persists actual retrieval vectors in SQLite \texttt{chunks.vector} float32 blobs. PostgreSQL also contains generation-aware document-index/chunk/job models from the application's indexing subsystem; their presence must not be confused with the private engine's current dense retrieval backend. The two representations have distinct responsibilities and require reconciliation rather than an assumed cross-database transaction.
+
+SQLite \texttt{files} stores revision and extraction information. \texttt{chunks} references a file with cascade deletion. \texttt{chunk\_fts} is an external-content FTS5 index maintained by insert/update/delete triggers. \texttt{conversations} and \texttt{exchanges} persist response JSON, while \texttt{conversation\_owners} adds actor ownership checks in the private adapter. \texttt{cloud\_outbox} retains failed metadata synchronisations for bounded retry.
+\diagram{er_intelligence}{Private SQLite evidence, FTS synchronisation and conversation ownership. Cross-store identity uses stable file IDs.}{er-ai}
+\section{Originals, cloud metadata and recovery}
+S3 is authoritative for original bytes. DynamoDB partitions cloud records under a workspace key and distinguishes file/job sort-key prefixes; revision information prevents stale reconciliation from becoming current state. S3 Vectors holds an optional cloud representation, not the ownership authority. SQLite migrations are additive and create backups before schema changes; interrupted pending/processing records become explicit retryable failures on restart.
+
+Backup and restore evidence is examined in Chapters 13--14; database documentation supplies the underlying persistence contracts~\cite{postgres,sqlitefts}.
+\FloatBarrier
+
+% END chapters/06_database
+% BEGIN chapters/07_features
+\chapter{Core Application Features}
+\section{Identity and account lifecycle}
+The public interface provides registration and login. Passwords are hashed, and authenticated requests carry short-lived access tokens. Refresh-token families and persistent sessions support rotation, revocation and reuse detection. Browser refresh cookies are HttpOnly and constrained to authentication paths; origin and CSRF checks apply to cookie-authenticated refresh operations. The Linux preparation uses a distinct refresh-cookie name so that the workstation session is not overwritten by another local port.
+\screen{public-login}{Actual public login interface rendered from the compiled frontend. Backend authentication evidence comes from separate integration/browser tests, not this static rendering.}{login}
+\screen{public-registration}{Registration interface from the compiled frontend; no account was created for this screenshot.}{registration}
+\section{Organisation and controlled collaboration}
+The dashboard displays storage, file-type distribution, recent files and activity. File views support nested folders, search, filtering, rename, move, selection and upload interaction. Trash and restoration preserve a reversible user workflow. Storage limits and upload reservations are accounted separately so that a failed or expired transfer does not permanently consume quota.
+
+Sharing is implemented through user/resource permissions and bounded share links. A viewer may read an authorised resource; editing operations require stronger authority. Folder permissions are resolved through the actual hierarchy rather than inferred from a filename. Link handling supports expiry, revocation, password protection and download limits where configured. A link token's lookup digest and verifier are distinct from storing a reusable plaintext secret.
+\screen{files}{Verified file explorer with a nested synthetic evidence folder and AI-ready document. The displayed content is a non-sensitive rehearsal fixture.}{files}
+\section{Intelligence and observable failure states}
+Indexed files can be searched by filename, exact content, BM25, semantic similarity or hybrid ranking. Ask supports document selection, conversation history and source buttons. Citation navigation opens the supporting passage rather than merely naming a file. The interface distinguishes unavailable generation, unsupported extraction, insufficient evidence and labelled fallback from a successful generated answer.
+
+The cloud page provides administrator-only, timestamped diagnostic snapshots. Its historical log counts are observations within a stated window, not continuous live health. Likewise, an AI-ready label indicates completed indexing for the current file generation; it does not guarantee that every question about that document is answerable.
+\screen{dashboard}{Verified Windows dashboard after the native AWS rehearsal. Synthetic counts illustrate the implemented interface, not a production workload.}{dashboard}
+\screen{linux-dashboard}{Verified local Linux dashboard with two seeded synthetic document records. This rehearsal did not upload those originals to S3.}{linux-dashboard}
+\diagram{download}{Download authority is checked against current metadata before original access. Revoked or foreign access is denied.}{download}
+\FloatBarrier
+
+% END chapters/07_features
+% BEGIN chapters/08_aws
+\chapter{AWS Cloud Infrastructure}
+\section{Object storage and optional vectors}
+Amazon S3 retains private original objects with public-access blocking and encryption configuration verified by read-only inspection. The application supports a private Python storage adapter and a separate presigned-transfer path; the integrated rehearsal exercised the guarded application path. Reservations and staging apply to the presigned mode. Historical final-application tests uploaded tiny synthetic originals, downloaded them and compared SHA-256 values. Those observations do not establish unlimited-size or every-format upload reliability~\cite{s3}.
+
+S3 Vectors stores embeddings in a dedicated index. The reviewed index is 384-dimensional with cosine similarity. A configured synthetic-canary demonstration checked cloud retrieval and metadata restrictions; normal local search and Ask do not issue vector queries. The benchmark SDK tripwire recorded zero attempted/live AWS calls. S3 Vectors is an S3 capability, not a separate AWS product added to inflate a service count~\cite{s3vectors}.
+\section{Asynchronous processing services}
+DynamoDB holds cloud file metadata, revision-linked processing records and stage history. It does not determine application-user ownership. The Lambda worker validates native event structure, object prefix, file UUID, original metadata and bounded processing rules. Heavy MiniLM and Qwen inference remain outside Lambda. Its reviewed configuration is 256 MiB memory and a 30-second function timeout~\cite{dynamodb,lambda}.
+
+EventBridge routes finalised-original S3 events to an existing SQS queue. Staging and derived prefixes are excluded to prevent recursive reprocessing. The queue decouples arrival from the bounded Lambda consumer; visibility timeout is 180 seconds and redrive permits three receives before the DLQ. The DLQ retains messages for 345,600 seconds (four days), so it is not a permanent audit archive. Mapping batch size one and reviewed concurrency limits help bound the rehearsal~\cite{eventbridge,sqs}.
+
+Standard Step Functions orchestrates \texttt{Validate}, \texttt{ExtractOrClassify}, \texttt{PersistManifest} and \texttt{AwaitLocalEmbedding}. Transient Lambda-service errors have bounded retries; failures are recorded through Catch paths. The final awaiting-local task ends the cloud execution. A successful state-machine run therefore proves cloud-stage completion, not completed private inference~\cite{stepfunctions}.
+\section{Observability, configuration and identity}
+CloudWatch retains worker logs for three days and supplies native invocation/duration metrics. A historical sampled window contained eleven Lambda invocations and five retrieved log events; those numbers are not presented as current counters. API Gateway exposes IAM-protected operational routes; the signed status request succeeded and an unsigned request returned 403 in the authorised rehearsal. Broad API listing routes are not exposed as ordinary user metadata~\cite{cloudwatch,apigateway}.
+
+Three Standard Parameter Store parameters provide shared non-secret configuration. CloudFormation records the actual stack and resource relationships, while IAM restricts service permissions and STS verifies account identity. Parameter Store is a Systems Manager feature; security groups and IAM roles are resources, not additional cloud products~\cite{ssm,cloudformation,iam}.
+\par\begin{table}[htbp]\caption{AWS integration evidence and current boundary}\label{tab:aws}\small\begin{tabularx}{\linewidth}{p{.22\linewidth}YY}\toprule Capability&Existing evidence&Operational qualification\\\midrule
+S3 / DynamoDB&Application upload, readback and metadata&Historical authorised synthetic run\\
+EventBridge / SQS / Lambda&Native event-driven processing&Rule and consumer restored idle\\
+SQS DLQ&Configuration and older failure evidence&No new poison-message/redrive test\\
+Step Functions&Cloud stages and awaiting-local marker&Private reconciliation is separate\\
+CloudWatch&Native logs and windowed metrics&Timestamped, not continuous health\\
+API Gateway&Signed success; unsigned 403&Operational status, not global user listing\\
+S3 Vectors&Restricted synthetic retrieval&Optional; normal search remains local\\
+SSM parameters / CloudFormation&Read-only configuration review&No new stack deployment\\
+IAM / STS&Identity, signed API and policy inspection&EC2 role execution still pending\\
+EC2 / EBS / Session Manager&Prepared design and read-only feasibility&Not deployed or accepted\\\bottomrule\end{tabularx}\end{table}\par
+\section{Evidence classification}
+The November 26 native rehearsal is historical live evidence. November 27 read-only observations establish configuration/state at their timestamps. Earlier timeout-limited service checks were not all successful; subsequent queue inspections resolved the two SQS timeouts. Cloud-stage demonstrations, local simulated tests and configuration inspection are intentionally labelled separately. No new console session or EC2 resource was created for this report.
+\screen{cloud-overview}{Cropped, timestamped application cloud dashboard from the historical verification session. The snapshot is evidence of displayed diagnostics, not current end-to-end operation.}{cloud-overview}
+\screen{cloud-services}{Historical application service matrix, cropped from the genuine cloud dashboard. No console screenshot or live EC2 result is fabricated.}{cloud-services}
+\FloatBarrier
+
+% END chapters/08_aws
+% BEGIN chapters/09_events
+\chapter{Event-Driven Document Processing}
+\section{Native event path and idempotency}
+The implemented event path begins only after an original appears under the managed final-object prefix. EventBridge delivers the S3 object-created notification to SQS. The worker validates its source and key, derives file/revision information and starts a Standard workflow with deterministic correlation. Duplicate delivery must not create a second logical result; conditional object creation, deterministic execution identity and revision-aware records support that property.
+
+The worker's partial-batch response identifies failed message IDs rather than acknowledging an entire unsuccessful batch. Visibility timeout and redrive then govern retries. Unknown backlog is not drained to manufacture a passing demonstration. During the historical authorised rehearsal, routing and the consumer were enabled briefly and restored to their prior disabled state in a finalisation path.
+Figure~\ref{fig:aws-events} traces the asynchronous handoff; Figures~\ref{fig:upload} and~\ref{fig:download} distinguish object transfer from application authority.
+\diagram{aws_events}{Native original-object processing followed by a separate private-AI handoff. The cloud workflow does not perform Qwen inference.}{aws-events}
+\section{State-machine semantics}
+Figure~\ref{fig:asl} corresponds to the deployed template's states. Each processing task invokes the worker with a stage value and records bounded history in DynamoDB. \texttt{ExtractOrClassify} does not indiscriminately persist every private document's plaintext in AWS. Only approved non-sensitive fixture hashes may produce a bounded derived text artifact; other content is classified for private processing. Derived output uses a separate prefix and is excluded from original-event routing.
+\diagram{state_machine}{Actual Standard state-machine structure. Catch paths record failure; AwaitLocalEmbedding ends the cloud execution rather than waiting for a callback.}{asl}
+\section{Private completion and verification}
+After the cloud marker, the application can retrieve the authorised original, verify content, extract text, generate embeddings and persist searchable private evidence. Outbound reconciliation updates the cloud metadata revision. A temporary failure is retained in \texttt{cloud\_outbox} rather than silently losing synchronisation. Search and RAG remain permission-scoped even when cloud metadata is stale.
+
+The native rehearsal used a 242-byte canary and a second 134-byte synthetic document through NimbusVault. Evidence includes object hashes, cloud job transitions, private completion, Qwen answers and citations. The DLQ's older failure demonstration remains historical and differs from this final-app success path. No new poison event, receive loop, queue purge or redrive was performed for the report.
+\diagram{upload}{Upload coordination. The direct browser-to-S3 branch applies to the implemented presigned mode; the integrated rehearsal used the guarded adapter path.}{upload}
+\FloatBarrier
+
+% END chapters/09_events
+% BEGIN chapters/10_search
+\chapter{Document Intelligence and Semantic Search}
+\section{Extraction and passage construction}
+The private extractor handles PDF, DOCX, spreadsheet and structured/plain-text families. It rejects encrypted PDFs requiring an unlocked copy, bounds PDF page count and checks archive expansion limits before Office extraction. The production configuration does not promise OCR for scanned images. Empty, unsupported and failed documents retain distinct states instead of being marked indexed without evidence.
+
+MiniLM chunking uses tokenizer offsets to retain original source substrings. A window contains at most 220 tokens, or a smaller model limit minus special tokens, with 32-token overlap. It checks boundary tokenisation again and limits the total to 3,000 chunks. Extracted text is bounded to 500,000 characters in the configured private engine. These implementation bounds differ from an unrestricted whole-document reasoning claim.
+Figures~\ref{fig:embedding},~\ref{fig:dense} and~\ref{fig:hybrid} expose the extraction, dense-ranking and fusion stages respectively.
+\diagram{embedding}{Verified bytes become token-bounded passages, normalised vectors and synchronised FTS entries.}{embedding}
+\section{Embedding representation and cosine similarity}
+The selected model is \texttt{sentence-transformers/all-MiniLM-L6-v2}. It runs on CPU in the private engine with remote model code disabled and an in-project cache. Encoding normalises each 384-dimensional float32 vector~\cite{minilmcard}. For query vector $q$ and passage vector $d$, cosine similarity is
+\begin{equation}\operatorname{cos}(q,d)=\frac{\sum_{j=1}^{384}q_jd_j}{\sqrt{\sum_jq_j^2}\sqrt{\sum_jd_j^2}}.\end{equation}
+Here $j$ indexes dimensions; non-zero normalised vectors permit the implementation to use a matrix dot product. A cosine value is a similarity score, not a probability that an answer is correct. As an illustrative example only, vectors $(1,0)$ and $(1,1)$ have cosine $1/\sqrt{2}$; this is not project benchmark data.
+\diagram{dense_search}{Dense retrieval filters by trusted document scope before ranking and returning authorised results.}{dense}
+\section{BM25 and SQLite FTS5}
+A standard BM25 form is
+\begin{equation}\operatorname{BM25}(D,Q)=\sum_{t\in Q}\operatorname{IDF}(t)\frac{f(t,D)(k_1+1)}{f(t,D)+k_1(1-b+b|D|/\overline{|D|})}.\end{equation}
+$Q$ is the query, $D$ a passage, $f$ the term count, $|D|$ its length and $\overline{|D|}$ the corpus mean. $k_1$ controls frequency saturation and $b$ length normalisation~\cite{bm25}. NimbusVault delegates sparse ranking to SQLite FTS5's \texttt{bm25(chunk\_fts)}. FTS5 uses its own documented scoring/sign convention; the SQL sorts its score ascending. The theoretical expression above is not a claim that custom Python code implements a separately tuned BM25 parameter set~\cite{sqlitefts}.
+\section{Actual hybrid ranking}
+The retrieved dense and lexical ranks are combined with
+\begin{equation}\operatorname{RRF}(c)=\frac{1}{60+r_d(c)}+\mathbf{1}_{c\in L}\frac{1}{60+r_l(c)},\end{equation}
+where $r_d$ and $r_l$ are one-based dense and lexical ranks, $L$ is the sparse candidate set, and an absent lexical contribution is zero. Dense candidates include scoped lexical rescue candidates; sparse retrieval is bounded to sixty candidates. Ties use lexical term coverage and then dense similarity. RRF is actually present in the source; it is not an invented weighted cosine/BM25 sum.
+
+Eligibility gates precede final selection. The default dense evidence floor is 0.28 with a relative floor of 70\% of the best score; single-document selection permits a 0.20 minimum. Exact identifier/full short-query lexical anchors and bounded complementary-intent logic can rescue evidence while retaining scope checks. A selected-document excerpt summary is handled separately and is not proof of whole-document completeness. These heuristics explain why the hybrid result is more than an unfiltered rank sum.
+\par\begin{table}[htbp]\caption{Search modes and interpretation}\small\begin{tabularx}{\linewidth}{lYY}\toprule Mode&Signal&Principal limitation\\\midrule Filename&Current authorised names&Content meaning not considered\\Exact&Literal content phrase&No paraphrase matching\\BM25&FTS5 lexical rank&False positives on shared terms\\Semantic&MiniLM cosine&Exact identifiers can be weakly embedded\\Hybrid&RRF plus explicit gates&Heuristic tuning can overfit a small corpus\\\bottomrule\end{tabularx}\end{table}\par
+\FloatBarrier
+
+% END chapters/10_search
+% BEGIN chapters/11_rag
+\chapter{Large Language Model and RAG}
+\section{Runtime and bounded context}
+Ollama serves the validated \texttt{qwen2.5:3b} model with Q4\_K\_M quantisation. The model family and instruction variant are documented by Qwen~\cite{qwen}; the deployed artifact is the actual Ollama manifest and blob set, not an assumed equivalence to every upstream model capability. The Linux rehearsal uses a native x86-64 CPU runtime, one parallel model slot and a 6,144-token runtime context. The application additionally bounds evidence context to 10,000 characters; the upstream model's advertised maximum is not the application's effective context budget~\cite{ollama}.
+
+Quantisation reduces weight storage and memory requirements while changing numerical representation. It does not make inference costless. The measured Linux runner used no VRAM, and a loaded model occupied approximately 2.2 GiB in the observed run. No matched GPU-versus-EC2 comparison was measured.
+\section{Permission-aware generation}
+Figure~\ref{fig:rag} traces the actual request. Express authenticates the caller and derives a current readable-file scope. FastAPI retrieves within that scope and supplies labelled passages to Qwen. Source text is treated as untrusted data; instructions request structured claims, evidence IDs and exact supporting quotations. The model has no tools that could execute instructions found in a document.
+Figures~\ref{fig:citation-check} and~\ref{fig:multidoc} show the grounding decision and complementary-source assembly.
+\diagram{rag}{Implemented RAG path, including bounded correction, labelled fallback and owned persistence.}{rag}
+\section{Grounding, correction and abstention}
+The application checks that citation IDs refer to supplied evidence and that each quotation matches a source substring after controlled whitespace/case normalisation. Unsupported claims are removed or trigger a bounded correction. The correction prompt requests exact source-faithful sentences, with a Linux correction budget of ninety seconds replacing the earlier hardcoded thirty-second limit. Timeout and cancellation remain bounded; the change does not weaken the acceptance criteria.
+
+Generated, extractive and insufficient responses remain distinct modes. An extractive fallback must not be counted as a genuine generated positive case. Lack of authorised or relevant context warrants abstention. Exact quotation checks establish provenance of quoted words, but semantic entailment can still fail; a correct quotation alone is not a proof that every paraphrase or inference is justified.
+\diagram{citation_validation}{Evidence sufficiency, exact quotation checks and bounded repair. Invalid output does not become a silent successful generation.}{citation-check}
+\section{Multi-document answers and history}
+The synthetic Linux acceptance combined a document describing local processing with a separate Borealis access-code document. A real application-level Qwen response included both source files, and the citation dialog exposed the corresponding passage. Conversation owners and stored file scopes are checked again when history is retrieved, preventing a saved response from bypassing later access changes.
+\diagram{multidoc}{Complementary evidence from two independently scoped documents is attributed in a single generated response.}{multidoc}
+\screen{generated-answer}{Verified genuine Qwen answer in NimbusVault's historical application rehearsal. The example concerns non-sensitive synthetic local-AI statements.}{qwen-answer}
+\screen{linux-citation}{Verified Linux multi-document conversation with the Borealis supporting passage open. Seeded local metadata is not evidence of a new S3 upload.}{linux-rag}
+\FloatBarrier
+
+% END chapters/11_rag
+% BEGIN chapters/12_security
+\chapter{Security, Privacy and Access Control}
+\section{Authentication and authorisation boundaries}
+Passwords use bcrypt hashing. Access-token validation checks request identity, while persistent refresh families and device sessions support rotation and revocation. Browser refresh requires an appropriate origin/custom header when authenticated by a cookie. A Linux-specific cookie name avoids a same-host, different-port collision with the Windows fallback. These controls follow layered session-management principles rather than relying on a JWT alone~\cite{owasp}.
+
+Every file operation resolves current ownership or inherited access. Search receives only readable indexed IDs, and source mapping checks authority again before returning citations. History retrieval additionally checks actor ownership and retained document scope. A private service token authenticates Express to FastAPI; the backend rejects an arbitrary intelligence URL before sending that token. The browser cannot submit a trusted actor header directly to a publicly exposed intelligence endpoint.
+Previously issued presigned download URLs remain usable until their short expiry; application revocation does not retroactively invalidate an already issued S3 signature. New authenticated requests are checked against current authority. This distinction prevents a claim of instantaneous revocation for every transfer path.
+Figures~\ref{fig:auth} and~\ref{fig:trust} make the identity and service boundaries explicit.
+\diagram{authentication}{Authentication and refresh-session sequence. A token identifies a caller; current resource policy still governs each operation.}{auth}
+\diagram{trust}{Trust boundaries for browser input, private intelligence, generation and guarded cloud access. Planned instance-role execution remains unverified on EC2.}{trust}
+\section{Threats and mitigations}
+\par\begin{table}[htbp]\caption{Threat analysis and residual scope}\small\begin{tabularx}{\linewidth}{p{.25\linewidth}YY}\toprule Threat&Implemented mitigation&Remaining qualification\\\midrule
+Foreign document exposure&Current file scope; source re-authorisation; history ownership&Regression cases are finite\\
+Refresh-token replay&Hashed family records and rotation/revocation&Secure deployment origin still matters\\
+Prompt injection&Untrusted evidence delimiters; no model tools; quote checks&No proof against every adversarial prompt\\
+Internal token leakage&Approved service-host allowlist&Host administrator remains privileged\\
+Stale index or revision&Generation checks, current metadata and outbox&No cross-store distributed transaction\\
+Cloud overspend&Free-plan/credit guard; idle event routing&Billing delay prevents a hard cost cap\\
+Container compromise&Non-root, dropped capabilities, isolated ports/networks&Host enforcement awaits EC2 verification\\\bottomrule\end{tabularx}\end{table}\par
+\section{Actual dependency and image findings}
+The final image snapshots contain 23 distinct HIGH/CRITICAL CVE identifiers across all four production images. Package-level counts are larger because one CVE may affect several installed packages or appear in multiple images. The table therefore reports findings without conflating them with unique defects. Production npm audit and a Python advisory scan have different coverage from whole-image scanning; the latter additionally inspects OS packages and bundled Go binaries.
+\par\begin{table}[htbp]\caption{Trivy image snapshot: package findings, not unique CVEs}\label{tab:security}\small\begin{tabularx}{\linewidth}{YrrY}\toprule Image&Critical&High&Boundary\\\midrule
+API&0&52&OS findings; no high Node-package result\\
+Intelligence&0&53&OS findings; no high Python-package result\\
+CPU Ollama&0&54&53 OS findings plus one bundled Go finding\\
+PostgreSQL&1&72&Stable libxml2 finding remains\\\bottomrule\end{tabularx}\end{table}\par
+The initial Python image's SQLite/zlib critical findings were addressed by the base-image change. Unused npm, pip/ensurepip and root-only gosu tooling were removed from final runtime images where appropriate; available stable security updates were applied. The remaining PostgreSQL libxml2 CVE-2026-6653 is scanner-critical, while Debian classifies it as a minor issue with no stable fix~\cite{libxml}. The database has no published port and the application exposes no arbitrary SQL/XML interface. This limits exposure but does not fix the vulnerable package.
+
+Other findings include privileged util-linux prerequisites, SQLite FTS table construction and a vendor Ollama x/net HTML-parser issue. Non-root execution, dropped capabilities, restricted network boundaries and the absence of model web-search use reduce specific attack paths. Findings are retained, not suppressed. No production-security certification or universal absence of vulnerabilities is claimed.
+\section{Secrets, logs and cloud controls}
+The report package contains no credential files, refresh cookies, private databases or recovery backups. AWS diagnostic values are sanitised and account identifiers are omitted where unnecessary. The proposed EC2 role would use instance credentials and IMDSv2 rather than copied personal profiles. A scoped deny prevents unrelated Parameter Store reads inherited from SSM core permissions. Actual metadata firewall, encrypted disk and private SSM controls remain post-approval checks~\cite{imds,ssmsession}.
+\FloatBarrier
+
+% END chapters/12_security
+% BEGIN chapters/13_deployment
+\chapter{Deployment and DevOps}
+\section{Standalone Windows baseline}
+The Windows application uses project-local Node/Python configuration, Docker PostgreSQL, private SQLite evidence, MiniLM cache and copied Ollama/Qwen assets. Startup, warmup, shutdown and backup commands are exposed through project scripts. The donor project was renamed and its files copied into the final project, after which inference, retrieval and normal application operations continued.
+
+Integrity comparison checked all 75 copied Windows runtime files, the Qwen assets and nineteen MiniLM cache files against the retained source. Six content-addressed Qwen blobs matched their digest names. Audited model/data locations contained no runtime reparse-point dependency. A separate recovery directory preserved 873 files; five SQLite copies passed integrity checks and row comparisons, including conversations. These are local recovery copies, not proof of off-device disaster recovery.
+\section{Linux rehearsal and isolation}
+The Docker composition separates PostgreSQL, Express, FastAPI and CPU-only Ollama. Only Express publishes a loopback host port. Internal application/model networks isolate databases and inference; persistent volumes hold PostgreSQL and SQLite while read-only model mounts hold platform-independent assets. The CPU runtime was extracted from the verified official Linux archive, excluding Windows and GPU libraries. Images are pinned by base digest and package locks.
+
+Local secrets and synthetic users are independent of the workstation's private data. The latest preparation further separates intelligence-service environment values from backend JWT/database secrets. No personal AWS profile or original document/history database belongs in the deployment bundle. The measured artifact set is approximately 3.1 GB; its exact hashes and revision must be refreshed whenever packaging inputs change.
+Figure~\ref{fig:deployment} separates the tested local runtime from the prospective cloud host.
+\diagram{deployment}{Verified local Linux topology and proposed host transition. Docker Desktop measurements do not establish EC2 performance.}{deployment}
+\section{Shutdown, restart and backup}
+The Linux API drains on SIGTERM, cancels owned active generations after a bounded wait and exits before the container stop deadline. A controlled active-generation test observed HTTP 499, exit code zero, no OOM kill and approximately 11.03 seconds to stop. A complete stack restart preserved login, file counts, conversation history and hybrid retrieval. A separate restore database matched all rows in twelve PostgreSQL public tables; an exported SQLite copy passed integrity checking.
+
+Moving the test database from the earlier Debian base exposed a collation-version mismatch. Reindexing the isolated synthetic database and refreshing its collation metadata resolved that migration condition; no original Windows database was changed. Fresh EC2 storage must still be tested on the actual host.
+\section{EC2 acceptance remains pending}
+The proposed host is one Ubuntu 24.04 x86-64 \texttt{m7i-flex.large} in Sydney, with encrypted 30 GiB gp3 and private SSM forwarding. No EC2 instance has been provisioned under the current request. The operating-system boot timer, credit watchdog, external stop schedule, metadata firewall and dedicated IAM role are prepared controls, not observed cloud enforcement. SSM forwarding at localhost is private administration, not a publicly accessible website~\cite{ec2,ssmsession,docker}.
+\FloatBarrier
+
+% END chapters/13_deployment
+% BEGIN chapters/14_testing
+\chapter{Testing and Quality Assurance}
+\section{Layered verification strategy}
+The test strategy separates deterministic unit behaviour, database/API integration, private-engine acceptance, browser interaction, native AWS rehearsal and configuration inspection. Each layer answers a different question. Mocked model tests exercise validation branches; real Qwen cases establish actual generation on the synthetic corpus; browser tests establish UI/session behaviour; authorised native cloud evidence establishes the particular AWS path exercised.
+\par\begin{table}[htbp]\caption{Recorded local test results; separate suite executions}\label{tab:tests}\small\begin{tabularx}{\linewidth}{YrlY}\toprule Suite&Passes&Framework&Scope\\\midrule
+Backend&298&Jest&Authentication, storage, sharing, jobs and AI boundaries\\
+Frontend&57&Vitest&Components, state and session behaviour\\
+Python intelligence&83&pytest&Extraction, retrieval, guards, grounding and real Qwen\\
+Infrastructure&22&Vitest&Infrastructure definitions and constraints\\\midrule
+Total across suites&460&&Not one monolithic run\\
+Responsive browser checks&54&Playwright&Nine SPA routes at six widths\\\bottomrule\end{tabularx}\end{table}\par
+The 54 responsive observations are route/viewport checks in a preserved SPA session, not 54 independently authenticated full-page reloads. Browser evidence includes real login, saved generated answers and clickable citations, with no observed page errors. Incorrect passwords and foreign history/download requests were rejected. Code-coverage percentage was not measured and is not inferred from the pass count.
+\chart{test_distribution}{Distribution of the 460 reported suite passes. Counts do not measure production coverage or defect absence.}{tests}
+\section{Representative acceptance cases}
+\par\begin{table}[htbp]\caption{Representative expected and observed outcomes}\small\begin{tabularx}{\linewidth}{p{.29\linewidth}YY}\toprule Case&Expected&Observed\\\midrule
+Foreign conversation request&No data disclosure&404 in scoped application acceptance\\
+Wrong password&Authentication denied&401\\
+Arbitrary intelligence host&No private token sent&Request rejected before fetch\\
+Unrelated query&No unsupported context answer&15/15 hybrid negatives rejected\\
+Two-document factual question&Real generated answer with both sources&Accepted application response and citation UI\\
+Active SIGTERM&Bounded cancellation and clean exit&499; exit 0; no OOM\\
+Restart&Persistent identity/data/history&Login, counts, history and hybrid search retained\\
+Backup restore&Equivalent recoverable data&All rows matched in twelve public tables\\\bottomrule\end{tabularx}\end{table}\par
+\section{Failures retained as engineering evidence}
+The first Linux AI run accepted 38 of forty cases. Its two failures reached a thirty-second correction limit; the bounded correction budget was repaired and the unchanged full suite later passed forty cases. Earlier Linux harness failures involved a missing OCR-test font, unwritable Vite temporary directories and absent infrastructure test dependencies. These were corrected without weakening assertions. Optional Vitest disk-cache warnings did not prevent execution.
+
+A Windows test invocation initially used an unused default test port. It was terminated and rerun through the existing isolated local harness; the 298/57 results refer to the successful rerun. Such distinctions matter because an infrastructure setup failure is neither an application pass nor evidence that the suite's assertions were exercised.
+\screen{mobile-dashboard}{Verified narrow-screen dashboard. Responsive checks establish the tested layouts, not accessibility conformance or every device.}{mobile-dashboard}
+\FloatBarrier
+
+% END chapters/14_testing
+% BEGIN chapters/15_evaluation
+\chapter{Experimental Evaluation and Performance}
+\begingroup\renewcommand{\chart}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=.84\linewidth]{figures/charts/#1.pdf}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\section{Corpus and methodology}
+The search evaluation uses 84 synthetic queries: 69 with relevant documents and fifteen intended negatives. Query scopes are trusted synthetic file-ID sets. The benchmark indexes into a temporary database, leaving user documents unchanged. Three modes run over the same cases. The corpus was used during development and repair; it is regression evidence, not an untouched independent holdout or a representative distribution of arbitrary user documents.
+
+For query $q$, let $R_q$ be relevant documents and $T_{q,k}$ the first $k$ returned distinct documents. The reported measures are
+\begin{align}
+\mathrm{Hit@}k&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\mathbf{1}[R_q\cap T_{q,k}\ne\varnothing],\\
+\mathrm{Recall@}k&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\frac{|R_q\cap T_{q,k}|}{|R_q|},\\
+\mathrm{MRR}&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\frac{1}{\operatorname{rank}_q},\\
+\mathrm{NegReject}&=\frac{1}{|Q^-|}\sum_{q\in Q^-}\mathbf{1}[\text{no accepted result}].
+\end{align}
+$Q^+$ and $Q^-$ denote positive and negative cases; reciprocal rank is zero when no relevant document is returned. Top-1 accuracy is Hit@1. Recall differs from hit rate when a query needs complementary documents. Precision was not reported as a principal benchmark metric.
+\section{Search quality and latency}
+\par\begin{table}[htbp]\caption{Latest local Linux search results, 84 cases per mode}\label{tab:search}\small\begin{tabularx}{\linewidth}{Yrrr}\toprule Metric&Dense&BM25&Hybrid\\\midrule
+Relevant top-1&65/69&64/69&69/69\\
+Top-1 accuracy&94.20\%&92.75\%&100.00\%\\
+Top-3 hit rate&95.65\%&95.65\%&100.00\%\\
+Mean Recall@3&94.20\%&95.65\%&98.55\%\\
+MRR&0.9493&0.9396&1.0000\\
+Negative rejection&15/15&8/15&15/15\\
+Scope leaks in tested cases&0&0&0\\
+Median latency (ms)&19.58&5.19&9.09\\
+P95 latency (ms)&37.03&7.44&12.59\\\bottomrule\end{tabularx}\end{table}\par
+Hybrid retrieval recovered exact identifiers and complementary evidence that dense-only ranking sometimes missed. Sparse retrieval was fastest but accepted seven unrelated negatives. Neither the perfect hybrid top-1 count nor zero tested scope leaks establishes universal accuracy or a formal confidentiality proof. A larger blinded corpus, adversarial permissions and relevance judgements independent of development remain necessary.
+\chart{search_top1}{Positive top-1 accuracy on 69 curated queries; the axis begins at zero.}{search-top1}
+\chart{negative_rejection}{Negative-query rejection on fifteen cases. BM25's literal matches are insufficient as an evidence gate.}{negatives}
+\chart{ranking_metrics}{Top-3 hit rate, mean Recall@3 and MRR. A hit need not retrieve every complementary relevant document.}{ranking}
+\chart{retrieval_latency}{Local private-adapter latency on the same 84 queries. Caching, mode order and workstation load affect timing.}{retrieval-time}
+\section{Genuine AI evaluation}
+The unchanged combined AI suite contains forty cases: 31 answerable cases require \texttt{generated} mode, expected facts and sources; nine require abstention. Checks also require exact supporting quotations and no source outside the permitted scope. The latest full Linux CPU run accepted all forty cases, with 31 genuine generated positives, nine correct insufficient responses, mean literal fact coverage 1.0 and zero reported quote/scope failures.
+
+The earlier 38/40 run had 29 generated positives and two bounded correction timeouts. After the correction repair, the long-document-end and breakfast-follow-up cases passed without changing expected facts or acceptance labels. An extractive response could not pass as a genuine generated positive. The measured median over all forty requests was 19.897 seconds; early cold/contention effects and faster abstentions are mixed in that overall statistic.
+\chart{ai_outcomes}{Strict AI acceptance categories: 31 generated positives and nine correct abstentions. This is not a population accuracy estimate.}{ai-outcomes}
+\chart{ai_latency}{Observed Linux CPU request-time distributions. Generated and insufficient cases have different workloads and should not be interpreted as matched inference comparisons.}{ai-latency}
+\section{Startup and resource observations}
+A fresh Linux Python process measured 1.631 seconds for Torch import, 3.740 seconds for Sentence Transformers import, 0.732 seconds to load MiniLM, 0.426 seconds for first encoding and 0.021 seconds for warm encoding; total was 6.661 seconds. This measures a fresh process with available local model files, not a cold EC2 disk or a first-ever model download.
+An earlier Windows first-request observation took approximately 84.4 seconds, of which roughly 75.6 seconds lay in retrieval initialisation. The exact historical subphase cause was not isolated; attributing all of it to model download, GPU allocation or one library would be speculation. The Linux profile should therefore explain possible startup components, not claim a proven paired speedup.
+
+The CPU runtime reported zero VRAM and an approximately 2.2 GiB loaded Qwen footprint in its observed run. One cold model-load observation was about 24.37 seconds. No equivalent paired cold/warm Qwen benchmark, measured GPU comparison or EC2 resource-utilisation trace is available. Those requested charts are omitted rather than invented.
+\chart{startup_phases}{Measured MiniLM startup/encoding phases. First and warm encoding are embedding operations, not Qwen inference.}{startup}
+\FloatBarrier
+\endgroup
+
+% END chapters/15_evaluation
+% BEGIN chapters/16_cost
+\chapter{Cloud Cost Analysis and Resource Optimisation}
+\section{Financial objective and verified rates}
+The project objective is INR0 out-of-pocket expenditure within the active AWS Free account plan and promotional-credit restrictions. Consuming credits is still consuming a finite resource. A point-in-time read-only observation recorded FREE/ACTIVE status, USD139.997874 remaining credits and expiry on May 24, 2027. It is not a claim that the account remains unchanged indefinitely or that a stopped instance costs nothing~\cite{freeplan}.
+
+The Sydney Pricing API evidence used USD0.1197 per compute hour, USD0.005 per in-use IPv4 hour and USD0.096 per GiB-month for gp3. Thirty GiB therefore costs USD2.88 per full month while retained, even when compute is stopped. No Paid-plan upgrade or automatic-upgrade trigger is authorised~\cite{ec2pricing,ebspricing,ipv4pricing}.
+\begin{equation}C(t,m)=t(0.1197+0.005)+30(0.096)m+C_{\rm artifacts}+C_{\rm requests},\end{equation}
+where $t$ is active compute/address hours and $m$ is retained-storage months. A four-hour session with storage prorated over a 730-hour month gives approximately USD0.515 before other services. The illustrative first month includes a full USD2.88 disk month, about USD0.10 artifact storage and a conservative USD1 small-integration allowance, totalling approximately USD4.48. This is an estimate, not a measured bill.
+\par\begin{table}[htbp]\caption{Illustrative retained-disk scenarios, excluding other account activity}\small\begin{tabularx}{\linewidth}{Yrr}\toprule Use&Hours/month&Gross USD/month\\\midrule
+Stopped all month&0&2.88\\
+One hour/day&30.42&6.67\\
+Two hours/day&60.83&10.47\\
+Four hours/day&121.67&18.05\\
+Continuous&730&93.91\\\bottomrule\end{tabularx}\end{table}\par
+{\renewcommand{\chart}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=.84\linewidth]{figures/charts/#1.pdf}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\chart{monthly_cost}{Estimated compute, address and retained EBS costs. Promotional eligibility, other services and billing delays are separate considerations.}{cost}
+}
+\section{Optimisation and bounded safeguards}
+Private MiniLM/Qwen inference avoids paid language-model APIs. Normal retrieval avoids S3 Vectors queries; cloud diagnostics are on demand rather than a polling loop. Existing serverless resources are reused, logs have finite retention and native triggers remain idle outside authorised windows. The proposed host avoids a managed database, NAT gateway and load balancer for this bounded academic workload.
+
+The proposed initial approval is limited to four hours, USD10 session credit consumption and a minimum USD10 reserve. A boot timer, independent deadline schedule and credit/authorisation watchdog are designed to stop compute. Free-plan/API uncertainty fails closed. IAM simulation verified upgrade, provisioning, deletion and unconditional overwrite denies, including an explicit denial of unrelated parameter reads.
+Figure~\ref{fig:shutdown} shows the planned independent stop paths and their approval boundary.
+{\setlength{\intextsep}{5pt}\setlength{\textfloatsep}{6pt}
+\diagram{shutdown}{Prepared financial and shutdown controls. These are locally reviewed designs; actual EC2 enforcement and final stopped state await approval.}{shutdown}
+}
+\section{Limits of cost assurance}
+Credit snapshots and timers are not a hard billing cap: usage reporting can lag and unrelated account activity can consume credits. Retained EBS/S3 continues to incur storage consumption. Sixteen other enabled regions could not be completely inventoried because of access restrictions, and zero Free Tier usage rows did not prove zero usage. Account-plan expiry is earlier than several arithmetic credit-runway estimates, so permanent free hosting is not claimed. Optional original-object export and permanent cleanup each remain separate authorisation decisions.
+\FloatBarrier
+
+% END chapters/16_cost
+% BEGIN chapters/17_challenges
+\chapter{Challenges, Solutions and Engineering Contributions}
+\section{Maintaining one authority for access}
+The most important integration problem was preserving application permissions across a separately implemented intelligence engine. A vector match alone originally lacked the application's ownership context. The implemented boundary sends trusted actor/file IDs from Express and checks returned source metadata again. Tests exercise revoked/foreign access and conversation ownership. The result is a defensible integration boundary, with finite regression coverage rather than a formal proof of every possible access path.
+\section{Retrieval and grounding repairs}
+The query about MiniLM/Qwen local processing exposed a dense-relevance gate that rejected a document containing all important exact anchors. A short-query full lexical-coverage rule recovered this case while keeping file scope mandatory. Exact identifiers and tie handling required separate corrections. The 84-query benchmark records the resulting balance of relevant hits and negative rejection; continued dependence on a curated development corpus remains a limitation.
+
+Generated paraphrases occasionally failed strict quotation/coverage checks. A source-faithful correction step selected supporting source sentences. On CPU, the earlier hardcoded thirty-second correction deadline caused two cases to fall back; a bounded configurable ninety-second Linux budget allowed the unchanged suite to complete. This is a latency/correctness trade-off, not evidence that more time always yields a correct answer.
+\section{Portability and operational reliability}
+Copied runtime/model paths removed the donor-directory dependency. Hashes, model manifests, symlink inspection and a separate recovery copy made that change reviewable. Native Linux CPU packaging avoided shipping Windows DLLs or assuming a cloud GPU. Docker's internal-only networking initially prevented the intended loopback port from publishing; a separate access bridge supplied the required publication, with stricter host egress/metadata enforcement planned for EC2.
+\par\begin{table}[htbp]\caption{Selected problems, verified changes and remaining limits}\small\begin{tabularx}{\linewidth}{p{.25\linewidth}YY}\toprule Problem&Verified response&Remaining limit\\\midrule
+Private-token destination risk&Reject untrusted intelligence host before fetch&Host policy must remain constrained\\
+Cross-port cookie collision&Separate cloud refresh-cookie name&Actual SSM-origin acceptance pending\\
+Backup checksum self-inclusion&Exclude checksum file; verify saved manifest&Remote recovery not yet demonstrated\\
+Database collation change&Reindex synthetic DB; refresh collation version&Fresh host still needs acceptance\\
+Active shutdown&Bounded owned-generation cancellation&Cloud stop/start remains unverified\\
+Image vulnerabilities&Stable updates; remove unused tooling&23 distinct high/critical identifiers remain\\
+Stale bundle risk&Regenerate manifests after source/image changes&Only matching hashes may be deployed\\\bottomrule\end{tabularx}\end{table}\par
+The engineering contribution is the combination of these boundaries and evidence practices. It is not the invention of embeddings, RAG, object storage or workflow orchestration. Established methods were adapted to a cohesive storage application, and their limitations were retained in the final acceptance record.
+\FloatBarrier
+
+% END chapters/17_challenges
+% BEGIN chapters/18_limitations
+\chapter{Limitations and Future Work}
+\section{Current limitations}
+The evaluation is small and development-influenced. A perfect top-1 result on 69 synthetic positives does not imply universal search accuracy, and forty strict AI cases do not characterise all hallucination or prompt-injection failures. The 3B model has limited reasoning capacity; finite retrieval/context budgets can omit complementary evidence from long documents. Excerpt summaries do not guarantee complete-document coverage. OCR is not enabled as a production guarantee, and unsupported/image-only documents can remain unsearchable.
+
+Generation concurrency is deliberately restricted. A private request supports at most 250 scoped indexed files; larger collections require a narrower folder or document set. The retained system is not a distributed high-availability service, and no large-scale load study, independent penetration test or multi-region recovery exercise was performed. Framework capability and object-storage durability do not prove end-to-end availability of a single application host.
+
+Residual image findings include the database libxml2 issue without a stable vendor fix. Mitigations constrain exposure but do not establish immunity. Credits and the Free-plan term are finite, and the planned private SSM access would not be a public HTTPS deployment. Complete EC2 installation, cloud-role execution, instance-level model performance, external schedule enforcement and final stopped-state evidence remain pending.
+\section{Prioritised future work}
+\par\begin{table}[htbp]\caption{Future work separated from implemented features}\small\begin{tabularx}{\linewidth}{p{.28\linewidth}YY}\toprule Priority&Work&Acceptance needed\\\midrule
+Immediate cloud completion&Approved single-host deployment&Live uploads, RAG, role/SSM, persistence and stop verification\\
+Evaluation independence&Blinded larger corpus and relevance labels&Holdout quality and adversarial access tests\\
+Document coverage&OCR, richer parsing and explicit coverage estimates&Scanned/multilingual extraction benchmarks\\
+Retrieval quality&Reranking and more robust evidence gates&Paired quality/latency study\\
+Capacity&GPU or larger models; indexing concurrency&Equivalent workload/cost/resource measurements\\
+Public service&HTTPS domain, production identity and audit&Security review and explicit financial scope\\
+Resilience&Managed database, multi-region copies or orchestration&Recovery objectives and controlled failover tests\\\bottomrule\end{tabularx}\end{table}\par
+\FloatBarrier
+
+% END chapters/18_limitations
+% BEGIN chapters/19_conclusion
+\chapter{Conclusion}
+NimbusVault implements a practical connection between secure file management and evidence-grounded document intelligence. PostgreSQL and Express control identity, organisation and sharing; private S3 retains original bytes; existing event-driven AWS services record bounded processing stages. The private MiniLM/SQLite engine provides dense, lexical and hybrid discovery, while Qwen performs genuine local generation with source-attributed answers and visible failure modes.
+
+The strongest result is not an isolated language-model response but an integrated boundary: readable documents determine retrieval scope, citations are mapped to currently authorised files, and conversations retain ownership checks. Evaluation provides concrete evidence for this integration. Separately executed suites recorded 460 passes, browser verification covered 54 route/viewport combinations, hybrid retrieval accepted all 69 relevant top-1 cases and rejected fifteen negatives, and the final forty-case CPU AI run met its strict generated/abstention criteria. These are bounded regression results, not universal correctness claims.
+
+Standalone repair and native Linux preparation also improved reproducibility. Copied assets passed integrity checks, recovery data remained intact, and active-generation shutdown and restart were demonstrated locally. Historical AWS rehearsal evidence remains distinct from read-only configuration observations. Full EC2 hosting is still awaiting explicit authorisation and acceptance; this report does not convert the proposed host into an accomplished deployment.
+
+The project demonstrates applied cloud computing through its separation of storage, processing, identity and inference, and applied AI through measured retrieval and grounded response handling. Its next steps follow directly from the evidence: finish the approved cloud acceptance, expand independent evaluation and address residual security and capacity limits without abandoning preservation or financial constraints.
+\FloatBarrier
+
+% END chapters/19_conclusion
+\bibliographystyle{IEEEtran}\bibliography{references}
+\appendix\small\setstretch{1.04}\renewcommand{\arraystretch}{1.06}\setlength{\LTpre}{4pt}\setlength{\LTpost}{6pt}% BEGIN appendices/technical
+\chapter{Setup, Usage and API Reference}
+\label{app:usage}
+\section{Existing local workflow}
+From the final project root, the established commands are \texttt{npm run setup}, \texttt{npm start}, \texttt{npm run warmup}, \texttt{npm run stop} and \texttt{npm run backup}. Setup downloads or verifies project-local AI assets; it must not recreate a dependency on the retained donor directory. A successful setup command is not evidence that an AWS deployment exists.
+
+The prepared cloud operator aliases are \texttt{aws:start}, \texttt{aws:connect}, \texttt{aws:status}, \texttt{aws:warmup}, \texttt{aws:stop} and \texttt{aws:backup}. They require an exact approved-instance manifest and a valid bounded authorisation. No current approval is inferred from their presence. Planned SSM access forwards host port 3100 to the administrator's loopback port 3200; there is no public project URL.
+\section{Representative API contract}
+Routes below are relative to \texttt{/api/v1}. The table is a representative source-verified reference rather than a complete OpenAPI specification.
+\begin{longtable}{p{.12\linewidth}p{.35\linewidth}p{.43\linewidth}}
+\caption{Representative source-verified HTTP routes}\\\toprule Method&Route&Purpose / access\\\midrule\endfirsthead\toprule Method&Route&Purpose / access\\\midrule\endhead
+POST&\texttt{/auth/register}&Create account; credential validation/rate limit\\
+POST&\texttt{/auth/login}&Password verification and token/session issue\\
+POST&\texttt{/auth/refresh}&Token rotation; cookie CSRF guard\\
+POST&\texttt{/auth/logout}&Revoke refresh family / session\\
+GET&\texttt{/auth/me}&Current authenticated account\\
+GET&\texttt{/auth/sessions}&Owned device sessions\\
+DELETE&\texttt{/auth/sessions/:sessionId}&Revoke owned session\\
+POST&\texttt{/files}&Authenticated multipart upload\\
+GET&\texttt{/files}&Authorised file list and filters\\
+POST&\texttt{/files/presigned-upload}&Reserve staged presigned upload\\
+POST&\texttt{/files/:fileId/complete}&Validate/finalise reservation\\
+GET&\texttt{/files/:fileId/download}&Current read authority before transfer\\
+PATCH&\texttt{/files/:fileId/rename}&Authorised logical rename\\
+PATCH&\texttt{/files/:fileId/move}&Authorised destination and move\\
+DELETE&\texttt{/files/:fileId}&Move to trash, not automatic purge\\
+POST&\texttt{/ai/search}&Authorised indexed-file discovery\\
+POST&\texttt{/ai/ask}&Scoped private RAG request\\
+POST&\texttt{/ai/cancel}&Cancel an owned active request\\
+GET&\texttt{/ai/conversations}&Owned conversation list\\
+GET&\texttt{/ai/conversations/:id}&Ownership plus current file-scope check\\
+GET&\texttt{/ai/cloud}&Administrator-only timestamped diagnostics\\
+POST&\texttt{/ai/cloud/vector-demo}&Guarded synthetic fixture only\\\bottomrule
+\end{longtable}
+\chapter{Database Data Dictionary}
+The following dictionary is generated from the inspected Prisma schema. Scalar fields are listed with their types and important annotations; ``Vector?'' abbreviates Prisma's nullable Unsupported("vector") declaration. Relation arrays are represented by the ER diagrams rather than duplicated as scalar storage columns. Field names do not imply independent version-history functionality: generation counters apply to derived indexing state, and the report does not claim a user-visible historical file-version browser.
+
+\section{User}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+name&String&Required scalar\\
+email&String&Unique\\
+passwordHash&String&Required scalar\\
+role&String&Declared default\\
+status&String&Declared default\\
+storageQuotaBytes&BigInt&Declared default\\
+storageUsedBytes&BigInt&Declared default\\
+lastLoginAt&DateTime?&Nullable\\
+createdAt&DateTime&Declared default\\
+updatedAt&DateTime&Updated automatically\\
+\bottomrule\end{longtable}
+
+\section{UserSession}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+userId&String&Required scalar\\
+device&String?&Nullable\\
+ipAddress&String?&Nullable\\
+createdAt&DateTime&Declared default\\
+lastUsedAt&DateTime&Declared default\\
+revokedAt&DateTime?&Nullable\\
+\bottomrule\end{longtable}
+
+\section{RefreshToken}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+userId&String&Required scalar\\
+tokenHash&String&Required scalar\\
+tokenFamily&String&Required scalar\\
+expiresAt&DateTime&Required scalar\\
+createdAt&DateTime&Declared default\\
+revokedAt&DateTime?&Nullable\\
+\bottomrule\end{longtable}
+
+\section{Folder}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+name&String&Required scalar\\
+ownerId&String&Required scalar\\
+parentFolderId&String?&Nullable\\
+depth&Int&Declared default\\
+deletedAt&DateTime?&Nullable\\
+createdAt&DateTime&Declared default\\
+updatedAt&DateTime&Updated automatically\\
+\bottomrule\end{longtable}
+
+\section{File}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+filename&String&Required scalar\\
+sizeBytes&BigInt&Required scalar\\
+mimeType&String&Required scalar\\
+category&FileCategory&Required scalar\\
+ownerId&String&Required scalar\\
+folderId&String?&Nullable\\
+s3Key&String&Unique\\
+checksumSha256&String?&Nullable\\
+status&FileStatus&Declared default\\
+stagingKey&String?&Unique; Nullable\\
+uploadExpiresAt&DateTime?&Nullable\\
+aiStatus&AiStatus&Declared default\\
+uploadedAt&DateTime&Declared default\\
+deletedAt&DateTime?&Nullable\\
+\bottomrule\end{longtable}
+
+\section{ShareLink}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+fileId&String&Required scalar\\
+createdBy&String&Required scalar\\
+token&String&Unique\\
+tokenLookup&String?&Unique; Nullable\\
+permission&SharePermission&Required scalar\\
+passwordHash&String?&Nullable\\
+expiresAt&DateTime?&Nullable\\
+maxDownloads&Int?&Nullable\\
+downloadCount&Int&Declared default\\
+revokedAt&DateTime?&Nullable\\
+createdAt&DateTime&Declared default\\
+\bottomrule\end{longtable}
+
+\section{Permission}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+resourceType&ResourceType&Required scalar\\
+resourceId&String&Required scalar\\
+granteeUserId&String&Required scalar\\
+level&PermissionLevel&Required scalar\\
+grantedBy&String&Required scalar\\
+createdAt&DateTime&Declared default\\
+\bottomrule\end{longtable}
+
+\section{ActivityLog}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&BigInt&Primary key; Declared default\\
+userId&String?&Nullable\\
+targetOwnerId&String?&Nullable\\
+action&ActivityAction&Required scalar\\
+resourceType&ResourceType?&Nullable\\
+resourceId&String?&Nullable\\
+ipAddress&String?&Nullable\\
+metadata&Json?&Nullable\\
+createdAt&DateTime&Declared default\\
+\bottomrule\end{longtable}
+
+\section{DocumentIndex}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+fileId&String&Primary key\\
+generation&Int&Declared default\\
+extractor&String?&Nullable\\
+textContent&String?&Nullable\\
+textLength&Int?&Nullable\\
+textTruncated&Boolean&Declared default\\
+pageCount&Int?&Nullable\\
+sourceChecksum&String?&Nullable\\
+embeddingModel&String?&Nullable\\
+embeddingDim&Int?&Nullable\\
+chunkCount&Int&Declared default\\
+errorCode&String?&Nullable\\
+errorMessage&String?&Nullable\\
+summary&String?&Nullable\\
+summaryStatus&AiSummaryStatus&Declared default\\
+summaryModel&String?&Nullable\\
+summaryCoverage&Float?&Nullable\\
+summaryError&String?&Nullable\\
+summaryGeneratedAt&DateTime?&Nullable\\
+indexedAt&DateTime?&Nullable\\
+createdAt&DateTime&Declared default\\
+updatedAt&DateTime&Updated automatically\\
+\bottomrule\end{longtable}
+
+\section{DocumentChunk}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+fileId&String&Required scalar\\
+generation&Int&Required scalar\\
+chunkIndex&Int&Required scalar\\
+content&String&Required scalar\\
+charStart&Int&Required scalar\\
+charEnd&Int&Required scalar\\
+pageStart&Int?&Nullable\\
+pageEnd&Int?&Nullable\\
+tokenEstimate&Int&Required scalar\\
+embeddingModel&String&Required scalar\\
+embedding&Vector?&Nullable\\
+createdAt&DateTime&Declared default\\
+\bottomrule\end{longtable}
+
+\section{AiJob}
+\begin{longtable}{p{.31\linewidth}p{.23\linewidth}p{.36\linewidth}}\toprule Field&Type&Constraint / storage note\\\midrule\endfirsthead\toprule Field&Type&Constraint / storage note\\\midrule\endhead
+id&String&Primary key; Declared default\\
+fileId&String&Required scalar\\
+generation&Int&Required scalar\\
+status&AiJobStatus&Declared default\\
+attempts&Int&Declared default\\
+maxAttempts&Int&Declared default\\
+runAfter&DateTime&Declared default\\
+lockedAt&DateTime?&Nullable\\
+lockedBy&String?&Nullable\\
+lastError&String?&Nullable\\
+createdAt&DateTime&Declared default\\
+updatedAt&DateTime&Updated automatically\\
+completedAt&DateTime?&Nullable\\
+\bottomrule\end{longtable}
+\chapter{Acceptance Evidence and Benchmark Detail}
+\section{Evidence ledger}
+\begin{longtable}{p{.31\linewidth}p{.59\linewidth}}
+\caption{Evidence records used for the report}\\\toprule Record&Interpretation\\\midrule\endfirsthead\toprule Record&Interpretation\\\midrule\endhead
+\path{STANDALONE_VERIFICATION_REPORT.md}&Original independent-source baseline and recovery findings\\
+\path{INDEPENDENT_AUDIT_REPORT.md}&Historical Windows integration, retrieval and Qwen acceptance\\
+\path{AWS_ACCEPTANCE_MATRIX.md}&Live/configuration/historical classifications\\
+\path{AWS_REHEARSAL.json}&Authorised November 26 native upload workflow and restoration journal\\
+\path{DEPLOYED_SOURCE_AUDIT.json}&Worker package hash and local-source match; read-only review\\
+\path{linux-search-84-final.json}&Latest 84-query, three-mode local CPU adapter benchmark\\
+\path{linux-ai-40-final.json}&Latest unchanged forty-case real Qwen run\\
+\path{linux-lifecycle.json}&Active cancellation, clean exit and persistence observations\\
+\path{linux-backup.json}&Twelve-table row-equivalent PostgreSQL restore and SQLite integrity\\
+\path{iam-policy-final.json}&Seven read-only policy simulations; not an attached live role\\
+\path{evaluation_summary.json}&Sanitised metric snapshot included in this source package\\
+\path{security_summary.json}&Sanitised final image CVE/version snapshot\\\bottomrule
+\end{longtable}
+The standalone Git checkpoint is \texttt{2c9083696f2fe79e2cf5528f9d39cbdefbb36905}. The latest inspected preparation checkpoint is \texttt{8af896a}. Local working evidence was inspected separately; the existence of a commit is not a replacement for its test artifacts. This report-generation task does not commit or modify the application implementation.
+\section{Detailed AI case acceptance}
+The table reports the final run's actual modes and times. Pass requires the case's expected generated/insufficient behaviour, quotation validity and authorised scope, not merely HTTP success.
+\begin{longtable}{lrrl}\caption{Forty-case Linux CPU AI replay}\\\toprule Case&Seconds&Accepted&Mode\\\midrule\endfirsthead\toprule Case&Seconds&Accepted&Mode\\\midrule\endhead
+a01&108.84&Yes&generated\\
+a02&26.86&Yes&generated\\
+a03&34.12&Yes&generated\\
+a04&43.54&Yes&generated\\
+a05&32.63&Yes&generated\\
+a06&29.27&Yes&generated\\
+a07&18.14&Yes&generated\\
+a08&49.93&Yes&generated\\
+a09&24.82&Yes&generated\\
+a10&23.88&Yes&generated\\
+a11&23.31&Yes&generated\\
+a12&28.84&Yes&generated\\
+a13&14.26&Yes&generated\\
+a14&14.65&Yes&generated\\
+a15&16.22&Yes&generated\\
+a16&13.26&Yes&generated\\
+a17&28.89&Yes&generated\\
+a18&20.46&Yes&generated\\
+a19&19.33&Yes&generated\\
+a20&0.02&Yes&insufficient\\
+a21&6.43&Yes&insufficient\\
+a22&0.03&Yes&insufficient\\
+a23&0.00&Yes&insufficient\\
+a24&0.04&Yes&insufficient\\
+u01&17.01&Yes&generated\\
+u02&15.05&Yes&generated\\
+u03&17.28&Yes&generated\\
+u04&15.92&Yes&generated\\
+u05&28.15&Yes&generated\\
+u06&26.92&Yes&generated\\
+u07&49.75&Yes&generated\\
+u08&23.76&Yes&generated\\
+u09&21.21&Yes&generated\\
+u10&39.96&Yes&generated\\
+u11&12.79&Yes&generated\\
+u12&0.02&Yes&insufficient\\
+u13&0.03&Yes&insufficient\\
+u14&6.62&Yes&insufficient\\
+u15&0.00&Yes&insufficient\\
+u16&44.64&Yes&generated\\
+\bottomrule\end{longtable}
+\section{Cloud acceptance still pending}
+\par\begin{table}[htbp]\caption{EC2-specific acceptance boundary}\small\begin{tabularx}{\linewidth}{YY}\toprule Requirement&Current report status\\\midrule
+Complete frontend/backend/database on EC2&Not provisioned; pending approval\\
+Fresh embeddings and genuine Qwen on EC2&Local Linux evidence only\\
+Instance-role account-plan API and IMDS firewall&Prepared; actual host validation pending\\
+Private SSM browser access&Prepared; no active cloud tunnel claimed\\
+EC2 native upload-to-RAG workflow&Historical workstation/AWS evidence; new cloud-host run pending\\
+EC2 stop/start persistence and final stopped state&Local lifecycle passed; cloud evidence pending\\
+External stop/idle-restoration schedules&Drafts only; not created\\\bottomrule\end{tabularx}\end{table}\par
+\chapter{Security and Financial Safeguards}
+\footnotesize
+\section{Unique residual scanner identifiers}
+Counts below combine the final image snapshots and retain scanner severity. They are not a claim that each CVE is exploitable through the application. Vendor classifications and prerequisites must be reviewed for actual exposure. No CVE is removed solely to obtain a clean-looking report.
+\begin{longtable}{p{.29\linewidth}p{.16\linewidth}p{.45\linewidth}}\caption{Distinct HIGH/CRITICAL identifiers in the retained snapshots}\\\toprule Identifier&Severity&Affected package families\\\midrule\endfirsthead\toprule Identifier&Severity&Affected package families\\\midrule\endhead
+CVE-2025-69720&HIGH&libncursesw6, libtinfo6, ncurses-base, ncurses-bin\\
+CVE-2026-107494&HIGH&libssl3t64, openssl, openssl-provider-legacy\\
+CVE-2026-119373&HIGH&libsqlite3-0\\
+CVE-2026-119374&HIGH&libsqlite3-0\\
+CVE-2026-119379&HIGH&libsqlite3-0\\
+CVE-2026-124709&HIGH&libssl3t64, openssl, openssl-provider-legacy\\
+CVE-2026-16742&HIGH&libsystemd-shared, libsystemd0, libudev1, systemd\\
+CVE-2026-24882&HIGH&dirmngr, gnupg, gnupg-l10n, gpg, gpg-agent, gpgconf, gpgsm\\
+CVE-2026-54369&HIGH&libacl1\\
+CVE-2026-6653&CRITICAL&libxml2\\
+CVE-2026-74860&HIGH&libxml2\\
+CVE-2026-76642&HIGH&bsdutils, libblkid1, liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount, util-linux\\
+CVE-2026-78408&HIGH&bsdutils, libblkid1, liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount, util-linux\\
+CVE-2026-78409&HIGH&bsdutils, libblkid1, liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount, util-linux\\
+CVE-2026-78410&HIGH&bsdutils, libblkid1, liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount, util-linux\\
+CVE-2026-78661&HIGH&golang.org/x/net\\
+CVE-2026-86138&HIGH&libxml2\\
+CVE-2026-86139&HIGH&libxml2\\
+CVE-2026-86140&HIGH&libxml2\\
+CVE-2026-86142&HIGH&libxml2\\
+CVE-2026-86143&HIGH&libxml2\\
+CVE-2026-86144&HIGH&libxml2\\
+CVE-2026-9538&HIGH&libperl5.40, perl, perl-base, perl-modules-5.40\\
+\bottomrule\end{longtable}
+\section{Bounded proposal, not deployment approval}
+The unapproved proposal requests one Sydney host, encrypted 30 GiB gp3, private SSM, no inbound rules, scoped IAM and at most four hours. Proposed limits are USD10 session consumption, a USD10 reserve, boot and absolute stop deadlines, three new synthetic objects, three workflow executions and five restricted vector queries.
+
+Unknown queue messages must not be received, purged or replayed. Native triggers need bounded authorisation and restoration. Original deletion, account upgrades, private-data migration, public ingress and indefinite runtime are excluded. Export of twelve original S3 objects remains separately unapproved; metadata inspection is not a downloaded backup.
+\small
+\chapter{User Manual and Interface Evidence}
+\section{Working with documents}
+Sign in through the application, create or select a folder and upload a supported document. Check its actual processing state before expecting semantic results. Choose an appropriate search mode: filenames and exact phrases have different semantics from dense or hybrid discovery. Select readable indexed documents when asking a question. Examine the displayed generation mode and open source buttons to verify supporting passages.
+
+Use sharing controls to grant the least required access. A valid link may have an expiry, password or download bound; revoking access changes later requests and must not be treated as a cosmetic interface change. Trash and restore are reversible operations, whereas permanent purge is a separate destructive action. The cloud dashboard is a timestamped administrator view, not a continuous health monitor.
+\screen{citation}{Verified Windows source-inspection dialog showing the actual cited passage. The synthetic text records the private-compute boundary.}{manual-citation}
+\screen{mobile-ask-crop}{Cropped narrow-screen Ask view from the verified responsive session; the source remains a real application capture.}{manual-mobile}
+\screen{landing-light-crop}{Cropped light-theme landing page from a prior verified browser capture. Marketing illustrations within the page are interface content, not test evidence.}{manual-light}
+\screen{landing-dark}{Dark-theme landing page from the existing browser evidence; contrasted with the light-theme capture.}{manual-dark}
+\screen{registration-original}{Existing registration-page capture retained from the interface review. The fields contain placeholders rather than personal credentials.}{manual-register}
+\FloatBarrier
+\chapter{Selected Implementation Excerpts}
+\label{app:source}\lstset{basicstyle=\ttfamily\scriptsize}
+The short excerpts below are copied from actual implementation files and retain the relevant mechanism. They are not substitutes for the complete application source, which is deliberately excluded from the report archive. Paths are repository-relative and contain no credentials.
+
+The ZIP includes this report's LaTeX, bibliography, editable TikZ diagrams, vector charts, selected screenshots, sanitised evidence and regeneration scripts. It excludes original personal documents, databases, AWS credentials, authentication caches, model weights, Docker images and private backups. Missing EC2 evidence can be added only after actual acceptance; changing prose to completed tense alone would not make that work verified.
+
+\section{Normalised embeddings}
+\sourcepath{intelligence/app/embeddings.py}
+\begin{lstlisting}
+            return np.asarray(
+                model.encode(
+                    texts, normalize_embeddings=True, show_progress_bar=False, batch_size=16
+                ),
+                dtype=np.float32,
+            )
+
+    def chunks(self, sections):
+        model = self.load()
+        tokenizer = model.tokenizer
+\end{lstlisting}
+
+\section{Tokenizer-bounded chunking}
+\sourcepath{intelligence/app/embeddings.py}
+\begin{lstlisting}
+        limit = min(220, model.max_seq_length - 2)
+        chunks = []
+        for section, text in sections:
+            # Fast tokenizer offsets retain the original text instead of decoding wordpieces.
+            offsets = tokenizer(
+                text,
+                add_special_tokens=False,
+                return_offsets_mapping=True,
+                truncation=False,
+                verbose=False,
+            )["offset_mapping"]
+            for start in range(0, len(offsets), limit - 32):
+                end = min(start + limit, len(offsets))
+                snippet = text[offsets[start][0] : offsets[end - 1][1]]
+                # Tokenization at a new chunk boundary can change token count.
+\end{lstlisting}
+
+\newpage
+\section{Actual reciprocal-rank fusion}
+\sourcepath{intelligence/app/retrieval.py}
+\begin{lstlisting}
+        rrf = 1 / (60 + rank) + (
+            1 / (60 + lexical_rank[row["id"]]) if row["id"] in lexical_rank else 0
+        )
+        ranking.append({**row, "similarity": float(score), "rrf": rrf, "lexical_terms": overlap})
+    ranking.sort(key=lambda r: (r["rrf"], r["lexical_terms"], r["similarity"]), reverse=True)
+    excerpt_summary = (
+        mode == "hybrid"
+\end{lstlisting}
+
+\section{Private service authentication}
+\sourcepath{intelligence/app/internal.py}
+\begin{lstlisting}
+    expected = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    if not expected or not hmac.compare_digest(
+        request.headers.get("x-service-token", ""), expected
+    ):
+        return JSONResponse({"detail": "Private service authentication required"}, status_code=401)
+    # Scope and actor are accepted only from the authenticated application server.
+    actor = request.headers.get("x-actor-id", "")
+    if request.url.path.startswith("/api/ai/"):
+        try:
+            UUID(actor)
+\end{lstlisting}
+
+\section{Cloud fixture privacy gate}
+\sourcepath{infrastructure/worker.py}
+\begin{lstlisting}
+            if digest in FIXTURE_SHAS and len(raw) <= 256*1024:
+                text = raw.decode('utf-8-sig')
+                artifact = DERIVED + job['file_id']+'/'+digest+'/text.json'
+                try:
+                    S3.put_object(Bucket=BUCKET, Key=artifact, Body=json.dumps({'file_id': job['file_id'], 'sha256': digest, 'sections': [{'section': 'Content', 'text': text}]}).encode(), ContentType='application/json', ServerSideEncryption='AES256', IfNoneMatch='*')
+                except ClientError as error:
+                    if error.response['Error']['Code'] not in {'PreconditionFailed', '412'}:
+                        raise
+                job.update(artifact_key=artifact, cloud_extraction='approved_plain_text')
+            else:
+                job.update(cloud_extraction='local_required_privacy_scope')
+\end{lstlisting}
+
+\section{Cloud/local retrieval boundary}
+\sourcepath{intelligence/app/cloud.py}
+\begin{lstlisting}
+    if os.environ.get('NIMBUS_LOCAL_RETRIEVAL') == 'true' and os.environ.get('AWS_OPERATIONS_ENABLED') != 'true':
+        return {'disabled_reason':'cloud_operations_paused'}
+    # Isolated tests never inherit real cloud activation.
+    if settings.data_dir.resolve() != (ROOT / "data").resolve():
+\end{lstlisting}
+
+% END appendices/technical
+\end{document}

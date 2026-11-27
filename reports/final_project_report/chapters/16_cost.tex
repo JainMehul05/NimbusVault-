@@ -1,0 +1,27 @@
+\chapter{Cloud Cost Analysis and Resource Optimisation}
+\section{Financial objective and verified rates}
+The project objective is INR0 out-of-pocket expenditure within the active AWS Free account plan and promotional-credit restrictions. Consuming credits is still consuming a finite resource. A point-in-time read-only observation recorded FREE/ACTIVE status, USD139.997874 remaining credits and expiry on May 24, 2027. It is not a claim that the account remains unchanged indefinitely or that a stopped instance costs nothing~\cite{freeplan}.
+
+The Sydney Pricing API evidence used USD0.1197 per compute hour, USD0.005 per in-use IPv4 hour and USD0.096 per GiB-month for gp3. Thirty GiB therefore costs USD2.88 per full month while retained, even when compute is stopped. No Paid-plan upgrade or automatic-upgrade trigger is authorised~\cite{ec2pricing,ebspricing,ipv4pricing}.
+\begin{equation}C(t,m)=t(0.1197+0.005)+30(0.096)m+C_{\rm artifacts}+C_{\rm requests},\end{equation}
+where $t$ is active compute/address hours and $m$ is retained-storage months. A four-hour session with storage prorated over a 730-hour month gives approximately USD0.515 before other services. The illustrative first month includes a full USD2.88 disk month, about USD0.10 artifact storage and a conservative USD1 small-integration allowance, totalling approximately USD4.48. This is an estimate, not a measured bill.
+\par\begin{table}[htbp]\caption{Illustrative retained-disk scenarios, excluding other account activity}\small\begin{tabularx}{\linewidth}{Yrr}\toprule Use&Hours/month&Gross USD/month\\\midrule
+Stopped all month&0&2.88\\
+One hour/day&30.42&6.67\\
+Two hours/day&60.83&10.47\\
+Four hours/day&121.67&18.05\\
+Continuous&730&93.91\\\bottomrule\end{tabularx}\end{table}\par
+{\renewcommand{\chart}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=.84\linewidth]{figures/charts/#1.pdf}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\chart{monthly_cost}{Estimated compute, address and retained EBS costs. Promotional eligibility, other services and billing delays are separate considerations.}{cost}
+}
+\section{Optimisation and bounded safeguards}
+Private MiniLM/Qwen inference avoids paid language-model APIs. Normal retrieval avoids S3 Vectors queries; cloud diagnostics are on demand rather than a polling loop. Existing serverless resources are reused, logs have finite retention and native triggers remain idle outside authorised windows. The proposed host avoids a managed database, NAT gateway and load balancer for this bounded academic workload.
+
+The proposed initial approval is limited to four hours, USD10 session credit consumption and a minimum USD10 reserve. A boot timer, independent deadline schedule and credit/authorisation watchdog are designed to stop compute. Free-plan/API uncertainty fails closed. IAM simulation verified upgrade, provisioning, deletion and unconditional overwrite denies, including an explicit denial of unrelated parameter reads.
+Figure~\ref{fig:shutdown} shows the planned independent stop paths and their approval boundary.
+{\setlength{\intextsep}{5pt}\setlength{\textfloatsep}{6pt}
+\diagram{shutdown}{Prepared financial and shutdown controls. These are locally reviewed designs; actual EC2 enforcement and final stopped state await approval.}{shutdown}
+}
+\section{Limits of cost assurance}
+Credit snapshots and timers are not a hard billing cap: usage reporting can lag and unrelated account activity can consume credits. Retained EBS/S3 continues to incur storage consumption. Sixteen other enabled regions could not be completely inventoried because of access restrictions, and zero Free Tier usage rows did not prove zero usage. Account-plan expiry is earlier than several arithmetic credit-runway estimates, so permanent free hosting is not claimed. Optional original-object export and permanent cleanup each remain separate authorisation decisions.
+\FloatBarrier

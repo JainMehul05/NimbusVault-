@@ -1,0 +1,16 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (browser) at (0,2) {Browser / React};
+\node[box] (api) at (0,0) {Express\\Identity and scope};
+\node[box] (pg) at (-4.7,-2) {PostgreSQL\\Users, files, permissions};
+\node[box] (ai) at (0,-2) {Private FastAPI\\MiniLM + SQLite};
+\node[box] (s3) at (4.7,-2) {Private S3\\Original bytes};
+\node[box] (llm) at (0,-4) {Ollama / Qwen 3B\\Grounded generation};
+\node[box] (aws) at (4.7,-4) {Existing AWS workflow\\Events and metadata};
+\draw[line] (browser) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {JWT} (api);
+\draw[line] (api) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Metadata} (pg);
+\draw[line] (api) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Token + actor + file IDs} (ai);
+\draw[line] (api) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Guarded transfer} (s3);
+\draw[line] (ai) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Evidence context} (llm);
+\draw[control] (s3) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Native events} (aws);
+\draw[control] (ai) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Outbound reconciliation} (aws);
+\end{tikzpicture}

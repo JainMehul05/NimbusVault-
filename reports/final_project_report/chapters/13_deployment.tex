@@ -1,0 +1,18 @@
+\chapter{Deployment and DevOps}
+\section{Standalone Windows baseline}
+The Windows application uses project-local Node/Python configuration, Docker PostgreSQL, private SQLite evidence, MiniLM cache and copied Ollama/Qwen assets. Startup, warmup, shutdown and backup commands are exposed through project scripts. The donor project was renamed and its files copied into the final project, after which inference, retrieval and normal application operations continued.
+
+Integrity comparison checked all 75 copied Windows runtime files, the Qwen assets and nineteen MiniLM cache files against the retained source. Six content-addressed Qwen blobs matched their digest names. Audited model/data locations contained no runtime reparse-point dependency. A separate recovery directory preserved 873 files; five SQLite copies passed integrity checks and row comparisons, including conversations. These are local recovery copies, not proof of off-device disaster recovery.
+\section{Linux rehearsal and isolation}
+The Docker composition separates PostgreSQL, Express, FastAPI and CPU-only Ollama. Only Express publishes a loopback host port. Internal application/model networks isolate databases and inference; persistent volumes hold PostgreSQL and SQLite while read-only model mounts hold platform-independent assets. The CPU runtime was extracted from the verified official Linux archive, excluding Windows and GPU libraries. Images are pinned by base digest and package locks.
+
+Local secrets and synthetic users are independent of the workstation's private data. The latest preparation further separates intelligence-service environment values from backend JWT/database secrets. No personal AWS profile or original document/history database belongs in the deployment bundle. The measured artifact set is approximately 3.1 GB; its exact hashes and revision must be refreshed whenever packaging inputs change.
+Figure~\ref{fig:deployment} separates the tested local runtime from the prospective cloud host.
+\diagram{deployment}{Verified local Linux topology and proposed host transition. Docker Desktop measurements do not establish EC2 performance.}{deployment}
+\section{Shutdown, restart and backup}
+The Linux API drains on SIGTERM, cancels owned active generations after a bounded wait and exits before the container stop deadline. A controlled active-generation test observed HTTP 499, exit code zero, no OOM kill and approximately 11.03 seconds to stop. A complete stack restart preserved login, file counts, conversation history and hybrid retrieval. A separate restore database matched all rows in twelve PostgreSQL public tables; an exported SQLite copy passed integrity checking.
+
+Moving the test database from the earlier Debian base exposed a collation-version mismatch. Reindexing the isolated synthetic database and refreshing its collation metadata resolved that migration condition; no original Windows database was changed. Fresh EC2 storage must still be tested on the actual host.
+\section{EC2 acceptance remains pending}
+The proposed host is one Ubuntu 24.04 x86-64 \texttt{m7i-flex.large} in Sydney, with encrypted 30 GiB gp3 and private SSM forwarding. No EC2 instance has been provisioned under the current request. The operating-system boot timer, credit watchdog, external stop schedule, metadata firewall and dedicated IAM role are prepared controls, not observed cloud enforcement. SSM forwarding at localhost is private administration, not a publicly accessible website~\cite{ec2,ssmsession,docker}.
+\FloatBarrier

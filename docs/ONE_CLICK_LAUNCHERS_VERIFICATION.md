@@ -1,3 +1,5 @@
+> Session B update: public deployment and launcher endpoint support were completed after the initial tests below. The approved endpoint is AWS API Gateway HTTPS; CloudFront is pending account verification. See AWS_FINAL_DEPLOYMENT_REPORT.md for later acceptance, including the ten launcher tests. The initial missing-CloudFront refusal described below is historical.
+
 # One-click launcher integration and verification
 
 November 27, 2026. This change is integrated with the existing local/EC2 controllers and ongoing public deployment work; it does not provision a second deployment.

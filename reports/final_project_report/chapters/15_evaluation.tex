@@ -1,0 +1,43 @@
+\chapter{Experimental Evaluation and Performance}
+\begingroup\renewcommand{\chart}[3]{\par\begin{figure}[htbp]\centering\includegraphics[width=.84\linewidth]{figures/charts/#1.pdf}\caption[\ShortCaption{#1}]{#2}\label{fig:#3}\end{figure}\par}
+\section{Corpus and methodology}
+The search evaluation uses 84 synthetic queries: 69 with relevant documents and fifteen intended negatives. Query scopes are trusted synthetic file-ID sets. The benchmark indexes into a temporary database, leaving user documents unchanged. Three modes run over the same cases. The corpus was used during development and repair; it is regression evidence, not an untouched independent holdout or a representative distribution of arbitrary user documents.
+
+For query $q$, let $R_q$ be relevant documents and $T_{q,k}$ the first $k$ returned distinct documents. The reported measures are
+\begin{align}
+\mathrm{Hit@}k&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\mathbf{1}[R_q\cap T_{q,k}\ne\varnothing],\\
+\mathrm{Recall@}k&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\frac{|R_q\cap T_{q,k}|}{|R_q|},\\
+\mathrm{MRR}&=\frac{1}{|Q^+|}\sum_{q\in Q^+}\frac{1}{\operatorname{rank}_q},\\
+\mathrm{NegReject}&=\frac{1}{|Q^-|}\sum_{q\in Q^-}\mathbf{1}[\text{no accepted result}].
+\end{align}
+$Q^+$ and $Q^-$ denote positive and negative cases; reciprocal rank is zero when no relevant document is returned. Top-1 accuracy is Hit@1. Recall differs from hit rate when a query needs complementary documents. Precision was not reported as a principal benchmark metric.
+\section{Search quality and latency}
+\par\begin{table}[htbp]\caption{Latest local Linux search results, 84 cases per mode}\label{tab:search}\small\begin{tabularx}{\linewidth}{Yrrr}\toprule Metric&Dense&BM25&Hybrid\\\midrule
+Relevant top-1&65/69&64/69&69/69\\
+Top-1 accuracy&94.20\%&92.75\%&100.00\%\\
+Top-3 hit rate&95.65\%&95.65\%&100.00\%\\
+Mean Recall@3&94.20\%&95.65\%&98.55\%\\
+MRR&0.9493&0.9396&1.0000\\
+Negative rejection&15/15&8/15&15/15\\
+Scope leaks in tested cases&0&0&0\\
+Median latency (ms)&19.58&5.19&9.09\\
+P95 latency (ms)&37.03&7.44&12.59\\\bottomrule\end{tabularx}\end{table}\par
+Hybrid retrieval recovered exact identifiers and complementary evidence that dense-only ranking sometimes missed. Sparse retrieval was fastest but accepted seven unrelated negatives. Neither the perfect hybrid top-1 count nor zero tested scope leaks establishes universal accuracy or a formal confidentiality proof. A larger blinded corpus, adversarial permissions and relevance judgements independent of development remain necessary.
+\chart{search_top1}{Positive top-1 accuracy on 69 curated queries; the axis begins at zero.}{search-top1}
+\chart{negative_rejection}{Negative-query rejection on fifteen cases. BM25's literal matches are insufficient as an evidence gate.}{negatives}
+\chart{ranking_metrics}{Top-3 hit rate, mean Recall@3 and MRR. A hit need not retrieve every complementary relevant document.}{ranking}
+\chart{retrieval_latency}{Local private-adapter latency on the same 84 queries. Caching, mode order and workstation load affect timing.}{retrieval-time}
+\section{Genuine AI evaluation}
+The unchanged combined AI suite contains forty cases: 31 answerable cases require \texttt{generated} mode, expected facts and sources; nine require abstention. Checks also require exact supporting quotations and no source outside the permitted scope. The latest full Linux CPU run accepted all forty cases, with 31 genuine generated positives, nine correct insufficient responses, mean literal fact coverage 1.0 and zero reported quote/scope failures.
+
+The earlier 38/40 run had 29 generated positives and two bounded correction timeouts. After the correction repair, the long-document-end and breakfast-follow-up cases passed without changing expected facts or acceptance labels. An extractive response could not pass as a genuine generated positive. The measured median over all forty requests was 19.897 seconds; early cold/contention effects and faster abstentions are mixed in that overall statistic.
+\chart{ai_outcomes}{Strict AI acceptance categories: 31 generated positives and nine correct abstentions. This is not a population accuracy estimate.}{ai-outcomes}
+\chart{ai_latency}{Observed Linux CPU request-time distributions. Generated and insufficient cases have different workloads and should not be interpreted as matched inference comparisons.}{ai-latency}
+\section{Startup and resource observations}
+A fresh Linux Python process measured 1.631 seconds for Torch import, 3.740 seconds for Sentence Transformers import, 0.732 seconds to load MiniLM, 0.426 seconds for first encoding and 0.021 seconds for warm encoding; total was 6.661 seconds. This measures a fresh process with available local model files, not a cold EC2 disk or a first-ever model download.
+An earlier Windows first-request observation took approximately 84.4 seconds, of which roughly 75.6 seconds lay in retrieval initialisation. The exact historical subphase cause was not isolated; attributing all of it to model download, GPU allocation or one library would be speculation. The Linux profile should therefore explain possible startup components, not claim a proven paired speedup.
+
+The CPU runtime reported zero VRAM and an approximately 2.2 GiB loaded Qwen footprint in its observed run. One cold model-load observation was about 24.37 seconds. No equivalent paired cold/warm Qwen benchmark, measured GPU comparison or EC2 resource-utilisation trace is available. Those requested charts are omitted rather than invented.
+\chart{startup_phases}{Measured MiniLM startup/encoding phases. First and warm encoding are embedding operations, not Qwen inference.}{startup}
+\FloatBarrier
+\endgroup

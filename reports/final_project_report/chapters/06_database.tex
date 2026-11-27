@@ -1,0 +1,26 @@
+\chapter{Database Design and Data Management}
+\section{Application metadata}
+The Prisma schema contains eleven application models. \texttt{User} owns files and folders and relates to sessions, refresh tokens, grants and activity. \texttt{Folder} uses a self-reference for hierarchy; \texttt{File.folderId} becomes null if its folder is removed, whereas file-dependent indexes, chunks, jobs and share links cascade with the file. These schema behaviours do not themselves authorise a destructive user operation: policy is checked before such changes.
+
+\texttt{Permission} uses a resource type and resource ID together with a grantee, rather than a database foreign key to every resource type. Its unique composite key prevents duplicate grants to the same user/resource pair. \texttt{ActivityLog} keeps a nullable actor and target owner so that anonymous link actions and events caused by collaborators can be represented. An account's storage counter uses a database non-negative constraint in addition to application accounting.
+Figures~\ref{fig:er-app} and~\ref{fig:er-ai} separate application ownership relations from derived evidence and conversation persistence.
+\diagram{er_application}{Application entity relationships. Solid edges denote schema relations; the permission resource reference is polymorphic rather than a direct foreign key.}{er-app}
+\par\begin{table}[htbp]\caption{Persistent application entities}\small\begin{tabularx}{\linewidth}{p{.30\linewidth}Y}\toprule Prisma model(s)&Stored responsibility\\\midrule
+User&Unique email, password hash, account state and quota\\
+UserSession / RefreshToken&Device session, hashed token family, expiry and revocation\\
+Folder / File&Hierarchy, ownership, object key, checksum and lifecycle state\\
+ShareLink / Permission&Bounded link access and user/resource grants\\
+ActivityLog&Actor, target owner, action and filtered metadata\\
+DocumentIndex&Current generation, extractor, checksum and index/summary status\\
+DocumentChunk&Generation-specific text and optional pgvector representation\\
+AiJob&Durable queue, lease, attempts and retry schedule\\\bottomrule\end{tabularx}\end{table}\par
+\section{Intelligence persistence and derived state}
+The integrated private engine persists actual retrieval vectors in SQLite \texttt{chunks.vector} float32 blobs. PostgreSQL also contains generation-aware document-index/chunk/job models from the application's indexing subsystem; their presence must not be confused with the private engine's current dense retrieval backend. The two representations have distinct responsibilities and require reconciliation rather than an assumed cross-database transaction.
+
+SQLite \texttt{files} stores revision and extraction information. \texttt{chunks} references a file with cascade deletion. \texttt{chunk\_fts} is an external-content FTS5 index maintained by insert/update/delete triggers. \texttt{conversations} and \texttt{exchanges} persist response JSON, while \texttt{conversation\_owners} adds actor ownership checks in the private adapter. \texttt{cloud\_outbox} retains failed metadata synchronisations for bounded retry.
+\diagram{er_intelligence}{Private SQLite evidence, FTS synchronisation and conversation ownership. Cross-store identity uses stable file IDs.}{er-ai}
+\section{Originals, cloud metadata and recovery}
+S3 is authoritative for original bytes. DynamoDB partitions cloud records under a workspace key and distinguishes file/job sort-key prefixes; revision information prevents stale reconciliation from becoming current state. S3 Vectors holds an optional cloud representation, not the ownership authority. SQLite migrations are additive and create backups before schema changes; interrupted pending/processing records become explicit retryable failures on restart.
+
+Backup and restore evidence is examined in Chapters 13--14; database documentation supplies the underlying persistence contracts~\cite{postgres,sqlitefts}.
+\FloatBarrier

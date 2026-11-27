@@ -1,0 +1,20 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (u) at (0,2) {User\\PK id; UNIQUE email};
+\node[box] (ses) at (-4.7,0) {UserSession / RefreshToken\\FK userId};
+\node[box] (fol) at (0,0) {Folder\\FK ownerId, parentFolderId};
+\node[box] (file) at (4.7,0) {File\\FK ownerId, folderId};
+\node[box] (per) at (-4.7,-2) {Permission\\FK granteeUserId\\Polymorphic resourceId};
+\node[box] (act) at (0,-2) {ActivityLog\\Nullable FK userId};
+\node[box] (share) at (4.7,-2) {ShareLink\\FK fileId, createdBy};
+\node[box] (idx) at (0,-4) {DocumentIndex\\PK/FK fileId};
+\node[box] (chunks) at (4.7,-4) {DocumentChunk / AiJob\\FK fileId + generation};
+\draw[line] (u) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (ses);
+\draw[line] (u) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (fol);
+\draw[line] (u) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (file);
+\draw[line] (u) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (per);
+\draw[control] (u.east) -- (2.3,2) -- node[right,font=\tiny,fill=white]{0..1:N} (2.3,-2) -- (act.east);
+\draw[line] (file) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (share);
+\draw[line] (file) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : 0..1} (idx);
+\draw[line] (file) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (chunks);
+\draw[line] (fol) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many} (file);
+\end{tikzpicture}

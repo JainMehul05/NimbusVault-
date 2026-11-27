@@ -1,0 +1,11 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (b) at (0,3) {Untrusted browser / document text};
+\node[box] (e) at (0,0) {Express identity boundary\\JWT + resource policy};
+\node[box] (p) at (0,-3.5) {Private intelligence boundary\\Service token + trusted scope};
+\node[box] (m) at (-4.7,-6) {Internal model boundary\\No tool or public model endpoint};
+\node[box] (aws) at (4.7,-6) {AWS boundary\\Pinned identity + guarded SDK};
+\draw[line] (b) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Validate input} (e);
+\draw[line] (e) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {No user-chosen service host} (p);
+\draw[line] (p) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Evidence-only prompt} (m);
+\draw[control] (p) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Role design pending EC2} (aws);
+\end{tikzpicture}

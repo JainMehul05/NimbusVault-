@@ -1,0 +1,14 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (f) at (0,2) {files\\PK id; UNIQUE object\_key};
+\node[box] (c) at (0,0) {chunks\\FK file\_id; float32 BLOB};
+\node[box] (fts) at (4.7,0) {chunk\_fts\\External-content FTS5};
+\node[box] (conv) at (-4.7,-2) {conversations\\PK id; authorised scope};
+\node[box] (ex) at (0,-2) {exchanges\\FK conversation\_id};
+\node[box] (owners) at (-4.7,-4) {conversation\_owners\\Actor ownership};
+\node[box] (out) at (4.7,-2) {cloud\_outbox\\PK file\_id; revision};
+\draw[line] (f) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many; cascade} (c);
+\draw[control] (c) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Triggers synchronise} (fts);
+\draw[line] (conv) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {1 : many; cascade} (ex);
+\draw[control] (conv) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Private ownership check} (owners);
+\draw[control] (f.east) -- (7.2,2) -- node[right,font=\scriptsize,align=center,text width=1.2cm]{Metadata\\retry} (7.2,-2) -- (out.east);
+\end{tikzpicture}

@@ -1,0 +1,28 @@
+\chapter{Testing and Quality Assurance}
+\section{Layered verification strategy}
+The test strategy separates deterministic unit behaviour, database/API integration, private-engine acceptance, browser interaction, native AWS rehearsal and configuration inspection. Each layer answers a different question. Mocked model tests exercise validation branches; real Qwen cases establish actual generation on the synthetic corpus; browser tests establish UI/session behaviour; authorised native cloud evidence establishes the particular AWS path exercised.
+\par\begin{table}[htbp]\caption{Recorded local test results; separate suite executions}\label{tab:tests}\small\begin{tabularx}{\linewidth}{YrlY}\toprule Suite&Passes&Framework&Scope\\\midrule
+Backend&298&Jest&Authentication, storage, sharing, jobs and AI boundaries\\
+Frontend&57&Vitest&Components, state and session behaviour\\
+Python intelligence&83&pytest&Extraction, retrieval, guards, grounding and real Qwen\\
+Infrastructure&22&Vitest&Infrastructure definitions and constraints\\\midrule
+Total across suites&460&&Not one monolithic run\\
+Responsive browser checks&54&Playwright&Nine SPA routes at six widths\\\bottomrule\end{tabularx}\end{table}\par
+The 54 responsive observations are route/viewport checks in a preserved SPA session, not 54 independently authenticated full-page reloads. Browser evidence includes real login, saved generated answers and clickable citations, with no observed page errors. Incorrect passwords and foreign history/download requests were rejected. Code-coverage percentage was not measured and is not inferred from the pass count.
+\chart{test_distribution}{Distribution of the 460 reported suite passes. Counts do not measure production coverage or defect absence.}{tests}
+\section{Representative acceptance cases}
+\par\begin{table}[htbp]\caption{Representative expected and observed outcomes}\small\begin{tabularx}{\linewidth}{p{.29\linewidth}YY}\toprule Case&Expected&Observed\\\midrule
+Foreign conversation request&No data disclosure&404 in scoped application acceptance\\
+Wrong password&Authentication denied&401\\
+Arbitrary intelligence host&No private token sent&Request rejected before fetch\\
+Unrelated query&No unsupported context answer&15/15 hybrid negatives rejected\\
+Two-document factual question&Real generated answer with both sources&Accepted application response and citation UI\\
+Active SIGTERM&Bounded cancellation and clean exit&499; exit 0; no OOM\\
+Restart&Persistent identity/data/history&Login, counts, history and hybrid search retained\\
+Backup restore&Equivalent recoverable data&All rows matched in twelve public tables\\\bottomrule\end{tabularx}\end{table}\par
+\section{Failures retained as engineering evidence}
+The first Linux AI run accepted 38 of forty cases. Its two failures reached a thirty-second correction limit; the bounded correction budget was repaired and the unchanged full suite later passed forty cases. Earlier Linux harness failures involved a missing OCR-test font, unwritable Vite temporary directories and absent infrastructure test dependencies. These were corrected without weakening assertions. Optional Vitest disk-cache warnings did not prevent execution.
+
+A Windows test invocation initially used an unused default test port. It was terminated and rerun through the existing isolated local harness; the 298/57 results refer to the successful rerun. Such distinctions matter because an infrastructure setup failure is neither an application pass nor evidence that the suite's assertions were exercised.
+\screen{mobile-dashboard}{Verified narrow-screen dashboard. Responsive checks establish the tested layouts, not accessibility conformance or every device.}{mobile-dashboard}
+\FloatBarrier

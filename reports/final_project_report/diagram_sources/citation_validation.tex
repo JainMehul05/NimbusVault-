@@ -1,0 +1,15 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (r) at (0,2) {Retrieved evidence sufficient?};
+\node[box] (g) at (0,0) {Generate structured claims};
+\node[box] (v) at (0,-2) {Quotes exact; IDs in scope? };
+\node[box] (ok) at (-4.7,-4) {Accept supported claims};
+\node[box] (fix) at (4.7,-2) {One source-faithful correction};
+\node[box] (fail) at (4.7,-4) {Label fallback or abstain};
+\draw[line] (r) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Yes} (g);
+\draw[control] (r.east) -- (7.1,2) -- node[right,font=\scriptsize]{No evidence} (7.1,-4) -- (fail.east);
+\draw[line] (g) -- (v);
+\draw[line] (v) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Valid} (ok);
+\draw[control] (v) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Invalid} (fix);
+\draw[control] (fix) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Still invalid / timeout} (fail);
+\draw[line] (fix) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Valid repair} (ok);
+\end{tikzpicture}

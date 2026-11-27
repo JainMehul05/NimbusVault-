@@ -1,0 +1,18 @@
+\chapter{Complete System Architecture}
+\section{Layered responsibilities}
+The browser presents the original React interface and holds transient interaction state. Express validates requests, authenticates users and resolves resource authority. Prisma connects this policy layer to PostgreSQL. The private intelligence service owns extraction, embedding, retrieval, generation validation and conversation persistence. S3 retains original bytes, while DynamoDB records cloud processing state rather than application ownership.
+
+Figure~\ref{fig:system} shows the principal boundaries. A backend request to intelligence carries an internal service token, actor identifier and authorised file IDs. The model receives selected evidence, not database credentials or a tool capable of browsing the cloud account. The backend rechecks returned source metadata before displaying a citation, so the authority of a cached index does not replace current permissions.
+\diagram{system}{Implemented storage/intelligence architecture. Dashed edges are asynchronous events or bounded reconciliation, not a continuously running cloud-to-laptop callback.}{system}
+\section{Data flow and control flow}
+Original bytes, metadata, extracted passages and model context are distinct data products. Upload completion establishes an authoritative file revision; indexing derives passages from that revision; retrieval chooses evidence within the trusted scope; generation produces structured claims. Renaming a PostgreSQL file must not leave a stale filename as the authority for discovery, and deleting or revoking a file must prevent later retrieval even if a vector still exists.
+
+Control paths include session rotation, job leases, cost guards, cancellation and explicit cloud diagnostics. Ordinary search and Ask requests use private local retrieval by default. An optional cloud-vector demonstration is separately guarded and restricted to a configured synthetic canary. It is not the normal multi-user corpus index.
+\section{Cloud execution boundary}
+The native serverless path validates and classifies an S3 event, persists metadata and reaches an awaiting-local-embedding marker. That task ends the Standard workflow. Private indexing later reconciles state through outbound requests; it does not resume a parked Step Functions callback token. This distinction is important when interpreting successful cloud-stage execution as opposed to completed document intelligence.
+
+The intended EC2 version would move the complete application runtime to one Linux host while retaining existing AWS resources. That topology is explicitly prospective. Its memory limits, networking files and SSM access design have local/configuration evidence, but no EC2 instance, cloud-host inference benchmark or final stopped-host acceptance is claimed here.
+\subsection{Retrieval subsystem}
+Figure~\ref{fig:hybrid} exposes the dense and sparse branches inside the private intelligence layer. Chapter 10 defines their scoring and eligibility rules.
+\diagram{hybrid}{Implemented hybrid candidate fusion and tie breaking. Scope and relevance checks remain mandatory.}{hybrid}
+\FloatBarrier

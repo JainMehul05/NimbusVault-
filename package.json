@@ -43,7 +43,8 @@
     "aws:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-stop.ps1",
     "aws:backup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-backup.ps1",
     "aws:url": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-url.ps1",
-    "aws:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-doctor.ps1"
+    "aws:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/aws-doctor.ps1",
+    "ai:set-groq-key": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-groq-key.ps1"
   },
   "devDependencies": {
     "husky": "^9.0.11",

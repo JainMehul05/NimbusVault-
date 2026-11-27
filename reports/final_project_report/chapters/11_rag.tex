@@ -1,0 +1,20 @@
+\chapter{Large Language Model and RAG}
+\section{Runtime and bounded context}
+Ollama serves the validated \texttt{qwen2.5:3b} model with Q4\_K\_M quantisation. The model family and instruction variant are documented by Qwen~\cite{qwen}; the deployed artifact is the actual Ollama manifest and blob set, not an assumed equivalence to every upstream model capability. The Linux rehearsal uses a native x86-64 CPU runtime, one parallel model slot and a 6,144-token runtime context. The application additionally bounds evidence context to 10,000 characters; the upstream model's advertised maximum is not the application's effective context budget~\cite{ollama}.
+
+Quantisation reduces weight storage and memory requirements while changing numerical representation. It does not make inference costless. The measured Linux runner used no VRAM, and a loaded model occupied approximately 2.2 GiB in the observed run. No matched GPU-versus-EC2 comparison was measured.
+\section{Permission-aware generation}
+Figure~\ref{fig:rag} traces the actual request. Express authenticates the caller and derives a current readable-file scope. FastAPI retrieves within that scope and supplies labelled passages to Qwen. Source text is treated as untrusted data; instructions request structured claims, evidence IDs and exact supporting quotations. The model has no tools that could execute instructions found in a document.
+Figures~\ref{fig:citation-check} and~\ref{fig:multidoc} show the grounding decision and complementary-source assembly.
+\diagram{rag}{Implemented RAG path, including bounded correction, labelled fallback and owned persistence.}{rag}
+\section{Grounding, correction and abstention}
+The application checks that citation IDs refer to supplied evidence and that each quotation matches a source substring after controlled whitespace/case normalisation. Unsupported claims are removed or trigger a bounded correction. The correction prompt requests exact source-faithful sentences, with a Linux correction budget of ninety seconds replacing the earlier hardcoded thirty-second limit. Timeout and cancellation remain bounded; the change does not weaken the acceptance criteria.
+
+Generated, extractive and insufficient responses remain distinct modes. An extractive fallback must not be counted as a genuine generated positive case. Lack of authorised or relevant context warrants abstention. Exact quotation checks establish provenance of quoted words, but semantic entailment can still fail; a correct quotation alone is not a proof that every paraphrase or inference is justified.
+\diagram{citation_validation}{Evidence sufficiency, exact quotation checks and bounded repair. Invalid output does not become a silent successful generation.}{citation-check}
+\section{Multi-document answers and history}
+The synthetic Linux acceptance combined a document describing local processing with a separate Borealis access-code document. A real application-level Qwen response included both source files, and the citation dialog exposed the corresponding passage. Conversation owners and stored file scopes are checked again when history is retrieved, preventing a saved response from bypassing later access changes.
+\diagram{multidoc}{Complementary evidence from two independently scoped documents is attributed in a single generated response.}{multidoc}
+\screen{generated-answer}{Verified genuine Qwen answer in NimbusVault's historical application rehearsal. The example concerns non-sensitive synthetic local-AI statements.}{qwen-answer}
+\screen{linux-citation}{Verified Linux multi-document conversation with the Borealis supporting passage open. Seeded local metadata is not evidence of a new S3 upload.}{linux-rag}
+\FloatBarrier

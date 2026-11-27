@@ -1,3 +1,5 @@
+> Current operation: Session B uses `npm run aws:start -- --hours 2` with interactive YES and automatic safeguard rearming, or the one-click AWS launchers. Public access is the configured API Gateway HTTPS URL; SSM is optional administration. See [PUBLIC_DEPLOYMENT_GUIDE.md](PUBLIC_DEPLOYMENT_GUIDE.md). The manual Session A rearming procedure below is retained as historical deployment detail.
+
 # AWS deployment and operation guide
 
 ## Prerequisites (laptop)

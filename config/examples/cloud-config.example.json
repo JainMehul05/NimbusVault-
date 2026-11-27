@@ -1,0 +1,11 @@
+{
+  "region": "ap-southeast-2",
+  "table": "REPLACE_TABLE",
+  "vector_bucket": "REPLACE_VECTOR_BUCKET",
+  "vector_index": "REPLACE_VECTOR_INDEX",
+  "vectors_enabled": false,
+  "metadata_enabled": false,
+  "api_enabled": false,
+  "api_endpoint": "https://EXAMPLE.execute-api.ap-southeast-2.amazonaws.com",
+  "workflow_name": "REPLACE_WORKFLOW_NAME"
+}

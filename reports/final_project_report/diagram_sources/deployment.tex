@@ -1,0 +1,13 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (h) at (0,2) {Local Linux rehearsal host\\Docker Desktop; NOT EC2};
+\node[box] (a) at (0,0) {Express + React\\Loopback host port};
+\node[box] (pg) at (-4.7,-2) {PostgreSQL volume};
+\node[box] (i) at (0,-2) {FastAPI + SQLite volume};
+\node[box] (o) at (4.7,-2) {Native Linux Ollama\\Read-only model assets};
+\node[box] (c) at (0,-4) {Proposed Ubuntu EC2 host\\Same runtime; SSM private access};
+\draw[line] (h) -- (a);
+\draw[line] (a) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Internal network} (pg);
+\draw[line] (a) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Private token} (i);
+\draw[line] (i) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Internal model network} (o);
+\draw[control] (a.west) -- (-7.2,0) -- node[left,font=\scriptsize,align=center,text width=1.2cm]{Not yet\\deployed} (-7.2,-4) -- (c.west);
+\end{tikzpicture}

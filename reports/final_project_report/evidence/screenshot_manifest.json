@@ -1,0 +1,118 @@
+{
+  "views": 16,
+  "distinct_captures": 15,
+  "captures": [
+    {
+      "view": "public-landing",
+      "source_capture": "public-landing",
+      "environment": "compiled public frontend (backend not started)",
+      "sha256": "0e7dbd31e08b919d0a7d26bd76aaff946735b2d618e78a6d47ae2bd7569a503e",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "public-login",
+      "source_capture": "public-login",
+      "environment": "compiled public frontend (backend not started)",
+      "sha256": "13771a70c7fec595932314154b15f03b5b64095b11d564b12d934465c70b01eb",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "public-registration",
+      "source_capture": "public-registration",
+      "environment": "compiled public frontend (backend not started)",
+      "sha256": "9cdf02bc27d04fad751bcb4eb7d8161538345df1b3a98c36b55cbda2e113cb39",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "files",
+      "source_capture": "files",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "bff6614f476368713db096e548a813797460d49752b3fc9d621494b9e758eb8e",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "dashboard",
+      "source_capture": "dashboard",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "e3a53706c2020ff5f28490a9f0d5f34b45920ebb31cac9b387d968369c54aa2d",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "linux-dashboard",
+      "source_capture": "linux-dashboard",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "797faad4f31e05bb36194a62a2baa802b28de8a8954a50e99144044e1a74c0d7",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "cloud-overview",
+      "source_capture": "historical-cloud-dashboard",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "6c239dc7ccb6f90e9507ff1fbeeffd69c9c46e8adca8dbb2af5e7368e27ed530",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "cloud-services",
+      "source_capture": "historical-cloud-dashboard",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "8fdf3950d328c087233d4702dbade4c7beb515f3f4d87c4c120fb4cb26c91a4f",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "generated-answer",
+      "source_capture": "generated-answer",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "acce882c53716e593b8566c5e318589ce496eb2d654d31e4366d8db37cbd25c2",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "linux-citation",
+      "source_capture": "linux-citation",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "70839d9b905542fd5faaf58b6883359d55ba6db87509795fafdd9551abc9ab77",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "mobile-dashboard",
+      "source_capture": "mobile-dashboard",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "05e3f50759ecb2c6dda5cb7d464489062496336b99f1c776dc50794ab5bd7827",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "citation",
+      "source_capture": "citation",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "8544536d061eef3cb6f4cf9cee6b275833d638bc9f962cd513473e2e87ba2c44",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "mobile-ask-crop",
+      "source_capture": "mobile-ask-crop",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "801b08975df4238c4bd1166553980610a45c2695dcf2ec3cd6359c78d6d1f17b",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "landing-light-crop",
+      "source_capture": "landing-light-crop",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "8d3e2cdea9d04577c9b6074c4e5bafc4133a3ed70410ec78d1f3aca4072dba71",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "landing-dark",
+      "source_capture": "landing-dark",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "5394908f1de796c8b9eafbac8406174a3e9e8f9b776c368619b301cfc5d85083",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    },
+    {
+      "view": "registration-original",
+      "source_capture": "registration-original",
+      "environment": "existing verified local application capture; not EC2",
+      "sha256": "cbfca24952bc68ccf73dbc704e98b3349ecd07822d792227b7f60e435a80e2c9",
+      "processing": "cropped for report readability where applicable; no synthetic UI replacement"
+    }
+  ]
+}

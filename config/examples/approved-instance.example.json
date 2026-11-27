@@ -1,0 +1,8 @@
+{
+  "approved": false,
+  "region": "ap-southeast-2",
+  "account_id": "000000000000",
+  "instance_id": "i-REPLACE_ME",
+  "deployment_id": "nimbusvault-EXAMPLE",
+  "public_url": "https://EXAMPLE.execute-api.ap-southeast-2.amazonaws.com"
+}

@@ -1,0 +1,29 @@
+\chapter{Requirements and Development Methodology}
+\section{Functional and non-functional requirements}
+The functional contract includes registration, login, file and folder operations, sharing, retrieval, question answering and citation inspection. A successful response must respect the current user and resource state. The non-functional contract concerns confidentiality, recoverability, bounded resource use and honest failure reporting. In particular, an unavailable model must not be silently represented as successful LLM generation.
+\par\begin{table}[htbp]\caption{Requirements and their verification boundaries}\small\begin{tabularx}{\linewidth}{lYY}\toprule ID&Requirement&Evidence or boundary\\\midrule
+FR1&Authenticate users and revoke sessions&Backend session tests; browser login\\
+FR2&Manage owned/shared resources&File, folder and sharing integration suites\\
+FR3&Retrieve only authorised indexed content&Trusted scope; search/permission tests\\
+FR4&Answer with supporting citations&Strict Qwen cases and citation UI\\
+FR5&Persist conversations and indexes&SQLite restart/history acceptance\\
+NFR1&Preserve originals and recovery data&Hashes, database integrity and restore comparison\\
+NFR2&Bound costly activity&Disabled idle triggers; financial guard design\\
+NFR3&Remain portable&Independent Windows assets; native Linux rehearsal\\
+NFR4&Complete cloud hosting&Pending explicit EC2 approval and acceptance\\\bottomrule\end{tabularx}\end{table}\par
+\section{Roles and access policy}
+An authenticated user owns resources or receives an explicit/inherited permission. Viewer and editor rights differ from ownership, and infrastructure diagnostics additionally require an application administrator. AWS IAM identity is separate from these application roles. An administrator status page must not turn every normal account into a cloud-global metadata reader.
+\par\begin{table}[htbp]\caption{Application role matrix (subject to resource policy)}\small\begin{tabularx}{\linewidth}{Ycccc}\toprule Operation&Owner&Editor&Viewer&Anonymous\\\midrule
+Read authorised file&Yes&Yes&Yes&Valid link only\\
+Rename/move editable resource&Yes&Policy&No&No\\
+Grant new access / create links&Yes&Yes&No&No\\
+Change or revoke existing grants&Yes&No&No&No\\
+Ask over readable indexed content&Yes&Yes&Yes&No\\
+Infrastructure diagnostics&Admin only&No&No&No\\\bottomrule\end{tabularx}\end{table}\par
+\section{Development sequence}
+The repository documents progression from the October 12 proposal to storage, authentication, sharing, cloud integration, private intelligence and retrieval repair. Historical AWS work on November 24--26 precedes the November 27 standalone and Linux verification. The exact date of every development phase is not independently documented, so no invented day-by-day schedule is supplied.
+
+The method is incremental: identify a reproducible behaviour, inspect its governing boundary, implement a bounded change and retain evidence. For example, semantic discovery and citation correction were evaluated against fixed synthetic cases, while actual application authorisation was exercised separately. This division avoids treating mocked requests or adapter tests as full browser-to-AWS acceptance.
+Figure~\ref{fig:usecases} locates the ordinary user functions and the separate diagnostic privilege.
+\diagram{usecases}{Principal use cases and the separate administrator diagnostic privilege.}{usecases}
+\FloatBarrier

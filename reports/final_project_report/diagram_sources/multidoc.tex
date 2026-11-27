@@ -1,0 +1,12 @@
+\begin{tikzpicture}[>=Latex,box/.style={draw=navy,fill=navy!4,rounded corners=1pt,align=center,text width=3.25cm,minimum height=1cm,font=\small,inner sep=5pt},line/.style={->,thick,draw=navy},control/.style={->,thick,dashed,draw=slate}]
+\node[box] (q) at (0,2) {Question spanning two documents};
+\node[box] (a) at (-2.6,0) {Document A\\Local AI processing evidence};
+\node[box] (b) at (2.6,0) {Document B\\Synthetic Borealis code};
+\node[box] (c) at (0,-2) {Complementary retrieved passages};
+\node[box] (g) at (0,-4) {Qwen structured answer\\Claim-to-source attribution};
+\draw[line] (q) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Scoped retrieval} (a);
+\draw[line] (q) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {Scoped retrieval} (b);
+\draw[line] (a) -- (c);
+\draw[line] (b) -- (c);
+\draw[line] (c) -- node[midway,fill=white,font=\scriptsize,align=center,text width=1.35cm,inner sep=1pt] {S1 / S2 citations} (g);
+\end{tikzpicture}

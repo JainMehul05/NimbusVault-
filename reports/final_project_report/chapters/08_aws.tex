@@ -1,0 +1,31 @@
+\chapter{AWS Cloud Infrastructure}
+\section{Object storage and optional vectors}
+Amazon S3 retains private original objects with public-access blocking and encryption configuration verified by read-only inspection. The application supports a private Python storage adapter and a separate presigned-transfer path; the integrated rehearsal exercised the guarded application path. Reservations and staging apply to the presigned mode. Historical final-application tests uploaded tiny synthetic originals, downloaded them and compared SHA-256 values. Those observations do not establish unlimited-size or every-format upload reliability~\cite{s3}.
+
+S3 Vectors stores embeddings in a dedicated index. The reviewed index is 384-dimensional with cosine similarity. A configured synthetic-canary demonstration checked cloud retrieval and metadata restrictions; normal local search and Ask do not issue vector queries. The benchmark SDK tripwire recorded zero attempted/live AWS calls. S3 Vectors is an S3 capability, not a separate AWS product added to inflate a service count~\cite{s3vectors}.
+\section{Asynchronous processing services}
+DynamoDB holds cloud file metadata, revision-linked processing records and stage history. It does not determine application-user ownership. The Lambda worker validates native event structure, object prefix, file UUID, original metadata and bounded processing rules. Heavy MiniLM and Qwen inference remain outside Lambda. Its reviewed configuration is 256 MiB memory and a 30-second function timeout~\cite{dynamodb,lambda}.
+
+EventBridge routes finalised-original S3 events to an existing SQS queue. Staging and derived prefixes are excluded to prevent recursive reprocessing. The queue decouples arrival from the bounded Lambda consumer; visibility timeout is 180 seconds and redrive permits three receives before the DLQ. The DLQ retains messages for 345,600 seconds (four days), so it is not a permanent audit archive. Mapping batch size one and reviewed concurrency limits help bound the rehearsal~\cite{eventbridge,sqs}.
+
+Standard Step Functions orchestrates \texttt{Validate}, \texttt{ExtractOrClassify}, \texttt{PersistManifest} and \texttt{AwaitLocalEmbedding}. Transient Lambda-service errors have bounded retries; failures are recorded through Catch paths. The final awaiting-local task ends the cloud execution. A successful state-machine run therefore proves cloud-stage completion, not completed private inference~\cite{stepfunctions}.
+\section{Observability, configuration and identity}
+CloudWatch retains worker logs for three days and supplies native invocation/duration metrics. A historical sampled window contained eleven Lambda invocations and five retrieved log events; those numbers are not presented as current counters. API Gateway exposes IAM-protected operational routes; the signed status request succeeded and an unsigned request returned 403 in the authorised rehearsal. Broad API listing routes are not exposed as ordinary user metadata~\cite{cloudwatch,apigateway}.
+
+Three Standard Parameter Store parameters provide shared non-secret configuration. CloudFormation records the actual stack and resource relationships, while IAM restricts service permissions and STS verifies account identity. Parameter Store is a Systems Manager feature; security groups and IAM roles are resources, not additional cloud products~\cite{ssm,cloudformation,iam}.
+\par\begin{table}[htbp]\caption{AWS integration evidence and current boundary}\label{tab:aws}\small\begin{tabularx}{\linewidth}{p{.22\linewidth}YY}\toprule Capability&Existing evidence&Operational qualification\\\midrule
+S3 / DynamoDB&Application upload, readback and metadata&Historical authorised synthetic run\\
+EventBridge / SQS / Lambda&Native event-driven processing&Rule and consumer restored idle\\
+SQS DLQ&Configuration and older failure evidence&No new poison-message/redrive test\\
+Step Functions&Cloud stages and awaiting-local marker&Private reconciliation is separate\\
+CloudWatch&Native logs and windowed metrics&Timestamped, not continuous health\\
+API Gateway&Signed success; unsigned 403&Operational status, not global user listing\\
+S3 Vectors&Restricted synthetic retrieval&Optional; normal search remains local\\
+SSM parameters / CloudFormation&Read-only configuration review&No new stack deployment\\
+IAM / STS&Identity, signed API and policy inspection&EC2 role execution still pending\\
+EC2 / EBS / Session Manager&Prepared design and read-only feasibility&Not deployed or accepted\\\bottomrule\end{tabularx}\end{table}\par
+\section{Evidence classification}
+The November 26 native rehearsal is historical live evidence. November 27 read-only observations establish configuration/state at their timestamps. Earlier timeout-limited service checks were not all successful; subsequent queue inspections resolved the two SQS timeouts. Cloud-stage demonstrations, local simulated tests and configuration inspection are intentionally labelled separately. No new console session or EC2 resource was created for this report.
+\screen{cloud-overview}{Cropped, timestamped application cloud dashboard from the historical verification session. The snapshot is evidence of displayed diagnostics, not current end-to-end operation.}{cloud-overview}
+\screen{cloud-services}{Historical application service matrix, cropped from the genuine cloud dashboard. No console screenshot or live EC2 result is fabricated.}{cloud-services}
+\FloatBarrier

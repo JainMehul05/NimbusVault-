@@ -1,0 +1,24 @@
+\chapter{Document Intelligence and Semantic Search}
+\section{Extraction and passage construction}
+The private extractor handles PDF, DOCX, spreadsheet and structured/plain-text families. It rejects encrypted PDFs requiring an unlocked copy, bounds PDF page count and checks archive expansion limits before Office extraction. The production configuration does not promise OCR for scanned images. Empty, unsupported and failed documents retain distinct states instead of being marked indexed without evidence.
+
+MiniLM chunking uses tokenizer offsets to retain original source substrings. A window contains at most 220 tokens, or a smaller model limit minus special tokens, with 32-token overlap. It checks boundary tokenisation again and limits the total to 3,000 chunks. Extracted text is bounded to 500,000 characters in the configured private engine. These implementation bounds differ from an unrestricted whole-document reasoning claim.
+Figures~\ref{fig:embedding},~\ref{fig:dense} and~\ref{fig:hybrid} expose the extraction, dense-ranking and fusion stages respectively.
+\diagram{embedding}{Verified bytes become token-bounded passages, normalised vectors and synchronised FTS entries.}{embedding}
+\section{Embedding representation and cosine similarity}
+The selected model is \texttt{sentence-transformers/all-MiniLM-L6-v2}. It runs on CPU in the private engine with remote model code disabled and an in-project cache. Encoding normalises each 384-dimensional float32 vector~\cite{minilmcard}. For query vector $q$ and passage vector $d$, cosine similarity is
+\begin{equation}\operatorname{cos}(q,d)=\frac{\sum_{j=1}^{384}q_jd_j}{\sqrt{\sum_jq_j^2}\sqrt{\sum_jd_j^2}}.\end{equation}
+Here $j$ indexes dimensions; non-zero normalised vectors permit the implementation to use a matrix dot product. A cosine value is a similarity score, not a probability that an answer is correct. As an illustrative example only, vectors $(1,0)$ and $(1,1)$ have cosine $1/\sqrt{2}$; this is not project benchmark data.
+\diagram{dense_search}{Dense retrieval filters by trusted document scope before ranking and returning authorised results.}{dense}
+\section{BM25 and SQLite FTS5}
+A standard BM25 form is
+\begin{equation}\operatorname{BM25}(D,Q)=\sum_{t\in Q}\operatorname{IDF}(t)\frac{f(t,D)(k_1+1)}{f(t,D)+k_1(1-b+b|D|/\overline{|D|})}.\end{equation}
+$Q$ is the query, $D$ a passage, $f$ the term count, $|D|$ its length and $\overline{|D|}$ the corpus mean. $k_1$ controls frequency saturation and $b$ length normalisation~\cite{bm25}. NimbusVault delegates sparse ranking to SQLite FTS5's \texttt{bm25(chunk\_fts)}. FTS5 uses its own documented scoring/sign convention; the SQL sorts its score ascending. The theoretical expression above is not a claim that custom Python code implements a separately tuned BM25 parameter set~\cite{sqlitefts}.
+\section{Actual hybrid ranking}
+The retrieved dense and lexical ranks are combined with
+\begin{equation}\operatorname{RRF}(c)=\frac{1}{60+r_d(c)}+\mathbf{1}_{c\in L}\frac{1}{60+r_l(c)},\end{equation}
+where $r_d$ and $r_l$ are one-based dense and lexical ranks, $L$ is the sparse candidate set, and an absent lexical contribution is zero. Dense candidates include scoped lexical rescue candidates; sparse retrieval is bounded to sixty candidates. Ties use lexical term coverage and then dense similarity. RRF is actually present in the source; it is not an invented weighted cosine/BM25 sum.
+
+Eligibility gates precede final selection. The default dense evidence floor is 0.28 with a relative floor of 70\% of the best score; single-document selection permits a 0.20 minimum. Exact identifier/full short-query lexical anchors and bounded complementary-intent logic can rescue evidence while retaining scope checks. A selected-document excerpt summary is handled separately and is not proof of whole-document completeness. These heuristics explain why the hybrid result is more than an unfiltered rank sum.
+\par\begin{table}[htbp]\caption{Search modes and interpretation}\small\begin{tabularx}{\linewidth}{lYY}\toprule Mode&Signal&Principal limitation\\\midrule Filename&Current authorised names&Content meaning not considered\\Exact&Literal content phrase&No paraphrase matching\\BM25&FTS5 lexical rank&False positives on shared terms\\Semantic&MiniLM cosine&Exact identifiers can be weakly embedded\\Hybrid&RRF plus explicit gates&Heuristic tuning can overfit a small corpus\\\bottomrule\end{tabularx}\end{table}\par
+\FloatBarrier

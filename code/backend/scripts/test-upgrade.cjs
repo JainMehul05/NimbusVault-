@@ -1,8 +1,8 @@
 /**
  * Proves that an existing database upgrades without losing data:
  *   node scripts/test-upgrade.cjs <url of an EMPTY database whose name contains "test">
- * Applies all migrations except the newest, inserts representative rows (including the odd
- * cases the newest migration repairs), applies the rest, and checks everything survived.
+ * Applies the migrations before phase-5 hardening, inserts representative legacy rows,
+ * applies hardening plus all later migrations, and checks everything survived.
  */
 const { spawnSync } = require('child_process');
 const fs = require('fs');
@@ -18,7 +18,12 @@ process.env.DATABASE_URL = url;
 const root = path.join(__dirname, '..');
 const migrations = path.join(root, 'prisma/migrations');
 const folders = fs.readdirSync(migrations).filter((f) => fs.statSync(path.join(migrations, f)).isDirectory()).sort();
-const latest = folders.at(-1);
+// The fixtures intentionally predate the constraints/data repairs introduced by hardening.
+// Adding a newer migration must not silently move that fixture baseline forward.
+const hardening = '20261125000000_phase5_hardening';
+const baselineIndex = folders.indexOf(hardening);
+if (baselineIndex < 1) throw new Error('Expected the pre-hardening upgrade baseline');
+const pending = folders.slice(baselineIndex);
 
 const deploy = (schema) => {
   const cli = require.resolve('prisma/build/index.js');
@@ -31,10 +36,10 @@ const assert = (ok, message) => {
 };
 
 (async () => {
-  // A copy of the schema directory as it was before the newest migration.
+  // A copy with the exact legacy migration baseline required by these fixtures.
   const old = fs.mkdtempSync(path.join(os.tmpdir(), 'nv-upgrade-'));
   fs.cpSync(path.join(root, 'prisma'), old, { recursive: true });
-  fs.rmSync(path.join(old, 'migrations', latest), { recursive: true });
+  for (const migration of pending) fs.rmSync(path.join(old, 'migrations', migration), { recursive: true });
   deploy(path.join(old, 'schema.prisma'));
 
   const { PrismaClient } = require('@prisma/client');
@@ -60,6 +65,7 @@ const assert = (ok, message) => {
   deploy(path.join(root, 'prisma/schema.prisma'));
 
   assert(JSON.stringify(await counts()) === JSON.stringify(before), 'every row survived the upgrade');
+  assert((await db.user.findUnique({ where: { id: 'u1' } })).externalAiConsent === false, 'legacy users remain opted out of external AI after upgrade');
   const names = (await db.folder.findMany({ where: { ownerId: 'u1', parentFolderId: null }, orderBy: { createdAt: 'asc' } })).map((f) => f.name);
   assert(names[0] === 'Docs' && names[1] === 'Docs (f2-dupli)', 'duplicate top-level folders were renamed, not removed');
   assert((await db.user.findUnique({ where: { id: 'u2' } })).storageUsedBytes === 0n, 'negative storage usage was corrected');

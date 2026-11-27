@@ -1,0 +1,250 @@
+\chapter{Methodology and Design}
+\label{ch:design}
+
+\section{Overall Approach}
+
+We followed an iterative and incremental model. Instead of building every layer separately and joining them at the end, each stage was made to run end to end before the next one started. Development proceeded from storage and authentication to cloud integration, document intelligence, retrieval repair and portability tests.
+
+Functional requirements include authentication, file and folder operations, sharing, authorised search, question answering and citation inspection. Non-functional requirements include confidentiality, recovery, bounded resources and explicit failure states.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{1.2cm}>{\raggedright\arraybackslash}p{3.4cm}L@{}}
+\toprule
+\textbf{Phase} & \textbf{Focus} & \textbf{What was built}\\
+\midrule
+1 & Storage and authentication & Registration, login and refresh sessions; nested folders, upload, rename, move, trash and restore; private S3 originals\\
+2 & Cloud integration & EventBridge, SQS, Lambda and Step Functions processing path; DynamoDB processing metadata; authorised AWS rehearsal\\
+3 & Document intelligence & Text extraction, token-bounded chunking, MiniLM embeddings, SQLite FTS5 and local Qwen generation with validated citations\\
+4 & Retrieval repair & Hybrid rank fusion, relevance gates, exact-anchor rescue and the 84-query regression corpus\\
+5 & Portability and testing & Standalone Windows runtime, native Linux rehearsal, backup and restore, lifecycle checks and automated test suites\\
+\bottomrule
+\end{tabularx}
+\caption{Development phases in implementation order. The table records the sequence of work rather than calendar dates.}
+\label{tab:phases}
+\end{table}
+
+\section{System Architecture}
+
+\subsection{High-Level Design}
+
+React handles the interface; Express authenticates requests and resolves current authority using PostgreSQL. A private FastAPI service receives an internal service token, the actor ID and the authorised file IDs. S3 holds original bytes and DynamoDB records cloud processing state. The AI model receives selected passages, not credentials or unrestricted cloud access. Figure~\ref{fig:arch} shows the implemented architecture.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=1.3cm and 1.0cm]
+  \node[box, minimum width=3.6cm] (br) {Browser / React};
+  \node[box, minimum width=3.6cm, below=1.1cm of br] (ex) {Express\\Identity and scope};
+  \node[box, minimum width=3.6cm, below=1.6cm of ex] (fa) {Private FastAPI\\MiniLM + SQLite};
+  \node[store, minimum width=3.6cm, left=0.8cm of fa] (pg) {PostgreSQL\\Users, files, permissions};
+  \node[store, minimum width=3.6cm, right=0.8cm of fa] (s3) {Private S3\\Original bytes};
+  \node[box, minimum width=3.6cm, below=1.3cm of fa] (ol) {Ollama / Qwen 3B\\Grounded generation};
+  \node[ext, minimum width=3.6cm, below=1.3cm of s3] (aws) {Existing AWS workflow\\Events and metadata};
+  \draw[arr] (br) -- node[lbl]{JWT} (ex);
+  \draw[arr] (ex.west) -| node[lbl, pos=0.25]{Metadata} (pg.north);
+  \draw[arr] (ex.east) -| node[lbl, pos=0.25]{Guarded transfer} (s3.north);
+  \draw[arr] (ex) -- node[lbl]{Token + actor + file IDs} (fa);
+  \draw[arr] (fa) -- node[lbl]{Evidence context} (ol);
+  \draw[arr] (s3) -- node[lbl]{Native events} (aws);
+  \draw[darr] (aws.west) -- node[lbl]{Outbound\\reconciliation} (fa.south east);
+\end{tikzpicture}
+\caption{Implemented high-level architecture of NimbusVault. The dashed link is bounded outbound reconciliation.}
+\label{fig:arch}
+\end{figure}
+
+Upload completion establishes a current file revision. Indexing derives passages and vectors; scoped retrieval selects evidence; Qwen generates structured claims. Express checks returned source metadata before displaying citations, so a stale vector never overrides current access rules.
+
+\subsection{Roles and Execution Boundary}
+
+\textbf{Roles.} Owners manage resources and grants; editors have policy-limited modification and sharing rights; viewers can read and Ask over readable indexed files. Anonymous access is limited to valid share links. Infrastructure diagnostics require a separate administrator role. AWS IAM is independent of these application roles.
+
+\textbf{Execution boundary.} The AWS Standard workflow ends at an awaiting-local-embedding marker. Private indexing reconciles state separately; it does not resume a parked callback token. Local retrieval is the default. S3 Vectors is an optional synthetic demonstration, not the normal user corpus index. The proposed EC2 host remains unprovisioned.
+
+\section{Technical Stack}
+
+\begin{itemize}
+  \item \textbf{Frontend:} React, TypeScript, Vite and Tailwind; React Router and Axios.
+  \item \textbf{Application server:} Node.js, Express and Zod; bcrypt, JWT and cookie-parser.
+  \item \textbf{Intelligence service:} Python, FastAPI and Pydantic; MiniLM, Torch and NumPy; Ollama serving Qwen2.5~3B with Q4\_K\_M quantisation.
+  \item \textbf{Databases:} PostgreSQL with Prisma for identity, ownership, permissions, jobs and migrations; SQLite with FTS5 for passages, vectors, lexical ranking, history and the metadata outbox.
+  \item \textbf{Cloud and tooling:} AWS for storage and workflows; Docker Compose and Git for reproducible runtimes and checkpoints.
+\end{itemize}
+
+The stack follows the framework and service contracts in \cite{AWSCFN,React,Express,FastAPI,Prisma,PGDG16,SQLiteFTS5}. Kubernetes, ECS, RDS, load balancers and CloudFront are not part of the accepted runtime. Table~\ref{tab:stack} gives the responsibility of each layer.
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{5.2cm}L@{}}
+\toprule
+\textbf{Layer / technology} & \textbf{Implementation responsibility}\\
+\midrule
+React, TypeScript, Vite, Tailwind & Responsive SPA; React Router navigation and Axios API client\\
+Node.js, Express, Zod & REST endpoints, middleware, request validation, limits and errors\\
+bcrypt, JWT, cookie-parser & Password verification, access tokens and refresh-session handling\\
+PostgreSQL, Prisma & Application identity, file ownership, permissions, jobs and migrations\\
+Python, FastAPI, Pydantic & Private document-intelligence service and scoped API\\
+MiniLM, Torch, NumPy & CPU-based normalised 384-dimensional embeddings\\
+SQLite, FTS5 & Passages, vectors, lexical ranking, history and metadata outbox\\
+Ollama, Qwen2.5 3B & Local structured generation with Q4\_K\_M quantisation\\
+AWS, Docker Compose, Git & Cloud storage and workflows, runtime isolation and reproducible checkpoints\\
+\bottomrule
+\end{tabularx}
+\caption{Technology stack and implementation responsibilities.}
+\label{tab:stack}
+\end{table}
+
+\section{UML Use Case Diagram}
+
+The use-case view identifies user goals and the system boundary. There are three actors: the registered user, a share-link recipient and the administrator. Access still depends on current resource permissions.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig/usecase.pdf}
+\caption{Use case diagram of NimbusVault. Solid associations identify participating actors; they do not confer permissions.}
+\label{fig:usecase}
+\end{figure}
+
+Owners, editors and viewers are permission roles on individual resources, not separate system-wide privileges. The administrator use case is shown separately for clarity.
+
+\section{Data Model}
+\label{sec:datamodel}
+
+\textbf{PostgreSQL application metadata.} Prisma defines eleven application models. User owns files and folders; folders have a self-referencing hierarchy. Permission has a polymorphic resource reference and a unique user/resource grant. File-linked indexes, chunks, jobs and links cascade on file removal, but application policy must still authorise destructive actions (Figure~\ref{fig:er}, Table~\ref{tab:entities}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=2.4cm] (user) at (0,0) {\textbf{User}\\PK id;\\UNIQUE email};
+  \node[box, minimum width=4.6cm] (sess) at (5.2,3.6) {UserSession / RefreshToken\\FK userId};
+  \node[box, minimum width=4.6cm] (perm) at (5.2,2.0) {Permission\\FK granteeUserId;\\polymorphic resourceId};
+  \node[box, minimum width=4.6cm] (act)  at (5.2,0.3) {ActivityLog\\Nullable FK userId};
+  \node[box, minimum width=4.6cm] (fold) at (5.2,-1.3) {Folder\\FK ownerId, parentFolderId};
+  \node[box, minimum width=4.6cm] (file) at (5.2,-3.3) {File\\FK ownerId, folderId};
+  \node[box, minimum width=4.4cm] (link) at (12.2,-1.7) {ShareLink\\FK fileId, createdBy};
+  \node[box, minimum width=4.4cm] (idx)  at (12.2,-3.3) {DocumentIndex\\PK/FK fileId};
+  \node[box, minimum width=4.4cm] (chunk) at (12.2,-4.9) {DocumentChunk / AiJob\\FK fileId + generation};
+  \draw[thick] (user.east) -- (1.5,0);
+  \draw[thick] (1.5,3.6) -- (1.5,-3.3);
+  \foreach \y/\n/\t in {3.6/sess/{1 : many}, 2.0/perm/{1 : many}, -1.3/fold/{1 : many}, -3.3/file/{1 : many}}
+    \draw[arr] (1.5,\y) -- node[font=\scriptsize, above]{\t} (\n.west |- 0,\y);
+  \draw[darr] (1.5,0.3) -- node[font=\scriptsize, above]{1 : 0..1} (act.west |- 0,0.3);
+  \draw[arr] (fold) -- node[font=\scriptsize, right]{1 : many} (file);
+  \draw[thick] (file.east) -- (8.3,-3.3);
+  \draw[thick] (8.3,-1.7) -- (8.3,-4.9);
+  \draw[arr] (8.3,-1.7) -- node[font=\scriptsize, above]{1 : many} (link.west |- 0,-1.7);
+  \draw[arr] (8.3,-3.3) -- node[font=\scriptsize, above]{1 : 0..1} (idx.west |- 0,-3.3);
+  \draw[arr] (8.3,-4.9) -- node[font=\scriptsize, above]{1 : many} (chunk.west |- 0,-4.9);
+\end{tikzpicture}
+\caption{Entity--relationship diagram of the PostgreSQL application data. Permission resource IDs are polymorphic, not foreign keys.}
+\label{fig:er}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{5.6cm}L@{}}
+\toprule
+\textbf{Entity / model} & \textbf{Stored responsibility}\\
+\midrule
+User; UserSession; RefreshToken & Identity, quota, device sessions and hashed refresh-token families\\
+Folder; File & Hierarchy, ownership, S3 key, checksum and lifecycle\\
+ShareLink; Permission & Link limits, resource grants and expiry\\
+ActivityLog & Actor, target owner, action and filtered metadata\\
+DocumentIndex; DocumentChunk; AiJob & Generation-specific index data, durable jobs, leases and retry state\\
+\bottomrule
+\end{tabularx}
+\caption{PostgreSQL entities and their stored responsibilities.}
+\label{tab:entities}
+\end{table}
+
+Folder removal can set \fname{File.folderId} to null, and the storage counter has a non-negative database constraint. Current retrieval vectors reside in the private SQLite store, not in the optional PostgreSQL vector field.
+
+\textbf{SQLite persistence.} The \fname{files} table records revisions and extraction state. Chunks reference files and store float32 vector blobs; an external-content FTS5 table is synchronised by insert, update and delete triggers. The \fname{conversations}, \fname{exchanges} and \fname{conversation\_owners} tables support owned history. The \fname{cloud\_outbox} table retains failed cloud metadata updates for bounded retry (Figure~\ref{fig:sqlite}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \node[box, minimum width=3.6cm] (files) at (0,0) {\fname{files}\\PK id; revision;\\extraction state};
+  \node[box, minimum width=3.8cm] (out) at (6.2,0) {\fname{cloud\_outbox}\\PK file\_id; revision};
+  \node[box, minimum width=3.6cm] (chunks) at (0,-2.6) {\fname{chunks}\\FK file\_id;\\float32 BLOB};
+  \node[box, minimum width=3.8cm] (fts) at (6.2,-2.6) {\fname{chunk\_fts}\\External-content FTS5};
+  \node[box, minimum width=3.6cm] (conv) at (0,-5.4) {\fname{conversations}\\PK id;\\authorised scope};
+  \node[box, minimum width=3.8cm] (exch) at (6.2,-5.4) {\fname{exchanges}\\FK conversation\_id};
+  \node[box, minimum width=3.6cm] (own) at (0,-7.9) {\fname{conversation\_owners}\\Actor ownership};
+  \draw[darr] (out) -- node[lbl, above]{Metadata retry} (files);
+  \draw[arr] (files) -- node[lbl]{1 : many; cascade} (chunks);
+  \draw[arr] (chunks) -- node[lbl, above]{Triggers synchronise} (fts);
+  \draw[arr] (conv) -- node[lbl, above]{1 : many; cascade} (exch);
+  \draw[arr] (own) -- node[lbl]{Private ownership check} (conv);
+\end{tikzpicture}
+\caption{Private SQLite persistence and FTS synchronisation. Stable file IDs link derived evidence to application metadata.}
+\label{fig:sqlite}
+\end{figure}
+
+\section{UML Class Diagram}
+
+The static class view summarises the application-domain entities from Section~\ref{sec:datamodel}. Attributes use the documented identity and relationship fields. The model is conceptual and does not reproduce every Prisma field or method.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{fig/classdiag.pdf}
+\caption{Conceptual UML class diagram with selected attributes and association multiplicities. Figure~\ref{fig:er} remains the database-specific view.}
+\label{fig:class}
+\end{figure}
+
+\fname{Permission.resourceId} is polymorphic, not a database foreign key to File or Folder. The diagram omits supporting session, activity and chunk models for readability.
+
+\section{Activity Diagrams}
+
+\subsection{Upload}
+
+This swimlane diagram assigns the upload and indexing steps to their responsible components. Upload authority is resolved before guarded storage operations, and document readiness is established only after the current revision has been indexed.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{fig/swim_upload.pdf}
+\caption{Swimlane activity diagram for an authorised upload and private indexing. The denied branch terminates before any original is transferred.}
+\label{fig:swimupload}
+\end{figure}
+
+The normal path abstracts staged and guarded-adapter transfers. Failed extraction or indexing is recorded as an explicit state; an uploaded file is not automatically AI-ready.
+
+\subsection{Ask NimbusVault}
+
+Question answering proceeds from user intent to a trusted file scope, relevant evidence and validated output. The model sees selected passages, not unrestricted storage or database credentials. This view complements the RAG and validation diagrams in Section~\ref{sec:rag}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{fig/swim_ask.pdf}
+\caption{Swimlane activity diagram for scoped retrieval, private generation, validation and user-visible results.}
+\label{fig:swimask}
+\end{figure}
+
+When evidence is insufficient, the model is bypassed. Invalid claims are not silently accepted: the service may repair once, return labelled excerpts or abstain.
+
+\section{Data Flow Diagrams}
+
+\subsection{Level 0 (Context Diagram)}
+
+The context diagram treats NimbusVault as one logical process. It describes data entering and leaving the system rather than the order of operations. AWS storage, workflow services and private inference are internal to the modelled boundary.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig/dfd0.pdf}
+\caption{Level 0 DFD: external actors and the principal data exchanges with the NimbusVault system.}
+\label{fig:dfd0}
+\end{figure}
+
+Resource checks are still required for files, links, search results and citations; infrastructure access is not granted to ordinary users.
+
+\subsection{Level 1}
+
+Process 0 is decomposed into identity and file management, cloud workflow and indexing, scoped search and question answering, and diagnostics. The labelled flows identify exchanged data; the data stores distinguish originals, application authority, cloud state and derived intelligence.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig/dfd1.pdf}
+\caption{Level 1 DFD: decomposition of the context process into four logical processes and four principal data stores.}
+\label{fig:dfd1}
+\end{figure}
+
+The cloud workflow ends at the awaiting-local-embedding marker, and private indexing reconciles state separately. Diagnostics also sample AWS configuration and CloudWatch data.

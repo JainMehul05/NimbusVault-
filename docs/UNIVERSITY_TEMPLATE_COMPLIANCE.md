@@ -38,7 +38,7 @@ All reachable local/remote branches, tags, recovery references and historical jo
 
 ## Publication status
 
-Current main and local recovery references were recorded before restructuring. Preparation occurs on `codex/university-template-20261127` in a separate worktree; the active application and concurrent Groq files are not moved or edited. No AWS resource is modified. The university-layout branch is not pushed until the completed Groq verification/checkpoint and final-report revision are available.
+Current main and local recovery references were recorded before restructuring. Preparation occurs on `codex/university-template-20261127` in a separate worktree; the active application and concurrent Groq files are not moved or edited. No AWS resource is modified. The user subsequently authorized the structural release independently of the pending Groq checkpoint and final-report revision.
 
 The final verification must include exact restoration hashes, layout completeness, focused application builds/configuration checks, MkDocs/site links, original-PDF inspection, final-PDF recompilation, secret scans, a normal push and a fresh remote-tree/clone comparison. Preparation alone is not proof of final publication.
 
@@ -52,6 +52,6 @@ Historical recovery paths have explicit `-text` Git attributes. This prevents ne
 
 ## Final publication prerequisites
 
-The latest request requires explicit approval of the complete verified publication commit before pushing to `main`. Local Groq checkpoint `caa4548` is not evidence that AWS Session C is complete. Further deployment changes remain in the active development checkout and are not copied here.
+The user explicitly approved publishing the prepared structural snapshot to `main`, subject to integrity, security and remote-compatibility checks. Local Groq checkpoint `caa4548` is not evidence that AWS Session C is complete. Further deployment changes remain in the active development checkout and are not copied here.
 
 [Complete baseline file migration record](repository-file-migration.json). Documentation build and verification helpers live in `docs/tools/`, keeping the root restricted to university folders and necessary configuration. `.gitattributes` preserves exact historical file bytes; `LICENSE.template` preserves the upstream documentation attribution.

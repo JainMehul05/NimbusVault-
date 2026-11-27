@@ -36,6 +36,6 @@ From the repository root, `uv sync --locked --extra docs` installs a separate do
 
 The GitHub Pages workflow builds on the actual default branch (`main`) and uses Pages artifacts rather than force-pushing a history branch. To deploy, configure repository Settings → Pages → Source: GitHub Actions and set `ENABLE_GITHUB_PAGES=true`. If these settings are unavailable, the owner must complete them; no paid service is enabled by this preparation.
 
-## Completion gate
+## Structural release and subsequent implementation update
 
-This is a prepared layout. The source snapshot is the last published checkpoint; the ongoing Groq work is not copied while incomplete. After the completed verification report/checkpoint is provided, import that verified source into the same mapping, update the final report with actual public-deployment/Groq evidence, rebuild its PDF, then repeat source/security/build checks before a normal push. No force push, working-directory reset or AWS mutation is part of this procedure.
+The user explicitly authorized publishing this verified structure without waiting for AWS Session C. This structural release contains the previously published Session B application, the restored original submissions and the historical final-report snapshot. Unfinished Groq changes are excluded. After the completed verification report/checkpoint is provided, import that verified source into the same mapping, update the final report with actual evidence and repeat applicable checks for a subsequent commit. No force push, working-directory reset or AWS operation is part of this publication.

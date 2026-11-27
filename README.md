@@ -22,7 +22,7 @@ Supervisor: **Dr. Paramveer Sidhu**. Names, roll numbers and university details 
 3. [Final-report source and build instructions](project-report-final/README.md) · [existing report snapshot PDF](project-report-final/NimbusVault_Final_Project_Report.pdf)
 4. [Individual team-member journals](journals/index.md) · [Saras](journals/1024030021-saras/index.md) · [Mehul Jain](journals/1024030020-mehul-jain/index.md) · [Mansimar Kaur](journals/1024030012-mansimar-kaur/index.md)
 
-The original submissions are byte-for-byte historical recoveries. No genuine authored journal entries for these students were found; that gap is stated explicitly, while original template examples are preserved separately. The existing final report predates completed public deployment; its final revision is pending the completed Groq verification/checkpoint. This preparation must not be mistaken for final publication readiness.
+The original submissions are byte-for-byte historical recoveries. No genuine authored journal entries for these students were found; that gap is stated explicitly, while original template examples are preserved separately. The existing final report predates completed public deployment; its final revision is pending the completed Groq verification/checkpoint. This structural release restores the university layout; it does not certify the pending Groq deployment or revised final report.
 
 ## Objectives and implemented features
 

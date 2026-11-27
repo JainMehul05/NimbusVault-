@@ -1,6 +1,6 @@
 # Final repository preparation — 27 November 2026
 
-Status: prepared locally; not approved or published. Remote `main` was rechecked at `e195e9de7bc35f47ba55156751f4d6d22d64953c`.
+Status: structural publication explicitly authorized; remote verification follows the normal push. Pre-publication remote `main` was rechecked at `e195e9de7bc35f47ba55156751f4d6d22d64953c`.
 
 ## Prepared repository
 
@@ -36,11 +36,10 @@ The two additional attribution/integrity files are necessary: `LICENSE.template`
 - Original PDFs opened successfully; final report source was compiled from a separate clone and its extracted text matched the preserved PDF. That PDF remains a pre-deployment snapshot requiring revision.
 - Genuine student journal entries could not be recovered. Correct student directories contain explicit recovery notices; template examples are labelled separately.
 
-## Required before approval and publication
+## Authorized structural publication
 
-1. Receive the deployment agent's completed AWS Session C verification report and exact checkpoint. Local Groq checkpoint `caa4548` alone does not establish Session C completion. Deployment edits remain active and are not imported.
-2. Import the finished verified application into `code/`, reconcile documentation and update the final academic report with verified Groq/Session C evidence. Compile and visually verify that revised PDF.
-3. Repeat the applicable build, test, inventory, link, academic integrity and secret/history checks on the final combined commit. Present that commit and evidence for explicit user approval.
-4. Only after approval, perform a normal push to actual `main` and verify its remote tree, fresh clone and GitHub Actions. No remote completion is claimed here.
+The user explicitly approved publishing the prepared university structure now, independently of the pending AWS Session C and Groq work. This release retains the verified Session B application and clearly labelled historical final-report snapshot. Unfinished Groq changes are excluded. Normal history-preserving publication is conditional on renewed integrity, security and remote-ancestry checks; no further approval is required for this structural release.
 
-The active standalone application, its private data, shortcuts and runtime were not modified by this preparation. No AWS operation was performed. Existing branches, tags and history are preserved.
+The completed Session C implementation and revised report will be a subsequent commit after their verification. No claim of completed Session C is made here.
+
+The active standalone application, private data, shortcuts and runtime are not modified by this publication. No AWS operation is performed. Existing branches, tags and history are preserved. Post-push evidence is recorded separately after inspecting actual remote main and an independent clone.
